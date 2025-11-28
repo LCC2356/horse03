@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - FINAL</title>
+    <title>HORSE RUNRUN - STRICT LOGIC</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -14,6 +14,7 @@
             --primary: #40e0d0;
             --panel: #004d40;
             --border: #00695c;
+            /* 1:35 */
             --game-w: 3500px; 
             --game-h: 100px;
         }
@@ -32,6 +33,8 @@
             gap: 20px;
         }
 
+        .hidden { display: none !important; }
+
         /* === 桌面布局 === */
         #desktop-view {
             display: flex; flex-direction: column;
@@ -40,7 +43,6 @@
             padding-top: 20px;
         }
 
-        /* 跑道视口 */
         #game-scaler {
             width: 98vw; height: 150px; 
             display: flex; justify-content: center; align-items: center;
@@ -56,7 +58,6 @@
             flex-shrink: 0; 
         }
 
-        /* 跑道元素 */
         .grid-bg {
             position: absolute; inset: 0; opacity: 0.2;
             background-image: linear-gradient(rgba(64, 224, 208, 0.3) 1px, transparent 1px),
@@ -77,16 +78,18 @@
             display: none; z-index: 20;
         }
 
-        /* 实体 */
+        /* 实体 - 修复大小为 32px */
         .entity { position: absolute; width: 32px; height: 32px; will-change: transform; }
         .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; }
         
+        /* 皇冠容器 - 修复位置 */
         .crown-container {
-            position: absolute; top: -24px; left: 50%; transform: translateX(-50%);
+            position: absolute; top: -26px; left: 50%; transform: translateX(-50%);
             width: 24px; height: 24px; animation: bounce 1s infinite; z-index: 10;
-            display: none; /* 默认隐藏，JS控制显示 */
+            display: none; /* 默认隐藏 */
             flex-direction: column-reverse; align-items: center;
         }
+        
         .aura {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 160%; height: 160%; border-radius: 50%;
@@ -184,7 +187,7 @@
                 <div class="grid-bg"></div>
                 <div class="finish-line"></div>
                 <div id="hud" class="hud">NOWHERE RUNRUN</div>
-                <div id="queue-text" class="queue-alert">NEXT RACE IN: 3...</div>
+                <div id="queue-text" class="queue-alert"></div>
                 
                 <div id="layer-grass"></div>
                 <div id="layer-pony"></div>
@@ -238,9 +241,10 @@
     </div>
 
     <script>
+        // === 配置 ===
         const GAME_W = 3500;
         const GAME_H = 100;
-        const PONY_SIZE = 32; 
+        const PONY_SIZE = 32; // 核心修复：恢复32px
         const FINISH_X = GAME_W - 400;
 
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#fff', BLUE:'#2979ff' };
@@ -299,6 +303,7 @@
             } catch(e) { console.error(e); }
         }
 
+        // === 核心：请求生成 ===
         function requestSpawnPony(name, pixels, color) {
             const newPony = {
                 id: Math.random().toString(36).substr(2, 9),
@@ -309,17 +314,23 @@
                 y: 30 + Math.random() * (GAME_H - PONY_SIZE - 20),
                 speed: 3.5 + Math.random() * 3,
                 state: 'racing',
-                // 强制初始化为无皇冠
+                // 核心修复：初始化时绝对没有皇冠
                 hasCrown: false, isStreak: false, crownCount: 0,
                 timer: 0, frame: 0, finishedWalking: false
             };
 
+            // 逻辑修复：
+            // 1. 如果比赛进行中 -> 进队列
             if (gameState === 'RACING' || gameState === 'COOLDOWN') {
                 ponyQueue.push(newPony);
                 updateHUD();
-            } else {
-                ponies.push(newPony);
-                startRace();
+            } 
+            // 2. 如果散步中 -> 立即触发新比赛
+            else if (gameState === 'ROAMING') {
+                // 先把新马加入队列 (为了统一逻辑)
+                ponyQueue.push(newPony);
+                // 立即开始倒计时
+                startCooldown();
             }
         }
 
@@ -329,17 +340,19 @@
         }
 
         function startRace() {
+            // 合并队列
             if (ponyQueue.length > 0) {
                 ponies = ponies.concat(ponyQueue);
                 ponyQueue = [];
             }
             
+            // 全员回到起点
             ponies.forEach(p => {
                 p.x = 20;
                 p.y = 30 + Math.random() * (GAME_H - PONY_SIZE - 30);
                 p.state = 'racing';
                 p.finishedWalking = false;
-                // 保留皇冠状态
+                // 保留皇冠和爆气状态，不重置！
             });
 
             grass = [];
@@ -370,6 +383,7 @@
             }
             else if (gameState === 'RACING') {
                 hud.innerText = "STATUS: RACING!!!";
+                // 比赛中有人加入，显示等待提示
                 if (ponyQueue.length > 0) {
                     alert.style.display = 'block';
                     alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`;
@@ -384,15 +398,15 @@
                 hud.innerText = "NOWHERE RUNRUN";
                 alert.style.display = 'none';
                 updatePoniesMovement();
-                if (ponyQueue.length > 0) startCooldown(); 
+                // 闲逛时不需要自动重开，除非有人加入 (在 requestSpawnPony 里触发)
             }
 
+            // 补草
             const active = ponies.filter(p => p.state === 'racing');
-            // 修改草生成上限：10 + 3*pony
             const maxGrass = 10 + ponies.length * 3;
             const growthRate = 0.02 + ponies.length * 0.005;
             if (active.length === 0 && Math.random() < growthRate && grass.length < maxGrass) {
-                grass.push({ x: Math.random() * GAME_W, y: 20 + Math.random() * (GAME_H - 40) });
+                grass.push({ x: 50 + Math.random() * (GAME_W - 100), y: 20 + Math.random() * (GAME_H - 40) });
             }
         }
 
@@ -400,11 +414,8 @@
             const finished = ponies.filter(p => p.state === 'finished');
             let raceOverTrigger = false;
             
-            if (ponies.length > 10) {
-                if (finished.length >= 10) raceOverTrigger = true;
-            } else {
-                if (ponies.length > 0 && finished.length === ponies.length) raceOverTrigger = true;
-            }
+            if (ponies.length > 10) { if (finished.length >= 10) raceOverTrigger = true; }
+            else { if (ponies.length > 0 && finished.length === ponies.length) raceOverTrigger = true; }
 
             if (raceOverTrigger) {
                 if (ponies.length > 10) {
@@ -414,14 +425,15 @@
                 }
                 
                 ponies.forEach(p => { 
-                    p.state = 'roaming'; 
-                    p.timer = 0; 
-                    p.targetX = null; 
+                    if(p.state === 'finished') { p.state = 'roaming'; p.timer = 0; p.targetX = null; }
                 });
 
                 gameState = 'ROAMING';
                 
-                if (ponyQueue.length > 0) startCooldown();
+                // 如果队列里有人，马上触发倒计时
+                if (ponyQueue.length > 0) {
+                    startCooldown();
+                }
             }
         }
 
@@ -441,7 +453,6 @@
                         if (finishedCount === 0 && !winnerFoundThisFrame && gameState === 'RACING') {
                             winnerFoundThisFrame = true;
                             
-                            // 判定逻辑
                             if (p.hasCrown) {
                                 p.isStreak = true; 
                             } else {
@@ -449,7 +460,7 @@
                                 p.isStreak = false;
                             }
                             
-                            // 强制剥夺其他所有马的皇冠
+                            // 核心修复：强制剥夺其他所有马的皇冠
                             ponies.forEach(o => { 
                                 if(o.id !== p.id) { 
                                     o.hasCrown = false; 
@@ -531,12 +542,9 @@
                 };
                 tick();
             }
-            // 爆炸生成草 (修复逻辑)
+            // 变草
             for(let i=0; i<5; i++) {
-                grass.push({
-                    x: p.x + (Math.random()-0.5) * 40,
-                    y: p.y + (Math.random()-0.5) * 40
-                });
+                 grass.push({ x: p.x + (Math.random()-0.5) * 60, y: p.y + (Math.random()-0.5) * 40 });
             }
         }
 
@@ -556,7 +564,7 @@
                     el.id = p.id; el.className = 'entity';
                     el.innerHTML = `
                         <div class="aura"></div>
-                        <div class="crown-container" style="display:none">
+                        <div class="crown-container" style="display: none;">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path></svg>
                         </div>
                         <div class="name-tag">${p.name}</div>
@@ -569,9 +577,13 @@
                 el.style.zIndex = Math.floor(p.y);
                 el.querySelector('.p-grid').style.transform = `scaleX(${p.facing || 1})`;
 
-                // 强制显隐控制
                 const crownC = el.querySelector('.crown-container');
-                crownC.style.display = p.hasCrown ? 'flex' : 'none';
+                // 核心修复：使用 style.display 而不是 class
+                if (p.hasCrown) {
+                    crownC.style.display = 'flex';
+                } else {
+                    crownC.style.display = 'none';
+                }
 
                 el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none';
                 el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
@@ -589,6 +601,16 @@
                 }
                 el.querySelector('.p-grid').innerHTML = html;
             });
+        }
+
+        function updateHUD() {
+            const alert = document.getElementById('queue-text');
+            if(ponyQueue.length > 0 && gameState === 'RACING') {
+                alert.style.display = 'block';
+                alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`;
+            } else {
+                alert.style.display = 'none';
+            }
         }
 
         function initMobile() {
@@ -627,7 +649,6 @@
             const colorEl = document.getElementById(colorId);
             colorEl.innerHTML = '';
             Object.values(COLORS).forEach(c => {
-                if(c === COLORS.WHITE) return;
                 const dot = document.createElement('div');
                 dot.className = `c-dot ${c === selectedColor ? 'active' : ''}`;
                 dot.style.background = c;
@@ -663,15 +684,6 @@
                 if(val) { cell.style.background = color; cell.style.boxShadow = `0 0 5px ${color}`; }
                 el.appendChild(cell);
             }));
-        }
-        function updateHUD() {
-            const alert = document.getElementById('queue-text');
-            if(ponyQueue.length > 0) {
-                alert.style.display = 'block';
-                alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`;
-            } else {
-                alert.style.display = 'none';
-            }
         }
     </script>
 </body>
