@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - LED EDITION</title>
+    <title>HORSE RUNRUN - LED 1:35</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -14,7 +14,9 @@
             --color-primary: #40e0d0;
             --color-panel: #004d40;
             --color-border: #00695c;
-            --target-w: 5058px;
+            
+            /* 1:35 比例分辨率 */
+            --target-w: 2240px; 
             --target-h: 64px;
         }
 
@@ -22,22 +24,53 @@
         
         body {
             margin: 0; padding: 0;
-            background-color: #1a1a1a; /* 浏览器背景深灰，区分屏幕 */
+            background-color: #1a1a1a; 
             font-family: 'VT323', monospace;
             color: var(--color-primary);
-            overflow: hidden;
             height: 100vh; width: 100vw;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
+            display: flex; 
+            flex-direction: column; /* 垂直排列：上二维码，下跑道 */
+            align-items: center; 
+            justify-content: center;
+            gap: 40px; /* 二维码和跑道的间距 */
         }
 
-        /* --- 缩放容器：这是 LED 屏幕的本体 --- */
+        /* --- 上方：大二维码区域 --- */
+        #top-qr-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(0, 37, 26, 0.8);
+            padding: 20px;
+            border: 2px solid var(--color-primary);
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(64, 224, 208, 0.2);
+            z-index: 100;
+        }
+        
+        #qrcode {
+            background: white;
+            padding: 10px;
+            width: 180px;  /* 大尺寸 */
+            height: 180px;
+            display: flex; justify-content: center; align-items: center;
+        }
+        #qrcode img { display: block; width: 100%; height: 100%; }
+        
+        .qr-label {
+            margin-top: 10px;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            text-shadow: 0 0 5px var(--color-primary);
+        }
+
+        /* --- 下方：屏幕缩放容器 --- */
         #scaler-wrapper {
             width: 100%;
+            /* 容器高度等于目标高度，宽度自动 */
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: visible;
         }
 
         #led-screen {
@@ -45,25 +78,13 @@
             height: var(--target-h);
             background: #000;
             position: relative;
-            display: flex;
-            /* 关键：强制不换行，左右布局 */
-            flex-direction: row; 
-            justify-content: space-between; /* 两端对齐 */
             overflow: hidden;
-            border: 1px solid #333; /* 仅用于在电脑上看清边界 */
-            /* 默认缩放中心 */
-            transform-origin: center center;
+            border: 1px solid #333; /* 边框 */
+            transform-origin: center top; /* 从顶部中心缩放 */
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
         }
 
-        /* --- 左侧：跑道区域 --- */
-        #track-section {
-            /* 宽度 = 总宽 - 64px (二维码) */
-            width: calc(5058px - 64px);
-            height: 100%;
-            position: relative;
-            border-right: 2px solid var(--color-primary);
-        }
-
+        /* --- 游戏跑道 --- */
         .grid-bg {
             position: absolute; inset: 0; opacity: 0.2;
             background-image: linear-gradient(rgba(64, 224, 208, 0.3) 1px, transparent 1px),
@@ -73,7 +94,7 @@
 
         .finish-line {
             position: absolute; top: 0; bottom: 0;
-            right: 400px; /* 终点线位置 */
+            right: 200px; /* 终点线位置 */
             width: 8px;
             background-image: linear-gradient(45deg, #40e0d0 25%, transparent 25%, transparent 50%, #40e0d0 50%, #40e0d0 75%, transparent 75%, transparent);
             background-size: 8px 8px; opacity: 0.8; z-index: 0;
@@ -81,22 +102,8 @@
 
         .hud {
             position: absolute; bottom: 2px; right: 10px;
-            font-size: 24px; /* 在巨大分辨率下字体要大 */
-            opacity: 0.5; letter-spacing: 2px;
+            font-size: 20px; opacity: 0.5; letter-spacing: 2px;
         }
-
-        /* --- 右侧：纯二维码区域 --- */
-        #qr-section {
-            width: 64px;
-            height: 64px;
-            background: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 2px; /* 白边 */
-        }
-        #qrcode { width: 100%; height: 100%; }
-        #qrcode img { display: block; width: 100%; height: 100%; }
 
         /* --- 实体 --- */
         .entity { position: absolute; will-change: transform; }
@@ -126,18 +133,6 @@
         .explosion { position: absolute; width: 4px; height: 4px; background: #ff5252; pointer-events: none; }
         @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
 
-        /* --- 悬浮操作按钮 (不占用屏幕空间) --- */
-        #controls-overlay {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-            z-index: 9999;
-        }
-        .btn {
-            background: #00251a; border: 2px solid var(--color-primary); color: var(--color-primary);
-            padding: 10px 30px; font-family: 'VT323', monospace; font-size: 1.5rem;
-            cursor: pointer; text-transform: uppercase; box-shadow: 0 0 15px rgba(64, 224, 208, 0.3);
-        }
-        .btn:hover { background: var(--color-primary); color: #000; }
-
         /* --- 移动端样式 (全屏覆盖) --- */
         #mobile-view {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -154,29 +149,29 @@
         input { background: #222; border: 1px solid #444; color: white; padding: 10px; text-align: center; font-size: 1.2rem; width: 100%; margin-bottom: 10px; }
         .m-footer { display: flex; gap: 10px; }
         .hidden { display: none !important; }
+        .btn { background: #00251a; border: 2px solid var(--color-primary); color: var(--color-primary); padding: 10px 30px; font-family: 'VT323', monospace; font-size: 1.4rem; cursor: pointer; text-transform: uppercase; box-shadow: 0 0 15px rgba(64, 224, 208, 0.2); transition: all 0.2s; touch-action: manipulation; }
+        .btn:active { transform: translateY(2px); }
+        .btn-outline { background: transparent; border: 2px solid var(--color-border); color: var(--color-primary); opacity: 0.8; }
 
     </style>
 </head>
 <body>
 
-    <div id="scaler-wrapper">
-        <div id="led-screen">
-            <div id="track-section">
-                <div class="grid-bg"></div>
-                <div class="finish-line"></div>
-                <div class="hud">MODE:RACE // STATUS:LIVE</div>
-                <div id="layer-grass"></div>
-                <div id="layer-pony"></div>
-                <div id="layer-fx"></div>
-            </div>
-            <div id="qr-section">
-                <div id="qrcode"></div>
-            </div>
-        </div>
+    <div id="top-qr-section">
+        <div id="qrcode"></div>
+        <div class="qr-label">SCAN TO JOIN</div>
     </div>
 
-    <div id="controls-overlay">
-        <button class="btn" onclick="openEditor()">+ ADD RUNNER</button>
+    <div id="scaler-wrapper">
+        <div id="led-screen">
+            <div class="grid-bg"></div>
+            <div class="finish-line"></div>
+            <div class="hud">MODE:RACE // STATUS:LIVE</div>
+            
+            <div id="layer-grass"></div>
+            <div id="layer-pony"></div>
+            <div id="layer-fx"></div>
+        </div>
     </div>
 
     <div id="mobile-view" class="hidden">
@@ -190,30 +185,17 @@
             <div id="m-grid" class="editor-grid"></div>
         </div>
         <div class="m-footer">
-            <button class="btn" style="border-color:#ff5252; color:#ff5252;" onclick="clearMobile()">CLEAR</button>
+            <button class="btn btn-outline" style="border-color:#ff5252; color:#ff5252;" onclick="clearMobile()">CLEAR</button>
             <button class="btn" style="flex:1" onclick="sendMobile()">SEND</button>
-        </div>
-    </div>
-
-    <div id="modal-editor" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:9000; display:flex; justify-content:center; align-items:center;">
-        <div style="background:#111; border:2px solid #40e0d0; padding:20px; text-align:center;">
-            <h2>NEW RUNNER</h2>
-            <input type="text" id="pc-name" placeholder="NAME" value="PC-PONY">
-            <div class="color-picker" id="pc-colors"></div>
-            <div id="pc-grid" class="editor-grid" style="margin:20px auto;"></div>
-            <div style="display:flex; gap:10px; justify-content:center;">
-                <button class="btn" onclick="document.getElementById('modal-editor').classList.add('hidden')">CANCEL</button>
-                <button class="btn" onclick="savePCPony()">CREATE</button>
-            </div>
         </div>
     </div>
 
     <script>
         // === 配置 ===
-        const TARGET_W = 5058;
+        const TARGET_W = 2240; // 1:35 比例宽度 (64 * 35)
         const TARGET_H = 64;
-        const SCREEN_WIDTH = TARGET_W - 64; // 跑道宽度
-        const FINISH_X = SCREEN_WIDTH - 400; // 终点线X坐标
+        const SCREEN_WIDTH = TARGET_W; 
+        const FINISH_X = SCREEN_WIDTH - 200; 
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#fff' };
         
         // 默认像素画
@@ -243,8 +225,9 @@
 
             const isMobile = new URLSearchParams(window.location.search).has('host');
             if(isMobile) {
+                // 移动端隐藏桌面元素
                 document.getElementById('scaler-wrapper').style.display = 'none';
-                document.getElementById('controls-overlay').style.display = 'none';
+                document.getElementById('top-qr-section').style.display = 'none';
                 document.getElementById('mobile-view').classList.remove('hidden');
                 initMobile();
             } else {
@@ -255,22 +238,22 @@
         function fitScreen() {
             const el = document.getElementById('led-screen');
             const wrap = document.getElementById('scaler-wrapper');
-            const scale = Math.min(window.innerWidth / TARGET_W, 1);
-            // 垂直居中缩放
+            // 计算缩放比例：用屏幕宽度 / 目标宽度 (留边距)
+            const scale = Math.min((window.innerWidth - 40) / TARGET_W, 1);
+            
             el.style.transform = `scale(${scale})`;
-            // 调整容器高度以免留白太多
+            // 调整容器尺寸
+            wrap.style.width = window.innerWidth + 'px';
             wrap.style.height = (TARGET_H * scale) + 'px';
-            wrap.style.marginTop = (window.innerHeight - TARGET_H * scale) / 2 + 'px';
         }
 
         // === 桌面端 ===
         function initDesktop() {
-            // 初始化 Peer
             peer = new Peer();
             peer.on('open', id => {
                 const url = `${location.href}?host=${id}`;
                 new QRCode(document.getElementById("qrcode"), {
-                    text: url, width: 60, height: 60, margin: 0,
+                    text: url, width: 160, height: 160, margin: 0,
                     colorDark: "#000000", colorLight: "#ffffff",
                     correctLevel: QRCode.CorrectLevel.L
                 });
@@ -279,13 +262,10 @@
                 c.on('data', data => spawnPony(data.name, data.pixels, data.color));
             });
 
-            // 初始化 PC 编辑器
-            initEditor('pc-grid', 'pc-colors', false);
             requestAnimationFrame(gameLoop);
         }
 
         function spawnPony(name, pixels, color) {
-            // 不限制数量，不删除旧马
             const id = Math.random().toString(36).substr(2, 9);
             
             // 所有马回到起点
@@ -299,14 +279,14 @@
                 id, name: name || 'PONY',
                 pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_PIXELS)),
                 color: color || COLORS.CYAN,
-                x: 20, y: 32 - 16, // 垂直居中 (64/2 - 32/2)
+                x: 20, y: 16 + Math.random() * 20, 
                 speed: 1.5 + Math.random() * 2,
                 state: 'racing',
                 hasCrown: false,
                 isStreak: false,
                 timer: 0, frame: 0
             });
-            grass = []; // 清除杂草
+            grass = []; 
         }
 
         // === 游戏逻辑 ===
@@ -322,52 +302,39 @@
             
             // 判定结束：前10名到达
             if (active.length > 0 && finished.length >= 10) {
-                // 淘汰剩下的
                 active.forEach(p => explode(p));
-                // 只保留前10
                 ponies = ponies.filter(p => p.state === 'finished' || p.state === 'roaming');
-                // 全员散步
                 ponies.forEach(p => { p.state = 'roaming'; p.timer = 0; });
             }
-            // 如果总数<10，全员到达后散步
             else if (active.length === 0 && finished.length > 0 && ponies.length <= 10) {
                 ponies.forEach(p => { p.state = 'roaming'; p.timer = 0; });
             }
 
             // 生成草
-            if (active.length === 0 && Math.random() < 0.02 && grass.length < 15) {
-                grass.push({ x: Math.random() * SCREEN_WIDTH, y: 20 + Math.random() * 24 });
+            if (active.length === 0 && Math.random() < 0.05 && grass.length < 30) {
+                grass.push({ x: Math.random() * SCREEN_WIDTH, y: 10 + Math.random() * 40 });
             }
 
             let winnerFound = false;
 
             ponies.forEach(p => {
-                // 动画帧
                 p.frame++;
 
                 if (p.state === 'racing') {
                     p.x += p.speed * (0.8 + Math.random() * 0.4);
                     p.facing = 1;
                     
-                    // 终点判定
                     if (p.x >= FINISH_LINE_X) {
                         p.state = 'finished';
-                        // 冠军逻辑
                         if (finished.length === 0 && !winnerFound) {
                             winnerFound = true;
-                            // 如果已经是冠军，开启爆气；否则成为新冠军
                             if (p.hasCrown) p.isStreak = true;
-                            else {
-                                p.hasCrown = true;
-                                p.isStreak = false;
-                            }
-                            // 其他人丢冠
+                            else { p.hasCrown = true; p.isStreak = false; }
                             ponies.forEach(o => { if(o !== p) { o.hasCrown = false; o.isStreak = false; }});
                         }
                     }
                 }
                 else if (p.state === 'finished') {
-                    // 终点后减速行走
                     if (p.x < SCREEN_WIDTH - 40) {
                         p.x += 0.5;
                         p.finishedWalking = true;
@@ -383,10 +350,9 @@
         }
 
         function aiBehavior(p) {
-            // 找草
             if (p.state === 'roaming') {
                 let target = null;
-                let minD = 200;
+                let minD = 300;
                 grass.forEach(g => {
                     let d = Math.abs(g.x - p.x);
                     if (d < minD) { minD = d; target = g; }
@@ -403,7 +369,6 @@
                         grass = grass.filter(g => g !== target);
                     }
                 } else {
-                    // 随机走
                     if (p.timer-- <= 0) {
                         p.timer = 60 + Math.random() * 100;
                         p.targetX = Math.random() * SCREEN_WIDTH;
@@ -418,7 +383,6 @@
                 if (p.timer-- <= 0) p.state = 'roaming';
             }
             
-            // 垂直微调防止重叠
             if (Math.random() < 0.05) p.y += (Math.random() - 0.5);
             p.y = Math.max(5, Math.min(64 - 35, p.y));
         }
@@ -447,16 +411,13 @@
                 };
                 tick();
             }
-            // 变草
             for(let i=0; i<3; i++) grass.push({x: p.x + (Math.random()-0.5)*20, y: p.y + (Math.random()-0.5)*10});
         }
 
         function draw() {
-            // 草
             const grassL = document.getElementById('layer-grass');
             grassL.innerHTML = grass.map(g => `<div class="grass" style="left:${g.x}px; top:${g.y}px"></div>`).join('');
 
-            // 小马 DOM Diff
             const ponyL = document.getElementById('layer-pony');
             const nodes = Array.from(ponyL.children);
             const ids = new Set(ponies.map(p => p.id));
@@ -480,34 +441,24 @@
 
                 el.style.transform = `translate(${p.x}px, ${p.y}px)`;
                 el.style.zIndex = Math.floor(p.y);
-                
-                // 翻转
                 const grid = el.querySelector('.p-grid');
                 grid.style.transform = `scaleX(${p.facing || 1})`;
 
-                // 皇冠 & 爆气
                 el.querySelector('.crown-container').style.display = p.hasCrown ? 'block' : 'none';
                 el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none';
                 el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
 
-                // 动画帧渲染
                 const isMoving = p.state === 'racing' || (p.state === 'finished' && p.finishedWalking) || p.state === 'roaming' || p.state === 'walking_to_food';
                 const frameStep = isMoving ? Math.floor(p.frame / 10) % 2 : 0;
                 
-                // 简单Diff像素
                 let html = '';
                 for(let y=0; y<8; y++) {
                     let row = p.pixels[y];
-                    // 简单走路动画：偶数帧且腿部（y>5）位移
-                    if (frameStep === 1 && y > 5) {
-                        row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[0]]; // shift
-                    }
-                    // 吃饭低头
+                    if (frameStep === 1 && y > 5) row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[0]]; 
                     if (p.state === 'eating') {
-                        if (y===1) row = [0,0,0,0,0,0,0,0]; // 头没了
-                        if (y===3) row = p.pixels[1]; // 头低下来
+                        if (y===1) row = [0,0,0,0,0,0,0,0]; 
+                        if (y===3) row = p.pixels[1]; 
                     }
-
                     for(let x=0; x<8; x++) {
                         if (row[x]) html += `<div style="background:${p.color}; width:4px; height:4px; grid-column:${x+1}; grid-row:${y+1}"></div>`;
                     }
@@ -519,8 +470,7 @@
         // === 移动端逻辑 ===
         function initMobile() {
             const host = new URLSearchParams(window.location.search).get('host');
-            // 初始化画板
-            initEditor('m-grid', 'm-colors', true);
+            initEditor('m-grid', 'm-colors');
             
             peer = new Peer();
             peer.on('open', () => {
@@ -547,48 +497,27 @@
             renderGrid('m-grid', myGrid, myColor);
         }
 
-        function savePCPony() {
-            spawnPony(
-                document.getElementById('pc-name').value.toUpperCase(),
-                myGrid, myColor
-            );
-            document.getElementById('modal-editor').classList.add('hidden');
-        }
-
-        function openEditor() {
-            // 重置PC编辑数据
-            myGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
-            myColor = COLORS.CYAN;
-            renderGrid('pc-grid', myGrid, myColor);
-            document.getElementById('modal-editor').classList.remove('hidden');
-        }
-
-        // === 通用编辑器逻辑 ===
-        function initEditor(gridId, colorId, isMobile) {
+        function initEditor(gridId, colorId) {
             const gridEl = document.getElementById(gridId);
             const colorEl = document.getElementById(colorId);
             
-            // 颜色选择器
             colorEl.innerHTML = '';
             Object.values(COLORS).forEach(c => {
-                if(c === COLORS.GOLD || c === COLORS.WHITE) return;
+                if(c === COLORS.WHITE) return; // 移除白色避免看不清
                 const dot = document.createElement('div');
                 dot.className = `c-dot ${c === myColor ? 'active' : ''}`;
                 dot.style.background = c;
                 dot.onclick = () => {
                     myColor = c;
                     renderGrid(gridId, myGrid, myColor);
-                    // 更新选中态
                     Array.from(colorEl.children).forEach(d => d.classList.remove('active'));
                     dot.classList.add('active');
                 };
                 colorEl.appendChild(dot);
             });
 
-            // 渲染网格
             renderGrid(gridId, myGrid, myColor);
 
-            // 触摸/鼠标事件
             let drawing = false;
             let eraseMode = false;
 
@@ -600,12 +529,11 @@
             };
             const move = (e) => {
                 if(!drawing) return;
-                e.preventDefault(); // 防止滚动
+                e.preventDefault();
                 let x, y;
                 if(e.touches) { x = e.touches[0].clientX; y = e.touches[0].clientY; }
                 else { x = e.clientX; y = e.clientY; }
                 
-                // 获取当前点下的元素
                 const el = document.elementFromPoint(x, y);
                 if (el && el.dataset.r) {
                     const r = parseInt(el.dataset.r);
@@ -620,10 +548,8 @@
 
             gridEl.onmousedown = (e) => start(e.target.dataset.r, e.target.dataset.c);
             gridEl.ontouchstart = (e) => start(e.target.dataset.r, e.target.dataset.c);
-            
             window.onmousemove = move;
             window.ontouchmove = move;
-            
             window.onmouseup = end;
             window.ontouchend = end;
         }
