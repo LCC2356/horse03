@@ -67,12 +67,11 @@
         }
 
         /* --- 布局容器 --- */
-        /* 使用 Flexbox 将游戏区和二维码区横向排列 */
         #main-layout {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 20px; /* 间距 */
+            gap: 20px;
             transform-origin: center;
             transform: scale(1);
         }
@@ -145,43 +144,58 @@
 
         /* --- 二维码区域 (右侧) --- */
         #qr-section {
-            width: 160px;
-            height: 120px; /* 【修改点2】高度与跑道一致 */
+            height: 120px;
             display: flex;
-            flex-direction: column;
+            /* 改为横向排列，文字在左，二维码在右 */
+            flex-direction: row; 
             align-items: center;
-            justify-content: center; /* 垂直居中 */
+            justify-content: space-between;
+            gap: 15px;
             border: 2px solid var(--color-border);
             background: rgba(0, 37, 26, 0.8);
-            padding: 10px;
+            padding: 10px 20px;
             border-radius: 4px;
             box-shadow: 0 0 20px rgba(64, 224, 208, 0.1);
+        }
+
+        .qr-text-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
         }
 
         #qrcode {
             background: white;
             padding: 5px;
-            margin-bottom: 5px;
-            /* 确保二维码不会超出容器 */
-            max-width: 100%;
-            /* 限制二维码最大高度，防止撑破容器 */
-            max-height: 85px;
+            /* 【修改点1】强制正方形，大小适中 */
+            width: 100px;
+            height: 100px;
             display: flex;
             justify-content: center;
             align-items: center;
+            flex-shrink: 0; /* 防止被挤压 */
         }
         
         #qrcode img {
-            display: block; 
-            max-width: 100%;
-            height: auto;
+            /* 【修改点1】强制填满容器 */
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
         }
 
         .qr-text {
-            font-size: 0.9rem;
+            font-size: 1.1rem;
             color: var(--color-primary);
-            text-align: center;
             line-height: 1.2;
+            letter-spacing: 1px;
+        }
+
+        .qr-sub-text {
+            font-size: 0.8rem;
+            color: var(--color-primary);
+            opacity: 0.7;
+            margin-top: 5px;
             letter-spacing: 1px;
         }
 
@@ -203,13 +217,14 @@
             height: 4px;
         }
 
-        .crown {
+        /* 【修改点2】像素皇冠容器 */
+        .crown-container {
             position: absolute;
-            top: -24px;
+            top: -28px; /* 调整位置 */
             left: 50%;
             transform: translateX(-50%);
-            color: #facc15; /* Yellow */
-            font-size: 20px;
+            width: 32px;
+            height: 32px;
             animation: bounce 1s infinite;
             z-index: 10;
         }
@@ -354,9 +369,11 @@
             </div>
 
             <div id="qr-section">
-                <div class="qr-text" style="margin-bottom: 5px;">SCAN TO JOIN</div>
+                <div class="qr-text-group">
+                    <div class="qr-text">SCAN TO JOIN</div>
+                    <div class="qr-sub-text">MOBILE LINK</div>
+                </div>
                 <div id="qrcode"></div>
-                <div class="qr-text" style="font-size: 0.7rem; opacity: 0.7; margin-top: 5px;">MOBILE LINK</div>
             </div>
 
         </div>
@@ -412,7 +429,8 @@
             RED: '#ff5252',
             GREEN: '#69f0ae',
             PURPLE: '#e040fb',
-            WHITE: '#ffffff'
+            WHITE: '#ffffff',
+            GOLD: '#facc15' // 皇冠颜色
         };
 
         // --- 默认像素画 (8x8) ---
@@ -427,6 +445,18 @@
             [0,0,1,0,0,0,1,0]
         ];
 
+        // 【修改点2】像素皇冠数据 (8x8)
+        const CROWN_PIXELS = [
+            [1,0,1,0,1,0,1,0],
+            [1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1],
+            [0,1,1,1,1,1,1,0],
+            [0,0,1,1,1,1,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0]
+        ];
+
         // --- 状态管理 ---
         let ponies = []; // { id, name, x, y, state, speed, hasCrown, color, pixels, facing, timer, targetX }
         let grass = [];  // { id, x, y }
@@ -435,6 +465,7 @@
         let conn = null; // 移动端用
         
         // 编辑器状态
+        // 【修改点3】初始化时也需要深拷贝，防止修改默认值
         let editorGrid = JSON.parse(JSON.stringify(DEFAULT_FRAME_1));
         let selectedColor = COLORS.TURQUOISE;
 
@@ -699,18 +730,18 @@
                     pixelContainer.style.transform = 'scaleX(1)';
                 }
 
-                // 【修改点3】 修复皇冠显示逻辑
-                const crownEl = el.querySelector('.crown');
-                // 使用 classList 来切换 hidden 类，而不是直接修改 style.display
+                // 修复皇冠显示逻辑
+                const crownContainer = el.querySelector('.crown-container');
+                // 使用 classList 来切换 hidden 类
                 if (p.hasCrown) {
-                    crownEl.classList.remove('hidden');
+                    crownContainer.classList.remove('hidden');
                 } else {
-                    crownEl.classList.add('hidden');
+                    crownContainer.classList.add('hidden');
                 }
 
                 // 名字颜色
                 const nameEl = el.querySelector('.name-tag');
-                nameEl.style.color = p.hasCrown ? '#facc15' : p.color;
+                nameEl.style.color = p.hasCrown ? COLORS.GOLD : p.color;
                 nameEl.style.opacity = p.hasCrown ? 1 : 0.8;
 
                 // 动画帧更新
@@ -725,11 +756,25 @@
             div.style.width = PONY_WIDTH + 'px';
             div.style.height = PONY_HEIGHT + 'px';
 
-            // 皇冠
-            const crown = document.createElement('div');
-            crown.className = 'crown hidden'; // 默认带有 hidden 类
-            crown.innerText = '👑';
-            div.appendChild(crown);
+            // 【修改点2】创建像素皇冠容器
+            const crownContainer = document.createElement('div');
+            crownContainer.className = 'crown-container hidden'; // 默认隐藏
+            
+            // 创建皇冠的像素网格
+            const crownGrid = document.createElement('div');
+            crownGrid.className = 'pixel-grid';
+            // 渲染皇冠像素
+            let crownHtml = '';
+            for(let y=0; y<8; y++) {
+                for(let x=0; x<8; x++) {
+                    if (CROWN_PIXELS[y][x]) {
+                        crownHtml += `<div class="pixel" style="background-color: ${COLORS.GOLD}; box-shadow: 0 0 4px ${COLORS.GOLD}; grid-column: ${x+1}; grid-row: ${y+1};"></div>`;
+                    }
+                }
+            }
+            crownGrid.innerHTML = crownHtml;
+            crownContainer.appendChild(crownGrid);
+            div.appendChild(crownContainer);
 
             // 名字
             const name = document.createElement('div');
@@ -751,7 +796,7 @@
         }
 
         function updatePonyAnimation(p, el) {
-            const gridEl = el.querySelector('.pixel-grid');
+            const gridEl = el.querySelector('.pixel-grid-container .pixel-grid');
             
             if (!p.frameTimer) p.frameTimer = 0;
             if (!p.currentFrame) p.currentFrame = 0;
@@ -845,7 +890,9 @@
                 speed: 1.5 + Math.random() * 2.0,
                 hasCrown: false,
                 color: color || COLORS.TURQUOISE,
-                pixels: pixels || DEFAULT_FRAME_1,
+                // 【修改点3】关键修复：使用 JSON.parse(JSON.stringify()) 进行深拷贝
+                // 确保每只小马的像素数据是独立的
+                pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_FRAME_1)),
                 timer: 0
             };
             ponies.push(newPony);
@@ -856,6 +903,7 @@
 
         function savePony() {
             const name = document.getElementById('editor-name').value;
+            // 这里的 editorGrid 已经是深拷贝过的，可以直接用
             createPony(name, editorGrid, selectedColor);
             closeEditor();
         }
@@ -882,6 +930,9 @@
             const container = document.getElementById(containerId);
             container.innerHTML = '';
             Object.values(COLORS).forEach(c => {
+                // 不显示金色在选择器中
+                if (c === COLORS.GOLD) return;
+
                 const div = document.createElement('div');
                 div.className = 'color-dot';
                 div.style.backgroundColor = c;
@@ -941,8 +992,9 @@
             document.getElementById('qrcode').innerHTML = '';
             new QRCode(document.getElementById('qrcode'), {
                 text: url,
-                width: 128,
-                height: 128,
+                // 【修改点1】设置二维码大小为 90x90，留一点边距
+                width: 90,
+                height: 90,
                 colorDark : "#000000",
                 colorLight : "#ffffff",
                 correctLevel : QRCode.CorrectLevel.H
@@ -954,6 +1006,8 @@
             buildColorPicker('mobile-color-picker');
             const container = document.getElementById('mobile-editor-container');
             container.innerHTML = '<div id="mobile-editor-grid" class="editor-grid"></div>';
+            // 【修改点3】确保移动端编辑器也使用深拷贝的默认值
+            editorGrid = JSON.parse(JSON.stringify(DEFAULT_FRAME_1));
             renderEditorGrid('mobile-editor-grid');
 
             peer = new Peer();
@@ -975,7 +1029,8 @@
             const name = document.getElementById('mobile-name-input').value || "MOBILE";
             conn.send({
                 name: name,
-                pixels: editorGrid,
+                // 发送前进行深拷贝，虽然在这里不是必须的，但好习惯
+                pixels: JSON.parse(JSON.stringify(editorGrid)),
                 color: selectedColor
             });
             alert("Sent!");
