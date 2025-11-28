@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN 1:35</title>
+    <title>HORSE RUNRUN - FIXED</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -14,9 +14,6 @@
             --primary: #40e0d0;
             --panel: #004d40;
             --border: #00695c;
-            
-            /* 严格 1:35 比例 */
-            /* 高度 64px -> 宽度 = 64 * 35 = 2240px */
             --game-w: 2240px; 
             --game-h: 64px;
         }
@@ -30,61 +27,49 @@
             color: var(--primary);
             height: 100vh; width: 100vw;
             overflow: hidden;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
         }
 
-        /* === 桌面端布局 === */
+        /* === 桌面布局 === */
         #desktop-view {
-            display: flex;
-            flex-direction: column;
+            display: flex; flex-direction: column;
             width: 100%; height: 100%;
-            align-items: center;
-            justify-content: center;
-            gap: 40px;
+            align-items: center; justify-content: center;
+            gap: 30px; position: relative;
         }
 
-        /* 上方：二维码 (大尺寸) */
+        /* 上方二维码 */
         #qr-card {
             background: rgba(0, 77, 64, 0.9);
             border: 2px solid var(--primary);
-            border-radius: 8px;
+            border-radius: 12px;
             padding: 15px 30px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            box-shadow: 0 0 30px rgba(64,224,208,0.1);
+            display: flex; flex-direction: row; align-items: center; gap: 20px;
+            box-shadow: 0 0 40px rgba(64,224,208,0.15);
+            z-index: 50;
         }
-        #qrcode {
-            background: white;
-            padding: 5px;
-            width: 150px; height: 150px;
-            display: flex; justify-content: center; align-items: center;
-        }
+        .qr-info h2 { margin: 0; font-size: 2rem; letter-spacing: 2px; text-shadow: 0 0 10px var(--primary); }
+        .qr-info p { margin: 5px 0 0 0; font-size: 1.2rem; opacity: 0.7; }
+        #qrcode { background: white; padding: 8px; width: 140px; height: 140px; display: flex; justify-content: center; align-items: center; border-radius: 4px; }
         #qrcode img { display: block; width: 100%; height: 100%; }
-        .qr-info h2 { margin: 0; font-size: 2rem; }
-        .qr-info p { margin: 0; opacity: 0.7; font-size: 1.2rem; }
 
-        /* 下方：跑道视口 (自动缩放) */
-        #game-scaler {
-            width: 95vw;
-            height: 100px; /* 视觉高度 */
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        /* 跑道视口 */
+        #track-viewport {
+            width: 95vw; height: 200px;
+            display: flex; justify-content: center; align-items: center;
+            overflow: visible;
         }
 
         #game-screen {
-            /* 强制逻辑分辨率 2240x64 */
-            width: var(--game-w);
-            height: var(--game-h);
-            background: #000;
-            position: relative;
-            border: 1px solid #333;
-            overflow: hidden;
-            transform-origin: center center;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            width: var(--game-w); height: var(--game-h);
+            background: #000; position: relative;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 30px rgba(64, 224, 208, 0.2);
+            overflow: hidden; transform-origin: center center;
         }
 
-        /* 跑道元素 */
+        /* 跑道内元素 */
         .grid-bg {
             position: absolute; inset: 0; opacity: 0.2;
             background-image: linear-gradient(rgba(64, 224, 208, 0.3) 1px, transparent 1px),
@@ -92,26 +77,20 @@
             background-size: 32px 32px;
         }
         .finish-line {
-            position: absolute; top: 0; bottom: 0; right: 300px; width: 8px;
+            position: absolute; top: 0; bottom: 0; right: 200px; width: 8px;
             background-image: linear-gradient(45deg, #40e0d0 25%, transparent 25%, transparent 50%, #40e0d0 50%, #40e0d0 75%, transparent 75%, transparent);
             background-size: 8px 8px; opacity: 0.8; z-index: 0;
         }
-        .hud {
-            position: absolute; bottom: 2px; right: 5px; font-size: 20px; opacity: 0.5;
-        }
+        .hud { position: absolute; bottom: 2px; right: 10px; font-size: 20px; opacity: 0.5; letter-spacing: 2px; }
 
         /* 实体 */
-        .entity { position: absolute; will-change: transform; }
-        .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 32px; height: 32px; }
-        .pixel { width: 4px; height: 4px; }
+        .entity { position: absolute; width: 40px; height: 40px; will-change: transform; }
+        .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; }
         
         .crown-container {
             position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
             width: 24px; height: 24px; animation: bounce 1s infinite; z-index: 10;
-            display: flex; flex-direction: column-reverse; align-items: center;
         }
-        .crown-icon { margin-bottom: -14px; filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)); }
-        
         .aura {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 160%; height: 160%; border-radius: 50%;
@@ -129,7 +108,17 @@
         .explosion { position: absolute; width: 4px; height: 4px; background: #ff5252; pointer-events: none; }
         @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
 
-        /* === 移动端样式 (修复版) === */
+        /* 桌面添加按钮 (悬浮) */
+        #desktop-add-btn {
+            position: fixed; bottom: 30px; 
+            background: #00251a; border: 2px solid var(--primary); color: var(--primary);
+            padding: 15px 40px; font-family: inherit; font-size: 1.5rem;
+            cursor: pointer; text-transform: uppercase; z-index: 100;
+            box-shadow: 0 0 20px rgba(64,224,208,0.2);
+        }
+        #desktop-add-btn:active { transform: translateY(2px); }
+
+        /* === 移动端样式 === */
         #mobile-view {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #111; display: flex; flex-direction: column; z-index: 20000;
@@ -145,30 +134,26 @@
             font-family: inherit; text-align: center; font-size: 1.5rem; width: 100%; border-radius: 4px;
         }
         
-        /* 画板容器：弹性伸缩 */
         .m-canvas-container {
             flex: 1; display: flex; justify-content: center; align-items: center;
             background: #1a1a1a; border-radius: 8px; margin-bottom: 20px;
-            overflow: hidden; min-height: 200px;
+            overflow: hidden; min-height: 300px;
         }
         
-        /* 核心修复：网格样式 */
         .editor-grid {
             display: grid;
-            /* 关键修复：显式定义行列 */
             grid-template-columns: repeat(8, 1fr); 
             grid-template-rows: repeat(8, 1fr);
             gap: 2px;
             background: #333; border: 2px solid #555;
-            touch-action: none; /* 允许滑动 */
+            touch-action: none;
         }
-        /* 格子大小适配 */
         .editor-cell { 
-            width: 35px; height: 35px; /* 手机上合适的大小 */
+            width: 38px; height: 38px; /* 加大尺寸，更好画 */
             background: #000; 
         }
         
-        .color-picker { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+        .color-picker { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
         .c-dot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #333; }
         .c-dot.active { border-color: white; transform: scale(1.1); }
         
@@ -177,10 +162,10 @@
             background: #00251a; border: 2px solid var(--primary); color: var(--primary);
             font-family: inherit; font-size: 1.5rem; text-transform: uppercase;
             display: flex; justify-content: center; align-items: center; cursor: pointer;
-            border-radius: 4px;
+            border-radius: 4px; flex: 1;
         }
         .btn:active { background: var(--primary); color: #000; }
-        .btn-outline { background: transparent; border-color: #ff5252; color: #ff5252; width: 100px; }
+        .btn-outline { background: transparent; border-color: #ff5252; color: #ff5252; flex: 0.4; }
 
     </style>
 </head>
@@ -189,8 +174,8 @@
     <div id="desktop-view">
         <div id="qr-card">
             <div class="qr-info">
-                <h2>SCAN TO JOIN</h2>
-                <p>MOBILE CONTROLLER</p>
+                <h2>JOIN RACE</h2>
+                <p>SCAN TO CUSTOMIZE</p>
             </div>
             <div id="qrcode"></div>
         </div>
@@ -200,22 +185,23 @@
                 <div class="grid-bg"></div>
                 <div class="finish-line"></div>
                 <div class="hud">MODE:RACE // RATIO:1:35 // STATUS:LIVE</div>
-                
                 <div id="layer-grass"></div>
                 <div id="layer-pony"></div>
                 <div id="layer-fx"></div>
             </div>
         </div>
+
+        <button id="desktop-add-btn" onclick="spawnPony('PC-USER', null, COLORS.CYAN)">+ ADD PONY</button>
     </div>
 
     <div id="mobile-view" style="display: none;">
         <div class="m-header">
-            <span class="m-title">DRAW PONY</span>
-            <span id="m-status">CONNECTING...</span>
+            <span class="m-title">PIXEL MAKER</span>
+            <span id="m-status" class="m-status">CONNECTING...</span>
         </div>
 
         <div class="m-controls">
-            <input type="text" id="m-name" placeholder="ENTER NAME" maxlength="8">
+            <input type="text" id="m-name" placeholder="ENTER YOUR NAME" maxlength="8">
             <div class="color-picker" id="m-colors"></div>
         </div>
 
@@ -225,17 +211,16 @@
 
         <div class="m-footer">
             <button class="btn btn-outline" onclick="clearMobile()">CLEAR</button>
-            <button class="btn" style="flex:1" onclick="sendMobile()">CAST TO SCREEN</button>
+            <button class="btn" onclick="sendMobile()">CAST TO SCREEN</button>
         </div>
     </div>
 
     <script>
         // === 配置 ===
-        const TARGET_W = 2240; // 1:35 (64 * 35)
+        const TARGET_W = 2240;
         const TARGET_H = 64;
-        
         const SCREEN_WIDTH = TARGET_W; 
-        const FINISH_X = SCREEN_WIDTH - 200; 
+        const FINISH_X = SCREEN_WIDTH - 400; 
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#fff' };
         
         const DEFAULT_PIXELS = [
@@ -252,6 +237,7 @@
         let ponies = [];
         let grass = [];
         let peer, conn;
+        // 移动端状态
         let myGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
         let myColor = COLORS.CYAN;
 
@@ -295,6 +281,7 @@
 
         function spawnPony(name, pixels, color) {
             const id = Math.random().toString(36).substr(2, 9);
+            // 重置所有人回起点
             ponies.forEach(p => { p.x = 20; p.state = 'racing'; p.finishedWalking = false; });
             
             ponies.push({
@@ -302,7 +289,7 @@
                 pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_PIXELS)),
                 color: color || COLORS.CYAN,
                 x: 20, y: 16 + Math.random() * 20, 
-                speed: 3.0 + Math.random() * 2, // 速度
+                speed: 3.0 + Math.random() * 2,
                 state: 'racing',
                 hasCrown: false,
                 isStreak: false,
@@ -337,8 +324,16 @@
                 });
             }
 
-            if (active.length === 0 && Math.random() < 0.02 && grass.length < 20) {
-                grass.push({ x: Math.random() * SCREEN_WIDTH, y: 10 + Math.random() * 40 });
+            // 动态草：草量 = 基础 + 马数量*系数
+            const maxGrass = 10 + ponies.length * 2;
+            const growthRate = 0.02 + ponies.length * 0.005;
+            
+            if (active.length === 0 && Math.random() < growthRate && grass.length < maxGrass) {
+                grass.push({ 
+                    id: Math.random(), 
+                    x: Math.random() * SCREEN_WIDTH, 
+                    y: 10 + Math.random() * 40 
+                });
             }
 
             let winnerFound = false;
@@ -439,7 +434,7 @@
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path></svg>
                         </div>
                         <div class="name-tag">${p.name}</div>
-                        <div class="p-grid" style="display:grid; grid-template-columns:repeat(8,1fr); width:32px; height:32px;"></div>
+                        <div class="p-grid" style="display:grid; grid-template-columns:repeat(8,1fr); width:100%; height:100%;"></div>
                     `;
                     ponyL.appendChild(el);
                 }
@@ -466,17 +461,22 @@
                         if (y===3) row = p.pixels[1]; 
                     }
                     for(let x=0; x<8; x++) {
-                        if (row[x]) html += `<div style="background:${p.color}; width:4px; height:4px; grid-column:${x+1}; grid-row:${y+1}"></div>`;
+                        if (row[x]) html += `<div style="background:${p.color}; width:100%; height:100%; grid-column:${x+1}; grid-row:${y+1}"></div>`;
                     }
                 }
                 el.querySelector('.p-grid').innerHTML = html;
             });
         }
 
-        // === 移动端逻辑 ===
+        // === 移动端逻辑 (修复重写) ===
         function initMobile() {
             const host = new URLSearchParams(window.location.search).get('host');
-            initEditor('m-grid', 'm-colors');
+            
+            // 初始化颜色选择器
+            initColorPicker();
+            // 初始化网格 DOM
+            initGridDOM();
+
             peer = new Peer();
             peer.on('open', () => {
                 conn = peer.connect(host);
@@ -484,29 +484,17 @@
                     document.getElementById('m-status').innerText = "CONNECTED";
                     document.getElementById('m-status').style.color = "#69f0ae";
                 });
+                // 添加错误提示
+                conn.on('error', () => {
+                    document.getElementById('m-status').innerText = "DISCONNECTED";
+                    document.getElementById('m-status').style.color = "red";
+                });
             });
         }
 
-        function sendMobile() {
-            if(!conn) return;
-            conn.send({
-                name: document.getElementById('m-name').value.toUpperCase() || 'MOBILE',
-                pixels: myGrid,
-                color: myColor
-            });
-            alert('SENT!');
-        }
-
-        function clearMobile() {
-            myGrid = Array(8).fill(0).map(()=>Array(8).fill(0));
-            renderGrid('m-grid', myGrid, myColor);
-        }
-
-        function initEditor(gridId, colorId) {
-            const gridEl = document.getElementById(gridId);
-            const colorEl = document.getElementById(colorId);
-            
-            colorEl.innerHTML = '';
+        function initColorPicker() {
+            const el = document.getElementById('m-colors');
+            el.innerHTML = '';
             Object.values(COLORS).forEach(c => {
                 if(c === COLORS.WHITE) return;
                 const dot = document.createElement('div');
@@ -514,66 +502,137 @@
                 dot.style.background = c;
                 dot.onclick = () => {
                     myColor = c;
-                    renderGrid(gridId, myGrid, myColor);
-                    Array.from(colorEl.children).forEach(d => d.classList.remove('active'));
+                    updateGridColors();
+                    Array.from(el.children).forEach(d => d.classList.remove('active'));
                     dot.classList.add('active');
                 };
-                colorEl.appendChild(dot);
+                el.appendChild(dot);
             });
-
-            renderGrid(gridId, myGrid, myColor);
-
-            let drawing = false, eraseMode = false;
-            
-            // 核心修复：滑动绘制逻辑
-            const start = (r, c) => {
-                drawing = true;
-                eraseMode = myGrid[r][c] === 1;
-                myGrid[r][c] = eraseMode ? 0 : 1;
-                renderGrid(gridId, myGrid, myColor);
-            };
-            const move = (e) => {
-                if(!drawing) return;
-                e.preventDefault(); // 阻止滚动
-                let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                
-                const el = document.elementFromPoint(clientX, clientY);
-                if (el && el.dataset.r) {
-                    const r = parseInt(el.dataset.r);
-                    const c = parseInt(el.dataset.c);
-                    // 只有状态改变时才更新
-                    if (myGrid[r][c] !== (eraseMode ? 0 : 1)) {
-                        myGrid[r][c] = eraseMode ? 0 : 1;
-                        renderGrid(gridId, myGrid, myColor);
-                    }
-                }
-            };
-            const end = () => { drawing = false; };
-
-            gridEl.addEventListener('mousedown', (e) => start(e.target.dataset.r, e.target.dataset.c));
-            gridEl.addEventListener('touchstart', (e) => {
-                if(e.target.dataset.r) start(e.target.dataset.r, e.target.dataset.c);
-            }, {passive: false});
-            
-            window.addEventListener('mousemove', move);
-            window.addEventListener('touchmove', move, {passive: false});
-            
-            window.addEventListener('mouseup', end);
-            window.addEventListener('touchend', end);
         }
 
-        function renderGrid(id, data, color) {
-            const el = document.getElementById(id);
-            el.innerHTML = '';
-            data.forEach((row, r) => {
+        function initGridDOM() {
+            const container = document.getElementById('m-grid');
+            container.innerHTML = '';
+            
+            myGrid.forEach((row, r) => {
                 row.forEach((val, c) => {
                     const cell = document.createElement('div');
                     cell.className = 'editor-cell';
-                    cell.dataset.r = r; cell.dataset.c = c;
-                    if(val) { cell.style.background = color; cell.style.boxShadow = `0 0 5px ${color}`; }
-                    el.appendChild(cell);
+                    cell.dataset.r = r; 
+                    cell.dataset.c = c;
+                    
+                    if (val) {
+                        cell.style.background = myColor;
+                        cell.style.boxShadow = `0 0 5px ${myColor}`;
+                    }
+                    container.appendChild(cell);
                 });
+            });
+
+            // 绑定事件 (使用事件委托或直接绑定，这里直接绑定以确保准确)
+            let drawing = false;
+            let eraseMode = false;
+
+            const updateCell = (r, c) => {
+                // 更新数据
+                const newVal = eraseMode ? 0 : 1;
+                if (myGrid[r][c] !== newVal) {
+                    myGrid[r][c] = newVal;
+                    // 更新视图 (只更新这一个格子)
+                    const cell = container.children[r * 8 + c];
+                    if (newVal) {
+                        cell.style.background = myColor;
+                        cell.style.boxShadow = `0 0 5px ${myColor}`;
+                    } else {
+                        cell.style.background = '#000';
+                        cell.style.boxShadow = 'none';
+                    }
+                }
+            };
+
+            const startDraw = (e) => {
+                e.preventDefault();
+                const target = document.elementFromPoint(
+                    e.touches ? e.touches[0].clientX : e.clientX,
+                    e.touches ? e.touches[0].clientY : e.clientY
+                );
+                
+                if (target && target.classList.contains('editor-cell')) {
+                    drawing = true;
+                    const r = parseInt(target.dataset.r);
+                    const c = parseInt(target.dataset.c);
+                    eraseMode = myGrid[r][c] === 1;
+                    updateCell(r, c);
+                }
+            };
+
+            const moveDraw = (e) => {
+                if (!drawing) return;
+                e.preventDefault();
+                const target = document.elementFromPoint(
+                    e.touches ? e.touches[0].clientX : e.clientX,
+                    e.touches ? e.touches[0].clientY : e.clientY
+                );
+                if (target && target.classList.contains('editor-cell')) {
+                    const r = parseInt(target.dataset.r);
+                    const c = parseInt(target.dataset.c);
+                    updateCell(r, c);
+                }
+            };
+
+            const endDraw = () => { drawing = false; };
+
+            container.addEventListener('mousedown', startDraw);
+            container.addEventListener('touchstart', startDraw, {passive: false});
+            
+            window.addEventListener('mousemove', moveDraw);
+            window.addEventListener('touchmove', moveDraw, {passive: false});
+            
+            window.addEventListener('mouseup', endDraw);
+            window.addEventListener('touchend', endDraw);
+        }
+
+        function updateGridColors() {
+            // 当颜色改变时，刷新所有已激活的格子颜色
+            const container = document.getElementById('m-grid');
+            myGrid.forEach((row, r) => {
+                row.forEach((val, c) => {
+                    if (val) {
+                        const cell = container.children[r * 8 + c];
+                        cell.style.background = myColor;
+                        cell.style.boxShadow = `0 0 5px ${myColor}`;
+                    }
+                });
+            });
+        }
+
+        function sendMobile() {
+            if(!conn) return alert("Not Connected!");
+            conn.send({
+                name: document.getElementById('m-name').value.toUpperCase() || 'MOBILE',
+                pixels: myGrid,
+                color: myColor
+            });
+            // 简单的发送动画反馈
+            const btn = document.querySelector('.m-footer .btn:last-child');
+            const originalText = btn.innerText;
+            btn.innerText = "SENT!";
+            btn.style.background = "#fff";
+            btn.style.color = "#000";
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.background = "#00251a";
+                btn.style.color = "var(--primary)";
+            }, 1000);
+        }
+
+        function clearMobile() {
+            myGrid = Array(8).fill(0).map(()=>Array(8).fill(0));
+            // 重新渲染清空后的网格
+            const container = document.getElementById('m-grid');
+            Array.from(container.children).forEach(cell => {
+                cell.style.background = '#000';
+                cell.style.boxShadow = 'none';
             });
         }
 
