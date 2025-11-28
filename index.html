@@ -149,10 +149,10 @@
             flex-direction: row; 
             align-items: center;
             justify-content: space-between;
-            gap: 10px;
+            gap: 15px;
             border: 2px solid var(--color-border);
             background: rgba(0, 37, 26, 0.8);
-            padding: 10px 15px;
+            padding: 10px 20px;
             border-radius: 4px;
             box-shadow: 0 0 20px rgba(64, 224, 208, 0.1);
         }
@@ -162,18 +162,17 @@
             flex-direction: column;
             align-items: flex-start;
             justify-content: center;
-            min-width: 80px; /* 给文字一点最小宽度 */
         }
 
         #qrcode {
             background: white;
             padding: 5px;
-            width: 90px;  /* 稍微调小一点，更精致 */
-            height: 90px;
+            width: 100px;
+            height: 100px;
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-shrink: 0;
+            flex-shrink: 0; 
             border-radius: 2px;
         }
         
@@ -184,17 +183,17 @@
         }
 
         .qr-text {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             color: var(--color-primary);
-            line-height: 1;
+            line-height: 1.2;
             letter-spacing: 1px;
             margin-bottom: 4px;
         }
 
         .qr-sub-text {
-            font-size: 0.7rem;
+            font-size: 0.8rem;
             color: var(--color-primary);
-            opacity: 0.6;
+            opacity: 0.7;
             letter-spacing: 1px;
         }
 
@@ -216,10 +215,10 @@
             height: 4px;
         }
 
-        /* 【优化点】像素皇冠容器位置调整 */
+        /* 像素皇冠容器 */
         .crown-container {
             position: absolute;
-            top: -12px; /* 从 -28px 改为 -12px，贴近头顶 */
+            top: -12px; /* 贴近头顶 */
             left: 50%;
             transform: translateX(-50%);
             width: 32px;
@@ -230,13 +229,13 @@
 
         .name-tag {
             position: absolute;
-            top: -16px; /* 稍微上移一点，避开皇冠 */
+            top: -16px;
             left: 50%;
             transform: translateX(-50%);
             font-size: 10px;
             white-space: nowrap;
             opacity: 0.8;
-            text-shadow: 1px 1px 0 #000; /* 加个描边防止看不清 */
+            text-shadow: 1px 1px 0 #000;
         }
 
         .grass {
@@ -433,8 +432,7 @@
             GOLD: '#facc15' 
         };
 
-        // 【优化点】更像动物的默认像素画 (8x8)
-        // 1=有像素, 0=无
+        // 默认像素画 (8x8) - 优化后更像动物
         const DEFAULT_FRAME_1 = [
             [0,0,0,0,0,0,1,0], // 耳朵
             [0,0,0,0,0,1,1,1], // 头
@@ -931,8 +929,8 @@
             document.getElementById('qrcode').innerHTML = '';
             new QRCode(document.getElementById('qrcode'), {
                 text: url,
-                width: 128,
-                height: 128,
+                width: 100,
+                height: 100,
                 colorDark : "#000000",
                 colorLight : "#ffffff",
                 correctLevel : QRCode.CorrectLevel.H
