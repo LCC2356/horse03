@@ -3,22 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - STRICT 1:35</title>
+    <title>HORSE RUNRUN - FINAL FIX</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --bg: #000;
+            --bg: #111;
             --primary: #40e0d0;
             --panel: #004d40;
             --border: #00695c;
-            
-            /* 【核心修改】严格定义 1:35 的物理尺寸 */
-            /* 高度 100px -> 宽度 = 3500px */
-            --game-logical-w: 3500px; 
-            --game-logical-h: 100px;
+            /* 逻辑分辨率 3500x100 */
+            --game-w: 3500px; 
+            --game-h: 100px;
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
@@ -32,7 +30,7 @@
             overflow: hidden;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            gap: 40px;
+            gap: 20px;
         }
 
         /* === 桌面布局 === */
@@ -40,90 +38,56 @@
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             width: 100%; height: 100%;
+            padding-top: 20px;
         }
 
-        /* 1. 跑道视口 (Zoom Lens) */
-        /* 这是一个视窗，用来把巨大的跑道缩放到你的屏幕里 */
         #game-scaler {
-            width: 98vw; /* 占满屏幕宽度 */
-            height: 150px; /* 给跑道留出视觉空间 */
+            width: 98vw; height: 150px; 
             display: flex; justify-content: center; align-items: center;
             overflow: visible;
         }
 
-        /* 2. 真正的跑道 (The Track) */
         #game-screen {
-            /* 强制使用逻辑尺寸 */
-            width: var(--game-logical-w); 
-            height: var(--game-logical-h);
+            /* --- 关键修复 --- */
+            width: var(--game-w); 
+            height: var(--game-h);
+            /* 强制不许被挤压！保持3500px实宽 */
+            flex-shrink: 0; 
+            
             background: #000; 
             position: relative;
-            /* 鲜艳边框，方便你看清边界 */
             border: 4px solid var(--primary); 
-            box-shadow: 0 0 50px rgba(64, 224, 208, 0.15);
-            overflow: hidden; /* 任何超出这个框的东西都会被切掉 */
-            transform-origin: center center; /* 从中心缩放 */
+            box-shadow: 0 0 30px rgba(64, 224, 208, 0.3);
+            overflow: hidden; 
+            transform-origin: center center;
         }
 
-        /* 跑道背景网格 */
+        /* 跑道元素 */
         .grid-bg {
             position: absolute; inset: 0; opacity: 0.2;
             background-image: linear-gradient(rgba(64, 224, 208, 0.3) 1px, transparent 1px),
                               linear-gradient(90deg, rgba(64, 224, 208, 0.3) 1px, transparent 1px);
-            background-size: 100px 100px; /* 网格大一点 */
+            background-size: 50px 50px;
+            pointer-events: none;
         }
-        
-        /* 终点线 */
         .finish-line {
-            position: absolute; top: 0; bottom: 0; 
-            right: 300px; /* 距离右边框 300px */
-            width: 20px;
+            position: absolute; top: 0; bottom: 0; right: 400px; width: 12px;
             background-image: linear-gradient(45deg, #40e0d0 25%, transparent 25%, transparent 50%, #40e0d0 50%, #40e0d0 75%, transparent 75%, transparent);
-            background-size: 20px 20px; opacity: 0.6; z-index: 0;
-            border-left: 2px solid #fff;
+            background-size: 12px 12px; opacity: 0.8; z-index: 0;
         }
-        
-        .hud { position: absolute; bottom: 5px; right: 15px; font-size: 32px; opacity: 0.5; letter-spacing: 4px; }
+        .hud { position: absolute; bottom: 4px; right: 10px; font-size: 32px; opacity: 0.5; letter-spacing: 2px; }
 
-        /* 3. 下方控制区 */
-        #bottom-controls {
-            display: flex; align-items: center; gap: 60px;
-            margin-top: 20px;
-            padding: 20px 40px;
-            background: rgba(0, 37, 26, 0.8);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-        }
-
-        /* 二维码 */
-        #qr-card { display: flex; align-items: center; gap: 20px; }
-        #qrcode {
-            background: white; padding: 5px;
-            width: 120px; height: 120px;
-            display: flex; justify-content: center; align-items: center;
-            border-radius: 4px;
-        }
-        #qrcode img { display: block; width: 100%; height: 100%; }
-        .qr-info h2 { margin: 0; font-size: 2rem; line-height: 1; color: #fff; }
-        .qr-info p { margin: 5px 0 0 0; font-size: 1.2rem; opacity: 0.7; color: var(--primary); }
-
-        /* 按钮 */
-        .btn {
-            background: #00251a; border: 2px solid var(--primary); color: var(--primary);
-            padding: 15px 40px; font-family: 'VT323', monospace; font-size: 1.5rem;
-            cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(64, 224, 208, 0.2);
-            transition: all 0.2s; height: 60px; display: flex; align-items: center;
-        }
-        .btn:hover { background: var(--primary); color: #000; }
-        .btn:active { transform: translateY(2px); }
-
-        /* --- 实体 --- */
+        /* 实体 */
         .entity { position: absolute; width: 50px; height: 50px; will-change: transform; }
         .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; }
+        
         .crown-container {
             position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
             width: 32px; height: 32px; animation: bounce 1s infinite; z-index: 10;
+            display: flex; flex-direction: column-reverse; align-items: center;
         }
+        .crown-icon { margin-bottom: -18px; filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)); width: 100%; height: 100%; }
+        
         .aura {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 160%; height: 160%; border-radius: 50%;
@@ -131,53 +95,96 @@
             box-shadow: 0 0 10px #facc15; z-index: -1;
             animation: pulse 0.5s infinite alternate; display: none;
         }
-        @keyframes pulse { from { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.2); } }
+        @keyframes pulse { from { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } }
+        
         .name-tag {
-            position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+            position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
             font-size: 18px; white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000;
         }
         .grass { position: absolute; width: 6px; height: 6px; background: #69f0ae; box-shadow: 0 0 4px #69f0ae; }
         .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
         @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
 
-        /* --- 弹窗 --- */
+        /* 控制区域 */
+        #bottom-controls {
+            display: flex; align-items: center; gap: 40px;
+            padding: 20px 30px;
+            background: rgba(0, 37, 26, 0.8);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 0 25px rgba(64, 224, 208, 0.15);
+        }
+        #qr-card { display: flex; align-items: center; gap: 20px; }
+        #qrcode {
+            background: white; padding: 6px;
+            width: 110px; height: 110px;
+            display: flex; justify-content: center; align-items: center;
+            border-radius: 4px;
+        }
+        #qrcode img { display: block; width: 100%; height: 100%; }
+        .qr-info h2 { margin: 0; font-size: 1.8rem; line-height: 1; }
+        .qr-info p { margin: 5px 0 0 0; font-size: 1rem; opacity: 0.7; }
+
+        /* 按钮 */
+        .btn {
+            background: #00251a; border: 2px solid var(--primary); color: var(--primary);
+            padding: 15px 40px; font-family: 'VT323', monospace; font-size: 1.5rem;
+            cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(64, 224, 208, 0.2);
+            transition: all 0.2s;
+        }
+        .btn:hover { background: var(--primary); color: #000; }
+        .btn:active { transform: translateY(2px); }
+
+        /* === 弹窗编辑器 === */
         #modal-editor {
             position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000;
             display: none; justify-content: center; align-items: center;
         }
         .modal-content {
-            background: #111; border: 2px solid var(--primary); padding: 30px;
+            background: #1a1c20; border: 2px solid var(--primary);
+            padding: 30px; border-radius: 8px;
             display: flex; flex-direction: column; align-items: center; gap: 20px;
         }
-        .editor-grid {
-            display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr);
-            gap: 2px; background: #333; border: 2px solid #555; touch-action: none;
-        }
-        .editor-cell { width: 38px; height: 38px; background: #000; }
-        .color-picker { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
-        .c-dot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #333; }
-        .c-dot.active { border-color: white; transform: scale(1.1); }
-        .btn-outline { background: transparent; border-color: #ff5252; color: #ff5252; }
 
-        /* --- 移动端 --- */
+        /* === 移动端样式 === */
         #mobile-view {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #111; display: flex; flex-direction: column; z-index: 20000;
             padding: 20px;
         }
         .m-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; flex-shrink: 0; }
+        .m-title { font-size: 1.5rem; color: #fff; }
         .m-status { background: #004d40; padding: 4px 8px; border-radius: 4px; font-size: 1rem; color: #40e0d0; }
+        
         .m-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; flex-shrink: 0; }
         input[type="text"] {
             background: #222; border: 1px solid #444; color: white; padding: 12px;
             font-family: inherit; text-align: center; font-size: 1.5rem; width: 100%; border-radius: 4px;
         }
+        
         .m-canvas-container {
             flex: 1; display: flex; justify-content: center; align-items: center;
             background: #1a1a1a; border-radius: 8px; margin-bottom: 20px;
             overflow: hidden; 
         }
+        
+        /* 网格 */
+        .editor-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr); 
+            grid-template-rows: repeat(8, 1fr);
+            gap: 2px;
+            background: #333; border: 2px solid #555;
+            touch-action: none;
+        }
+        .editor-cell { width: 38px; height: 38px; background: #000; }
+        
+        .color-picker { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+        .c-dot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #333; }
+        .c-dot.active { border-color: white; transform: scale(1.1); }
+        
         .m-footer { display: flex; gap: 15px; height: 60px; flex-shrink: 0; width: 100%; }
+        .btn-outline { background: transparent; border-color: #ff5252; color: #ff5252; width: 100px; }
         .btn-flex { flex: 1; display: flex; justify-content: center; align-items: center; }
 
     </style>
@@ -190,7 +197,6 @@
                 <div class="grid-bg"></div>
                 <div class="finish-line"></div>
                 <div class="hud">MODE:RACE // RATIO:1:35 // STATUS:LIVE</div>
-                
                 <div id="layer-grass"></div>
                 <div id="layer-pony"></div>
                 <div id="layer-fx"></div>
@@ -201,8 +207,8 @@
             <div id="qr-card">
                 <div id="qrcode"></div>
                 <div class="qr-info">
-                    <h2>JOIN RACE</h2>
-                    <p>SCAN TO CUSTOMIZE</p>
+                    <h2 class="vfd-glow">JOIN RACE</h2>
+                    <p>SCAN TO PLAY</p>
                 </div>
             </div>
 
@@ -210,9 +216,9 @@
         </div>
     </div>
 
-    <div id="modal-editor">
+    <div id="modal-editor" class="hidden">
         <div class="modal-content">
-            <h2 style="margin:0; color:#fff;">DESIGN RUNNER</h2>
+            <h2 class="vfd-glow" style="margin:0;">DESIGN RUNNER</h2>
             <input type="text" id="pc-name" placeholder="ENTER NAME" maxlength="8" value="PLAYER" style="background:#222; border:1px solid #444; color:white; padding:10px; text-align:center; font-size:1.5rem; border-radius:4px;">
             <div class="color-picker" id="pc-colors"></div>
             <div id="pc-grid" class="editor-grid"></div>
@@ -225,7 +231,7 @@
 
     <div id="mobile-view" style="display: none;">
         <div class="m-header">
-            <span style="font-size: 1.5rem; color:white;">PIXEL MAKER</span>
+            <span class="m-title">PIXEL MAKER</span>
             <span id="m-status" class="m-status">Wait...</span>
         </div>
         <div class="m-controls">
@@ -242,23 +248,17 @@
     </div>
 
     <script>
-        // === 核心：逻辑分辨率 1:35 ===
+        // === 核心逻辑参数 (3500x100) ===
         const GAME_W = 3500;
         const GAME_H = 100;
         const PONY_SIZE = 50;
-        const FINISH_X = GAME_W - 300; // 终点线坐标 (3200px)
+        const FINISH_X = GAME_W - 400; // 终点线位置
 
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#fff' };
         
         const DEFAULT_PIXELS = [
-            [0,0,0,0,0,0,1,0],
-            [0,0,0,0,0,1,1,1],
-            [0,0,0,0,0,1,1,0],
-            [0,0,1,1,1,1,1,0],
-            [0,1,1,1,1,1,1,0],
-            [1,1,1,1,1,1,1,0],
-            [0,1,0,0,0,1,0,0],
-            [0,1,0,0,0,1,0,0]
+            [0,0,0,0,0,0,1,0], [0,0,0,0,0,1,1,1], [0,0,0,0,0,1,1,0], [0,0,1,1,1,1,1,0],
+            [0,1,1,1,1,1,1,0], [1,1,1,1,1,1,1,0], [0,1,0,0,0,1,0,0], [0,1,0,0,0,1,0,0]
         ];
 
         let ponies = [];
@@ -283,12 +283,9 @@
             }
         };
 
-        // === 自动缩放：把 3500px 压扁塞进屏幕 ===
         function fitScreen() {
             const el = document.getElementById('game-screen');
-            // 计算可用宽度 (屏幕宽 - 5%边距)
             const availableW = window.innerWidth * 0.95;
-            // 计算缩放比
             const scale = Math.min(availableW / GAME_W, 1);
             el.style.transform = `scale(${scale})`;
         }
@@ -300,7 +297,7 @@
                 peer.on('open', id => {
                     const url = `${location.href}?host=${id}`;
                     new QRCode(document.getElementById("qrcode"), {
-                        text: url, width: 120, height: 120,
+                        text: url, width: 110, height: 110,
                         colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L
                     });
                 });
@@ -324,23 +321,17 @@
 
         function spawnPony(name, pixels, color) {
             const id = Math.random().toString(36).substr(2, 9);
+            // 重置所有人回起点
+            ponies.forEach(p => { p.x = 20; p.state = 'racing'; p.finishedWalking = false; });
             
-            // 重置
-            ponies.forEach(p => { 
-                p.x = 20; 
-                p.state = 'racing'; 
-                p.finishedWalking = false; 
-            });
-            
-            // 安全坐标生成：保证完全在跑道内
+            // 安全 Y (10 ~ H-50-10)
             const safeY = 10 + Math.random() * (GAME_H - PONY_SIZE - 20);
 
             ponies.push({
                 id, name: name || 'PONY',
                 pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_PIXELS)),
                 color: color || COLORS.CYAN,
-                x: 20, 
-                y: safeY, 
+                x: 20, y: safeY, 
                 speed: 3.5 + Math.random() * 3,
                 state: 'racing',
                 hasCrown: false, isStreak: false,
@@ -374,8 +365,14 @@
                 });
             }
 
-            if (active.length === 0 && Math.random() < 0.02 && grass.length < 20) {
-                grass.push({ x: Math.random() * GAME_W, y: 10 + Math.random() * (GAME_H - 20) });
+            // 补草
+            const maxGrass = 5 + ponies.length * 2;
+            const growthRate = 0.02 + ponies.length * 0.005;
+            if (active.length === 0 && Math.random() < growthRate && grass.length < maxGrass) {
+                grass.push({ 
+                    x: Math.random() * GAME_W, 
+                    y: 10 + Math.random() * (GAME_H - 20) 
+                });
             }
 
             let winnerFound = false;
@@ -383,9 +380,8 @@
                 p.frame++;
                 if (p.state === 'racing') {
                     p.x += p.speed * (0.9 + Math.random() * 0.2); 
-                    p.facing = 1; // 向右跑
+                    p.facing = 1; // 向右
                     
-                    // 终点判定
                     if (p.x >= FINISH_X) {
                         p.state = 'finished';
                         if (finished.length === 0 && !winnerFound) {
@@ -397,14 +393,12 @@
                     }
                 }
                 else if (p.state === 'finished') {
-                    // 终点漫步逻辑：只在终点线后(FINISH_X)到屏幕右边缘(GAME_W)之间活动
-                    if (p.x < GAME_W - PONY_SIZE - 10) { 
-                        p.x += 0.8; 
-                        p.finishedWalking = true; 
-                    } else {
-                        p.finishedWalking = false;
-                        aiBehavior(p, true); // true = 限制在终点区
-                    }
+                    // 终点后继续慢跑，直到墙边
+                    if (p.x < GAME_W - PONY_SIZE - 20) { p.x += 0.8; p.finishedWalking = true; }
+                    else p.finishedWalking = false;
+                    
+                    // 只在终点区散步
+                    if (!p.finishedWalking) aiBehavior(p, true);
                 }
                 else if (p.state === 'roaming' || p.state === 'eating') {
                     p.finishedWalking = false;
@@ -418,16 +412,12 @@
         }
 
         function aiBehavior(p, restrictFinish) {
-            // 设定活动范围
-            let minX = 0, maxX = GAME_W - PONY_SIZE;
-            if (restrictFinish) {
-                minX = FINISH_X; // 只能在终点线后面走
-            }
+            const minX = restrictFinish ? FINISH_X : 0;
+            const maxX = GAME_W - PONY_SIZE;
 
             if (p.state === 'roaming' || p.state === 'finished') {
                 let target = null, minD = 500;
-                // 只有非终点模式才找草
-                if (!restrictFinish) {
+                if (!restrictFinish) { // 终点不吃草
                     grass.forEach(g => {
                         let d = Math.abs(g.x - p.x);
                         if (d < minD) { minD = d; target = g; }
@@ -456,7 +446,6 @@
                 if (p.timer-- <= 0) p.state = 'roaming';
             }
             
-            // 垂直晃动
             if (Math.random() < 0.05) p.y += (Math.random() - 0.5) * 2;
         }
 
