@@ -39,19 +39,17 @@
         /* 通用样式类 */
         .hidden { display: none !important; }
         .vfd-glow { text-shadow: 0 0 5px rgba(64, 224, 208, 0.6), 0 0 10px rgba(64, 224, 208, 0.4); }
-        
         .btn {
             background: #00251a;
             border: 2px solid var(--color-primary);
             color: var(--color-primary);
-            padding: 10px 30px;
+            padding: 10px 20px;
             font-family: 'VT323', monospace;
-            font-size: 1.4rem;
+            font-size: 1.2rem;
             cursor: pointer;
             text-transform: uppercase;
             box-shadow: 0 0 15px rgba(64, 224, 208, 0.2);
             transition: all 0.2s;
-            margin-top: 20px; /* 按钮顶部的间距 */
         }
         .btn:hover { background: var(--color-primary); color: #00251a; }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -71,8 +69,7 @@
         /* --- 布局容器 --- */
         #main-layout {
             display: flex;
-            /* 【关键修改】顶部对齐，解决二维码下沉问题 */
-            align-items: flex-start; 
+            align-items: flex-start; /* 顶部对齐 */
             justify-content: center;
             gap: 20px;
             transform-origin: center;
@@ -147,7 +144,7 @@
 
         /* --- 二维码区域 (右侧) --- */
         #qr-section {
-            height: 120px; /* 与跑道同高 */
+            height: 120px;
             display: flex;
             flex-direction: row; 
             align-items: center;
@@ -219,14 +216,14 @@
             height: 4px;
         }
 
-        /* 像素皇冠容器 */
+        /* SVG 皇冠容器 */
         .crown-container {
             position: absolute;
-            top: -12px; /* 完美贴合头顶 */
+            top: -20px; /* 调整 SVG 皇冠的高度 */
             left: 50%;
             transform: translateX(-50%);
-            width: 32px;
-            height: 32px;
+            width: 24px;
+            height: 24px;
             animation: bounce 1s infinite;
             z-index: 10;
         }
@@ -366,7 +363,9 @@
                     </div>
                 </div>
                 
-                <button class="btn" onclick="openEditor()">+ NEW RUNNER</button>
+                <div style="margin-top: 20px;">
+                    <button class="btn" onclick="openEditor()">+ NEW RUNNER</button>
+                </div>
             </div>
 
             <div id="qr-section">
@@ -434,7 +433,7 @@
             GOLD: '#facc15' 
         };
 
-        // 默认像素画 (8x8) - 像小动物
+        // 默认像素画 (8x8)
         const DEFAULT_FRAME_1 = [
             [0,0,0,0,0,0,1,0], // 耳朵
             [0,0,0,0,0,1,1,1], // 头
@@ -444,18 +443,6 @@
             [1,1,1,1,1,1,1,0], // 身体+尾巴
             [0,1,0,0,0,1,0,0], // 腿
             [0,1,0,0,0,1,0,0]  // 腿
-        ];
-
-        // 像素皇冠数据 (8x8)
-        const CROWN_PIXELS = [
-            [0,0,0,0,0,0,0,0],
-            [1,0,1,0,1,0,1,0],
-            [1,1,1,1,1,1,1,1],
-            [1,1,1,1,1,1,1,1],
-            [0,1,1,1,1,1,1,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0]
         ];
 
         // --- 状态管理 ---
@@ -718,19 +705,13 @@
 
             const crownContainer = document.createElement('div');
             crownContainer.className = 'crown-container hidden';
-            
-            const crownGrid = document.createElement('div');
-            crownGrid.className = 'pixel-grid';
-            let crownHtml = '';
-            for(let y=0; y<8; y++) {
-                for(let x=0; x<8; x++) {
-                    if (CROWN_PIXELS[y][x]) {
-                        crownHtml += `<div class="pixel" style="background-color: ${COLORS.GOLD}; box-shadow: 0 0 4px ${COLORS.GOLD}; grid-column: ${x+1}; grid-row: ${y+1};"></div>`;
-                    }
-                }
-            }
-            crownGrid.innerHTML = crownHtml;
-            crownContainer.appendChild(crownGrid);
+            // 使用 SVG 皇冠
+            crownContainer.innerHTML = `
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path>
+                </svg>
+            `;
+            crownContainer.style.filter = "drop-shadow(0 0 5px rgba(250, 204, 21, 0.8))";
             div.appendChild(crownContainer);
 
             const name = document.createElement('div');
