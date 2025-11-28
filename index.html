@@ -3,121 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - 1:35 RATIO</title>
+    <title>HORSE RUNRUN</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --color-bg: #000;
-            --color-primary: #40e0d0;
-            --color-panel: #004d40;
-            --color-border: #00695c;
-            
-            /* 设定 1:35 比例的逻辑分辨率 */
-            /* 高度 64px -> 宽度 = 64 * 35 = 2240px */
-            --target-w: 2240px; 
-            --target-h: 64px;
+            --bg: #111;
+            --primary: #40e0d0;
+            --panel: #004d40;
+            --border: #00695c;
+            /* 1:35 逻辑分辨率 */
+            --game-w: 2240px; 
+            --game-h: 64px;
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         
         body {
             margin: 0; padding: 0;
-            background-color: #1a1a1a; 
+            background-color: #000; 
             font-family: 'VT323', monospace;
-            color: var(--color-primary);
+            color: var(--primary);
             height: 100vh; width: 100vw;
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center;
             overflow: hidden;
         }
 
-        /* --- 缩放容器：核心黑科技 --- */
-        #scaler-wrapper {
-            /* 初始尺寸，会被 JS 动态修改 */
-            width: 100%;
+        /* === 桌面布局：左右结构 === */
+        #desktop-view {
             display: flex;
-            justify-content: center;
+            width: 100%; height: 100%;
             align-items: center;
+            justify-content: center;
+            gap: 40px; /* 跑道和二维码的间距 */
+            padding: 20px;
         }
 
-        #led-screen {
-            /* 强制逻辑尺寸，保证像素不模糊 */
-            width: var(--target-w);
-            height: var(--target-h);
+        /* --- 左侧：跑道容器 (自动缩放) --- */
+        #game-scaler {
+            /* 这是一个视口，用来限制缩放后的跑道 */
+            flex: 1;
+            height: 200px; /* 给跑道留足够的视觉空间 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: visible;
+        }
+
+        #game-screen {
+            /* 强制逻辑尺寸 */
+            width: var(--game-w);
+            height: var(--game-h);
             background: #000;
             position: relative;
-            display: flex;
-            flex-direction: row; 
-            justify-content: space-between;
-            align-items: flex-start; /* 顶部对齐 */
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 30px rgba(64,224,208,0.2);
             overflow: hidden;
-            border: 1px solid #333; 
-            box-shadow: 0 0 50px rgba(0,0,0,0.8);
-            
-            /* 缩放中心点设为中心 */
+            /* 默认缩放中心 */
             transform-origin: center center;
         }
 
-        /* --- 左侧：跑道区域 --- */
-        #track-section {
-            /* 宽度 = 总宽 - 64px (二维码) */
-            width: calc(var(--target-w) - 64px);
-            height: 100%;
-            position: relative;
-            border-right: 2px solid var(--color-primary);
-            overflow: hidden;
-        }
-
+        /* 跑道内部元素 */
         .grid-bg {
             position: absolute; inset: 0; opacity: 0.2;
             background-image: linear-gradient(rgba(64, 224, 208, 0.3) 1px, transparent 1px),
                               linear-gradient(90deg, rgba(64, 224, 208, 0.3) 1px, transparent 1px);
             background-size: 32px 32px;
         }
-
         .finish-line {
-            position: absolute; top: 0; bottom: 0;
-            right: 200px; /* 终点线距离右边的距离 */
-            width: 8px;
+            position: absolute; top: 0; bottom: 0; right: 200px; width: 8px;
             background-image: linear-gradient(45deg, #40e0d0 25%, transparent 25%, transparent 50%, #40e0d0 50%, #40e0d0 75%, transparent 75%, transparent);
             background-size: 8px 8px; opacity: 0.8; z-index: 0;
         }
-
         .hud {
-            position: absolute; bottom: 2px; right: 10px;
-            font-size: 20px; opacity: 0.5; letter-spacing: 2px;
+            position: absolute; bottom: 2px; right: 10px; font-size: 20px; opacity: 0.5; letter-spacing: 2px;
         }
 
-        /* --- 右侧：纯二维码区域 --- */
-        #qr-section {
-            width: 64px;
-            height: 64px;
-            background: white;
+        /* --- 右侧：大二维码卡片 --- */
+        #qr-card {
+            width: 240px;
+            background: rgba(0, 77, 64, 0.9);
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            padding: 20px;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            padding: 2px; /* 白边 */
+            box-shadow: 0 0 50px rgba(64,224,208,0.1);
             flex-shrink: 0; /* 防止被挤压 */
         }
-        #qrcode { width: 100%; height: 100%; }
+        #qrcode {
+            background: white;
+            padding: 10px;
+            width: 180px; height: 180px;
+            display: flex; justify-content: center; align-items: center;
+            border-radius: 4px;
+        }
         #qrcode img { display: block; width: 100%; height: 100%; }
+        .qr-title { font-size: 2rem; margin-bottom: 10px; text-shadow: 0 0 5px var(--primary); }
+        .qr-hint { font-size: 1rem; margin-top: 10px; opacity: 0.7; }
 
-        /* --- 实体 --- */
+        /* --- 实体样式 --- */
         .entity { position: absolute; will-change: transform; }
         .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 32px; height: 32px; }
         .pixel { width: 4px; height: 4px; }
-
-        /* 皇冠 */
+        
         .crown-container {
             position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
             width: 24px; height: 24px; animation: bounce 1s infinite; z-index: 10;
+            display: flex; flex-direction: column-reverse; align-items: center;
         }
-        /* 爆气 */
+        .crown-icon { margin-bottom: -14px; filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)); }
+        
         .aura {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 160%; height: 160%; border-radius: 50%;
@@ -125,7 +123,7 @@
             box-shadow: 0 0 10px #facc15; z-index: -1;
             animation: pulse 0.5s infinite alternate; display: none;
         }
-        @keyframes pulse { from { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } }
+        @keyframes pulse { from { opacity: 0.5; transform: scale(1); } to { opacity: 1; transform: scale(1.1); } }
         
         .name-tag {
             position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
@@ -135,80 +133,102 @@
         .explosion { position: absolute; width: 4px; height: 4px; background: #ff5252; pointer-events: none; }
         @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
 
-        /* --- 移动端样式 (全屏覆盖) --- */
+        /* --- 移动端样式 (原生HTML结构，不动态生成) --- */
         #mobile-view {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #111; display: flex; flex-direction: column; z-index: 10000;
+            background: #111; display: flex; flex-direction: column; z-index: 20000;
             padding: 20px;
         }
-        .m-header { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-        .m-canvas-wrap { flex: 1; display: flex; justify-content: center; align-items: center; }
-        .editor-grid { display: grid; grid-template-rows: repeat(8, 1fr); gap: 1px; background: #333; border: 1px solid #555; touch-action: none; }
-        .editor-cell { width: 40px; height: 40px; background: #000; }
-        .color-picker { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
-        .c-dot { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #333; }
+        .m-header { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
+        .m-title { font-size: 1.5rem; color: #fff; }
+        .m-status { background: #004d40; padding: 2px 8px; border-radius: 4px; font-size: 1rem; color: #40e0d0; }
+        
+        .m-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; }
+        input[type="text"] {
+            background: #222; border: 1px solid #444; color: white; padding: 12px;
+            font-family: inherit; text-align: center; font-size: 1.5rem; width: 100%; border-radius: 4px;
+        }
+        
+        .m-canvas-container {
+            flex: 1; display: flex; justify-content: center; align-items: center;
+            background: #1a1a1a; border-radius: 8px; margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .editor-grid {
+            display: grid; grid-template-rows: repeat(8, 1fr); gap: 1px;
+            background: #333; border: 1px solid #555;
+            touch-action: none; /* 关键：允许滑动 */
+        }
+        .editor-cell { width: 42px; height: 42px; background: #000; }
+        
+        .color-picker { display: flex; justify-content: center; gap: 12px; }
+        .c-dot { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #333; }
         .c-dot.active { border-color: white; transform: scale(1.2); }
-        input { background: #222; border: 1px solid #444; color: white; padding: 10px; text-align: center; font-size: 1.2rem; width: 100%; margin-bottom: 10px; }
-        .m-footer { display: flex; gap: 10px; }
-        .hidden { display: none !important; }
-        .btn { background: #00251a; border: 2px solid var(--color-primary); color: var(--color-primary); padding: 10px 30px; font-family: 'VT323', monospace; font-size: 1.4rem; cursor: pointer; text-transform: uppercase; box-shadow: 0 0 15px rgba(64, 224, 208, 0.2); transition: all 0.2s; touch-action: manipulation; }
-        .btn:active { transform: translateY(2px); }
-        .btn-outline { background: transparent; border: 2px solid var(--color-border); color: var(--color-primary); opacity: 0.8; }
+        
+        .m-footer { display: flex; gap: 15px; height: 60px; }
+        .btn {
+            background: #00251a; border: 2px solid var(--primary); color: var(--primary);
+            font-family: inherit; font-size: 1.5rem; text-transform: uppercase;
+            display: flex; justify-content: center; align-items: center; cursor: pointer;
+            border-radius: 4px;
+        }
+        .btn:active { background: var(--primary); color: #000; }
+        .btn-outline { background: transparent; border-color: #ff5252; color: #ff5252; width: 100px; }
 
     </style>
 </head>
 <body>
 
-    <div id="scaler-wrapper">
-        <div id="led-screen">
-            <div id="track-section">
+    <div id="desktop-view">
+        <div id="game-scaler">
+            <div id="game-screen">
                 <div class="grid-bg"></div>
                 <div class="finish-line"></div>
                 <div class="hud">MODE:RACE // STATUS:LIVE</div>
+                
                 <div id="layer-grass"></div>
                 <div id="layer-pony"></div>
                 <div id="layer-fx"></div>
             </div>
-            <div id="qr-section">
-                <div id="qrcode"></div>
-            </div>
+        </div>
+
+        <div id="qr-card">
+            <div class="qr-title">SCAN TO JOIN</div>
+            <div id="qrcode"></div>
+            <div class="qr-hint">MOBILE CONTROLLER</div>
         </div>
     </div>
 
-    <div id="mobile-view" class="hidden">
+    <div id="mobile-view" style="display: none;">
         <div class="m-header">
-            <span>DRAW PONY</span>
-            <span id="m-status" style="color:#40e0d0">CONNECTING...</span>
+            <span class="m-title">DRAW PONY</span>
+            <span id="m-status" class="m-status">CONNECTING...</span>
         </div>
-        <input type="text" id="m-name" placeholder="ENTER NAME" maxlength="8">
-        <div class="color-picker" id="m-colors"></div>
-        <div class="m-canvas-wrap">
+
+        <div class="m-controls">
+            <input type="text" id="m-name" placeholder="ENTER NAME" maxlength="8">
+            <div class="color-picker" id="m-colors"></div>
+        </div>
+
+        <div class="m-canvas-container">
             <div id="m-grid" class="editor-grid"></div>
         </div>
+
         <div class="m-footer">
-            <button class="btn btn-outline" style="border-color:#ff5252; color:#ff5252;" onclick="clearMobile()">CLEAR</button>
-            <button class="btn" style="flex:1" onclick="sendMobile()">SEND</button>
+            <button class="btn btn-outline" onclick="clearMobile()">CLEAR</button>
+            <button class="btn" style="flex:1" onclick="sendMobile()">CAST TO SCREEN</button>
         </div>
     </div>
 
     <script>
         // === 配置 ===
-        // 1:35 比例 (64 * 35 = 2240)
         const TARGET_W = 2240;
         const TARGET_H = 64;
-        
-        // 游戏内逻辑宽度 (扣除二维码 64px)
-        const SCREEN_WIDTH = TARGET_W - 64; 
-        const SCREEN_HEIGHT = TARGET_H;
-        const PONY_SCALE = 4; // 32px
-        const PONY_WIDTH = 8 * PONY_SCALE; 
-        const PONY_HEIGHT = 8 * PONY_SCALE;
-        // 终点线位置 (留出 200px 缓冲区)
-        const FINISH_LINE_X = SCREEN_WIDTH - 200; 
-        
+        const SCREEN_WIDTH = TARGET_W; 
+        const FINISH_X = SCREEN_WIDTH - 200; 
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#fff' };
         
-        // 默认像素画
         const DEFAULT_PIXELS = [
             [0,0,0,0,0,0,1,0],
             [0,0,0,0,0,1,1,1],
@@ -220,23 +240,20 @@
             [0,1,0,0,0,1,0,0]
         ];
 
-        // 状态
         let ponies = [];
         let grass = [];
         let peer, conn;
         let myGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
         let myColor = COLORS.CYAN;
 
-        // === 初始化 ===
         function init() {
-            // 自动缩放适配屏幕
             window.addEventListener('resize', fitScreen);
             fitScreen();
 
             const isMobile = new URLSearchParams(window.location.search).has('host');
             if(isMobile) {
-                document.getElementById('scaler-wrapper').style.display = 'none';
-                document.getElementById('mobile-view').classList.remove('hidden');
+                document.getElementById('desktop-view').style.display = 'none';
+                document.getElementById('mobile-view').style.display = 'flex';
                 initMobile();
             } else {
                 initDesktop();
@@ -244,57 +261,45 @@
         }
 
         function fitScreen() {
-            const el = document.getElementById('led-screen');
-            const wrap = document.getElementById('scaler-wrapper');
-            // 计算缩放比例：用屏幕宽度 / 目标宽度 (留20px边距)
-            const scale = Math.min((window.innerWidth - 40) / TARGET_W, 1);
-            
-            // 垂直居中缩放
+            const el = document.getElementById('game-screen');
+            // 计算左侧可用宽度 (窗口宽 - 二维码卡片宽 - 间距)
+            const availableW = window.innerWidth - 300; 
+            const scale = Math.min(availableW / TARGET_W, 1);
             el.style.transform = `scale(${scale})`;
-            // 调整容器高度以免留白太多
-            wrap.style.height = (TARGET_H * scale) + 'px';
-            // wrap.style.marginTop = (window.innerHeight - TARGET_H * scale) / 2 + 'px'; // 居中
         }
 
         // === 桌面端 ===
         function initDesktop() {
-            // 初始化 Peer
             peer = new Peer();
             peer.on('open', id => {
                 const url = `${location.href}?host=${id}`;
-                // 二维码适应 64x64
                 new QRCode(document.getElementById("qrcode"), {
-                    text: url, width: 60, height: 60, margin: 0,
-                    colorDark: "#000000", colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.L
+                    text: url, width: 180, height: 180,
+                    colorDark : "#000000", colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.L
                 });
             });
             peer.on('connection', c => {
                 c.on('data', data => spawnPony(data.name, data.pixels, data.color));
             });
-
             requestAnimationFrame(gameLoop);
         }
 
         function spawnPony(name, pixels, color) {
             const id = Math.random().toString(36).substr(2, 9);
-            
-            // 所有马回到起点
-            ponies.forEach(p => {
-                p.x = 20; 
-                p.state = 'racing'; 
-                p.finishedWalking = false;
-            });
+            // 重置所有人回起点
+            ponies.forEach(p => { p.x = 20; p.state = 'racing'; p.finishedWalking = false; });
             
             ponies.push({
                 id, name: name || 'PONY',
                 pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_PIXELS)),
                 color: color || COLORS.CYAN,
-                x: 20, y: 16 + Math.random() * 20, // 随机高度分布
+                x: 20, y: 16 + Math.random() * 20, 
                 speed: 1.5 + Math.random() * 2,
                 state: 'racing',
-                hasCrown: false,
+                crownCount: 0,
                 isStreak: false,
+                hasCrown: false,
                 timer: 0, frame: 0
             });
             grass = []; 
@@ -311,62 +316,57 @@
             const active = ponies.filter(p => p.state === 'racing');
             const finished = ponies.filter(p => p.state === 'finished');
             
-            // 判定结束：前10名到达
-            if (active.length > 0 && finished.length >= 10) {
-                // 淘汰剩下的
-                active.forEach(p => explode(p));
-                // 只保留前10
-                ponies = ponies.filter(p => p.state === 'finished' || p.state === 'roaming');
+            let raceOver = false;
+            // >10人: 前10到达触发
+            if (ponies.length > 10) { if (finished.length >= 10) raceOver = true; }
+            // <=10人: 全员到达触发
+            else { if (ponies.length > 0 && finished.length === ponies.length) raceOver = true; }
+
+            if (raceOver) {
+                if (ponies.length > 10) {
+                    // 淘汰还没到的
+                    const losers = ponies.filter(p => p.state === 'racing');
+                    losers.forEach(p => explode(p));
+                    ponies = ponies.filter(p => p.state === 'finished');
+                }
                 // 全员散步
-                ponies.forEach(p => { p.state = 'roaming'; p.timer = 0; });
-            }
-            // 如果总数<10，全员到达后散步
-            else if (active.length === 0 && finished.length > 0 && ponies.length <= 10) {
-                ponies.forEach(p => { p.state = 'roaming'; p.timer = 0; });
+                ponies.forEach(p => { 
+                    if(p.state === 'finished') { p.state = 'roaming'; p.timer = 0; }
+                });
             }
 
-            // 生成草
+            // 补草
             if (active.length === 0 && Math.random() < 0.02 && grass.length < 15) {
                 grass.push({ x: Math.random() * SCREEN_WIDTH, y: 10 + Math.random() * 40 });
             }
 
             let winnerFound = false;
-
             ponies.forEach(p => {
-                // 动画帧
                 p.frame++;
-
                 if (p.state === 'racing') {
                     p.x += p.speed * (0.8 + Math.random() * 0.4);
                     p.facing = 1;
-                    
-                    // 终点判定
                     if (p.x >= FINISH_LINE_X) {
                         p.state = 'finished';
-                        // 冠军逻辑
                         if (finished.length === 0 && !winnerFound) {
                             winnerFound = true;
-                            // 如果已经是冠军，开启爆气；否则成为新冠军
+                            // 连胜逻辑
                             if (p.hasCrown) p.isStreak = true;
-                            else {
-                                p.hasCrown = true;
-                                p.isStreak = false;
-                            }
-                            // 其他人丢冠
-                            ponies.forEach(o => { if(o !== p) { o.hasCrown = false; o.isStreak = false; }});
+                            else { p.hasCrown = true; p.isStreak = false; }
+                            
+                            // 失败者皇冠清零
+                            ponies.forEach(o => { if(o !== p) { o.hasCrown = false; o.isStreak = false; o.crownCount = 0; }});
+                            // 冠军皇冠叠加
+                            if (!p.crownCount) p.crownCount = 0;
+                            p.crownCount++;
                         }
                     }
                 }
                 else if (p.state === 'finished') {
-                    // 终点后减速行走
-                    if (p.x < SCREEN_WIDTH - 40) {
-                        p.x += 0.5;
-                        p.finishedWalking = true;
-                    } else {
-                        p.finishedWalking = false;
-                    }
+                    if (p.x < SCREEN_WIDTH - 40) { p.x += 0.5; p.finishedWalking = true; }
+                    else p.finishedWalking = false;
                 }
-                else if (p.state === 'roaming' || p.state === 'food') {
+                else if (p.state === 'roaming' || p.state === 'eating') {
                     p.finishedWalking = false;
                     aiBehavior(p);
                 }
@@ -374,42 +374,26 @@
         }
 
         function aiBehavior(p) {
-            // 找草
             if (p.state === 'roaming') {
-                let target = null;
-                let minD = 200;
+                let target = null, minD = 300;
                 grass.forEach(g => {
                     let d = Math.abs(g.x - p.x);
                     if (d < minD) { minD = d; target = g; }
                 });
-                
                 if (target) {
                     let dir = Math.sign(target.x - p.x);
-                    if (Math.abs(target.x - p.x) > 2) {
-                        p.x += dir * 0.5;
-                        p.facing = dir;
-                    } else {
-                        p.state = 'eating';
-                        p.timer = 100;
-                        grass = grass.filter(g => g !== target);
-                    }
+                    if (Math.abs(target.x - p.x) > 2) { p.x += dir * 0.5; p.facing = dir; }
+                    else { p.state = 'eating'; p.timer = 100; grass = grass.filter(g => g !== target); }
                 } else {
-                    // 随机走
-                    if (p.timer-- <= 0) {
-                        p.timer = 60 + Math.random() * 100;
-                        p.targetX = Math.random() * SCREEN_WIDTH;
-                    }
-                    if (Math.abs(p.targetX - p.x) > 2) {
+                    if (p.timer-- <= 0) { p.timer = 60 + Math.random() * 100; p.targetX = Math.random() * SCREEN_WIDTH; }
+                    if (p.targetX && Math.abs(p.targetX - p.x) > 2) {
                         let dir = Math.sign(p.targetX - p.x);
-                        p.x += dir * 0.5;
-                        p.facing = dir;
+                        p.x += dir * 0.5; p.facing = dir;
                     }
                 }
             } else if (p.state === 'eating') {
                 if (p.timer-- <= 0) p.state = 'roaming';
             }
-            
-            // 垂直微调防止重叠
             if (Math.random() < 0.05) p.y += (Math.random() - 0.5);
             p.y = Math.max(5, Math.min(64 - 35, p.y));
         }
@@ -423,11 +407,9 @@
                 el.style.top = (p.y + 16) + 'px';
                 el.style.background = p.color;
                 fx.appendChild(el);
-                
                 const angle = Math.random() * 6.28;
                 const spd = 2 + Math.random() * 3;
                 let vx = Math.cos(angle) * spd, vy = Math.sin(angle) * spd;
-                
                 let life = 30;
                 const tick = () => {
                     if (life-- <= 0) return el.remove();
@@ -438,16 +420,13 @@
                 };
                 tick();
             }
-            // 变草
             for(let i=0; i<3; i++) grass.push({x: p.x + (Math.random()-0.5)*20, y: p.y + (Math.random()-0.5)*10});
         }
 
         function draw() {
-            // 草
             const grassL = document.getElementById('layer-grass');
             grassL.innerHTML = grass.map(g => `<div class="grass" style="left:${g.x}px; top:${g.y}px"></div>`).join('');
 
-            // 小马 DOM Diff
             const ponyL = document.getElementById('layer-pony');
             const nodes = Array.from(ponyL.children);
             const ids = new Set(ponies.map(p => p.id));
@@ -460,9 +439,7 @@
                     el.id = p.id; el.className = 'entity';
                     el.innerHTML = `
                         <div class="aura"></div>
-                        <div class="crown-container hidden">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path></svg>
-                        </div>
+                        <div class="crown-container hidden"></div>
                         <div class="name-tag">${p.name}</div>
                         <div class="p-grid" style="display:grid; grid-template-columns:repeat(8,1fr); width:32px; height:32px;"></div>
                     `;
@@ -471,44 +448,45 @@
 
                 el.style.transform = `translate(${p.x}px, ${p.y}px)`;
                 el.style.zIndex = Math.floor(p.y);
-                
-                const grid = el.querySelector('.p-grid');
-                grid.style.transform = `scaleX(${p.facing || 1})`;
+                el.querySelector('.p-grid').style.transform = `scaleX(${p.facing || 1})`;
 
-                // 皇冠 & 爆气
-                el.querySelector('.crown-container').style.display = p.hasCrown ? 'block' : 'none';
+                const crownC = el.querySelector('.crown-container');
+                if (p.hasCrown) {
+                    crownC.classList.remove('hidden');
+                    // 仅显示一个皇冠图标，但如果有连胜，位置可能会变或者加数字？
+                    // 按照需求：不叠加显示多个图标，只显示一个，但连胜有爆气
+                    crownC.innerHTML = `<svg class="crown-icon" width="24" height="24" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path></svg>`;
+                    crownC.style.top = '-38px';
+                } else {
+                    crownC.classList.add('hidden');
+                }
+
                 el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none';
                 el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
 
-                // 动画帧渲染
-                const isMoving = p.state === 'racing' || (p.state === 'finished' && p.finishedWalking) || p.state === 'roaming' || p.state === 'walking_to_food';
+                // 像素渲染
+                const isMoving = p.state !== 'idle';
                 const frameStep = isMoving ? Math.floor(p.frame / 10) % 2 : 0;
-                
                 let html = '';
                 for(let y=0; y<8; y++) {
                     let row = p.pixels[y];
-                    // 走路动画
-                    if (frameStep === 1 && y > 5) {
-                        row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[0]]; 
-                    }
+                    if (frameStep === 1 && y > 5) row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[0]]; 
                     if (p.state === 'eating') {
                         if (y===1) row = [0,0,0,0,0,0,0,0]; 
                         if (y===3) row = p.pixels[1]; 
                     }
-
                     for(let x=0; x<8; x++) {
                         if (row[x]) html += `<div style="background:${p.color}; width:4px; height:4px; grid-column:${x+1}; grid-row:${y+1}"></div>`;
                     }
                 }
-                if (grid.innerHTML !== html) grid.innerHTML = html;
+                el.querySelector('.p-grid').innerHTML = html;
             });
         }
 
-        // === 移动端逻辑 ===
+        // === 移动端 ===
         function initMobile() {
             const host = new URLSearchParams(window.location.search).get('host');
-            initEditor('m-grid', 'm-colors', true);
-            
+            initEditor('m-grid', 'm-colors');
             peer = new Peer();
             peer.on('open', () => {
                 conn = peer.connect(host);
@@ -534,15 +512,13 @@
             renderGrid('m-grid', myGrid, myColor);
         }
 
-        // === 通用编辑器逻辑 ===
-        function initEditor(gridId, colorId, isMobile) {
+        function initEditor(gridId, colorId) {
             const gridEl = document.getElementById(gridId);
             const colorEl = document.getElementById(colorId);
             
-            // 颜色选择器
             colorEl.innerHTML = '';
             Object.values(COLORS).forEach(c => {
-                if(c === COLORS.GOLD || c === COLORS.WHITE) return;
+                if(c === COLORS.WHITE) return;
                 const dot = document.createElement('div');
                 dot.className = `c-dot ${c === myColor ? 'active' : ''}`;
                 dot.style.background = c;
@@ -555,13 +531,9 @@
                 colorEl.appendChild(dot);
             });
 
-            // 渲染网格
             renderGrid(gridId, myGrid, myColor);
 
-            // 触摸/鼠标事件
-            let drawing = false;
-            let eraseMode = false;
-
+            let drawing = false, eraseMode = false;
             const start = (r, c) => {
                 drawing = true;
                 eraseMode = myGrid[r][c] === 1;
@@ -570,15 +542,12 @@
             };
             const move = (e) => {
                 if(!drawing) return;
-                e.preventDefault(); 
-                let x, y;
-                if(e.touches) { x = e.touches[0].clientX; y = e.touches[0].clientY; }
-                else { x = e.clientX; y = e.clientY; }
-                
-                const el = document.elementFromPoint(x, y);
+                e.preventDefault();
+                let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const el = document.elementFromPoint(clientX, clientY);
                 if (el && el.dataset.r) {
-                    const r = parseInt(el.dataset.r);
-                    const c = parseInt(el.dataset.c);
+                    const r = parseInt(el.dataset.r), c = parseInt(el.dataset.c);
                     if (myGrid[r][c] !== (eraseMode ? 0 : 1)) {
                         myGrid[r][c] = eraseMode ? 0 : 1;
                         renderGrid(gridId, myGrid, myColor);
@@ -589,12 +558,8 @@
 
             gridEl.onmousedown = (e) => start(e.target.dataset.r, e.target.dataset.c);
             gridEl.ontouchstart = (e) => start(e.target.dataset.r, e.target.dataset.c);
-            
-            window.onmousemove = move;
-            window.ontouchmove = move;
-            
-            window.onmouseup = end;
-            window.ontouchend = end;
+            window.onmousemove = move; window.ontouchmove = move;
+            window.onmouseup = end; window.ontouchend = end;
         }
 
         function renderGrid(id, data, color) {
@@ -605,10 +570,7 @@
                     const cell = document.createElement('div');
                     cell.className = 'editor-cell';
                     cell.dataset.r = r; cell.dataset.c = c;
-                    if(val) {
-                        cell.style.background = color;
-                        cell.style.boxShadow = `0 0 5px ${color}`;
-                    }
+                    if(val) { cell.style.background = color; cell.style.boxShadow = `0 0 5px ${color}`; }
                     el.appendChild(cell);
                 });
             });
