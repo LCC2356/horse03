@@ -146,14 +146,13 @@
         #qr-section {
             height: 120px;
             display: flex;
-            /* 改为横向排列，文字在左，二维码在右 */
             flex-direction: row; 
             align-items: center;
             justify-content: space-between;
-            gap: 15px;
+            gap: 10px;
             border: 2px solid var(--color-border);
             background: rgba(0, 37, 26, 0.8);
-            padding: 10px 20px;
+            padding: 10px 15px;
             border-radius: 4px;
             box-shadow: 0 0 20px rgba(64, 224, 208, 0.1);
         }
@@ -163,22 +162,22 @@
             flex-direction: column;
             align-items: flex-start;
             justify-content: center;
+            min-width: 80px; /* 给文字一点最小宽度 */
         }
 
         #qrcode {
             background: white;
             padding: 5px;
-            /* 【修改点1】强制正方形，大小适中 */
-            width: 100px;
-            height: 100px;
+            width: 90px;  /* 稍微调小一点，更精致 */
+            height: 90px;
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-shrink: 0; /* 防止被挤压 */
+            flex-shrink: 0;
+            border-radius: 2px;
         }
         
         #qrcode img {
-            /* 【修改点1】强制填满容器 */
             width: 100% !important;
             height: 100% !important;
             display: block;
@@ -187,15 +186,15 @@
         .qr-text {
             font-size: 1.1rem;
             color: var(--color-primary);
-            line-height: 1.2;
+            line-height: 1;
             letter-spacing: 1px;
+            margin-bottom: 4px;
         }
 
         .qr-sub-text {
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             color: var(--color-primary);
-            opacity: 0.7;
-            margin-top: 5px;
+            opacity: 0.6;
             letter-spacing: 1px;
         }
 
@@ -217,10 +216,10 @@
             height: 4px;
         }
 
-        /* 【修改点2】像素皇冠容器 */
+        /* 【优化点】像素皇冠容器位置调整 */
         .crown-container {
             position: absolute;
-            top: -28px; /* 调整位置 */
+            top: -12px; /* 从 -28px 改为 -12px，贴近头顶 */
             left: 50%;
             transform: translateX(-50%);
             width: 32px;
@@ -231,12 +230,13 @@
 
         .name-tag {
             position: absolute;
-            top: -12px;
+            top: -16px; /* 稍微上移一点，避开皇冠 */
             left: 50%;
             transform: translateX(-50%);
             font-size: 10px;
             white-space: nowrap;
             opacity: 0.8;
+            text-shadow: 1px 1px 0 #000; /* 加个描边防止看不清 */
         }
 
         .grass {
@@ -249,7 +249,7 @@
 
         @keyframes bounce {
             0%, 100% { transform: translate(-50%, 0); }
-            50% { transform: translate(-50%, -5px); }
+            50% { transform: translate(-50%, -4px); }
         }
 
         /* --- 模态框 --- */
@@ -370,8 +370,8 @@
 
             <div id="qr-section">
                 <div class="qr-text-group">
-                    <div class="qr-text">SCAN TO JOIN</div>
-                    <div class="qr-sub-text">MOBILE LINK</div>
+                    <div class="qr-text">SCAN<br>TO JOIN</div>
+                    <div class="qr-sub-text">MOBILE</div>
                 </div>
                 <div id="qrcode"></div>
             </div>
@@ -417,7 +417,7 @@
 
     <script>
         // --- 常量与配置 ---
-        const SCREEN_WIDTH = 900; // 对应 CSS .screen-frame 的宽度
+        const SCREEN_WIDTH = 900; 
         const SCREEN_HEIGHT = 120;
         const PONY_SCALE = 4;
         const PONY_WIDTH = 8 * PONY_SCALE; // 8x8 Grid
@@ -430,42 +430,41 @@
             GREEN: '#69f0ae',
             PURPLE: '#e040fb',
             WHITE: '#ffffff',
-            GOLD: '#facc15' // 皇冠颜色
+            GOLD: '#facc15' 
         };
 
-        // --- 默认像素画 (8x8) ---
+        // 【优化点】更像动物的默认像素画 (8x8)
+        // 1=有像素, 0=无
         const DEFAULT_FRAME_1 = [
-            [0,0,0,0,0,1,0,0],
-            [0,0,0,0,1,1,1,1],
-            [0,0,0,0,1,1,1,0],
-            [0,0,1,1,1,1,1,0],
-            [1,0,1,1,1,1,1,0],
-            [1,1,1,1,1,1,1,0],
-            [0,0,1,0,0,0,1,0],
-            [0,0,1,0,0,0,1,0]
+            [0,0,0,0,0,0,1,0], // 耳朵
+            [0,0,0,0,0,1,1,1], // 头
+            [0,0,0,0,0,1,1,0], // 脖子
+            [0,0,1,1,1,1,1,0], // 身体
+            [0,1,1,1,1,1,1,0], // 身体
+            [1,1,1,1,1,1,1,0], // 身体+尾巴
+            [0,1,0,0,0,1,0,0], // 腿
+            [0,1,0,0,0,1,0,0]  // 腿
         ];
 
-        // 【修改点2】像素皇冠数据 (8x8)
+        // 像素皇冠数据 (8x8)
         const CROWN_PIXELS = [
+            [0,0,0,0,0,0,0,0],
             [1,0,1,0,1,0,1,0],
             [1,1,1,1,1,1,1,1],
             [1,1,1,1,1,1,1,1],
             [0,1,1,1,1,1,1,0],
-            [0,0,1,1,1,1,0,0],
             [0,0,0,0,0,0,0,0],
             [0,0,0,0,0,0,0,0],
             [0,0,0,0,0,0,0,0]
         ];
 
         // --- 状态管理 ---
-        let ponies = []; // { id, name, x, y, state, speed, hasCrown, color, pixels, facing, timer, targetX }
-        let grass = [];  // { id, x, y }
+        let ponies = []; 
+        let grass = [];  
         let peerId = null;
         let peer = null;
-        let conn = null; // 移动端用
+        let conn = null; 
         
-        // 编辑器状态
-        // 【修改点3】初始化时也需要深拷贝，防止修改默认值
         let editorGrid = JSON.parse(JSON.stringify(DEFAULT_FRAME_1));
         let selectedColor = COLORS.TURQUOISE;
 
@@ -475,12 +474,10 @@
             const connectTo = params.get('connectTo');
 
             if (connectTo) {
-                // 移动端模式
                 document.getElementById('desktop-view').classList.add('hidden');
                 document.getElementById('mobile-view').classList.remove('hidden');
                 initMobile(connectTo);
             } else {
-                // 桌面端模式
                 initDesktop();
             }
         }
@@ -490,8 +487,6 @@
             initPeerHost();
             buildColorPicker('desktop-color-picker');
             buildEditorGrid('desktop-editor-grid');
-            
-            // 游戏循环
             requestAnimationFrame(gameLoop);
         }
 
@@ -499,12 +494,10 @@
             peer = new Peer();
             peer.on('open', (id) => {
                 peerId = id;
-                // 生成并显示固定二维码
                 generateFixedQR();
             });
             peer.on('connection', (c) => {
                 c.on('data', (data) => {
-                    // 收到手机端发来的小马
                     createPony(data.name, data.pixels, data.color);
                 });
             });
@@ -518,15 +511,11 @@
         }
 
         function updatePhysics() {
-            // 检查比赛是否还有人没跑完
             const totalPonies = ponies.length;
             const finishedPonies = ponies.filter(p => p.state === 'finished').length;
             const isRaceOngoing = ponies.some(p => p.state === 'racing');
-            
-            // 全员到达终点触发器
             let allFinishedTrigger = (totalPonies > 0 && finishedPonies === totalPonies);
 
-            // 1. 生成草 (比赛结束后)
             if (!isRaceOngoing && totalPonies > 0 && grass.length < 8 && Math.random() < 0.01) {
                 grass.push({
                     id: Math.random(),
@@ -535,19 +524,15 @@
                 });
             }
 
-            // 2. 更新每只小马
             let winnerFoundThisFrame = false;
             const existingWinner = ponies.some(p => p.hasCrown);
 
             ponies.forEach(p => {
-                // 如果所有马都跑完了，重置为散步
                 if (allFinishedTrigger && p.state === 'finished') {
                     p.state = 'roaming';
                     p.timer = 0;
                     p.targetX = null;
-                    
-                    // 全方位随机出生
-                    const side = Math.floor(Math.random() * 4); // 0:Top, 1:Right, 2:Bottom, 3:Left
+                    const side = Math.floor(Math.random() * 4); 
                     const SAFE_TOP = 35; 
                     const SAFE_H = SCREEN_HEIGHT - PONY_HEIGHT - 10 - SAFE_TOP;
                     
@@ -557,17 +542,13 @@
                     else { p.x = -50; p.y = SAFE_TOP + Math.random() * SAFE_H; }
                 }
 
-                // 状态机
                 if (p.state === 'racing') {
-                    // 速度波动 (0.5x - 2.0x)
                     let variance = 0.5 + Math.random() * 1.5;
                     p.x += p.speed * variance;
                     p.facing = 'right';
 
-                    // 冲过屏幕右侧
                     if (p.x > SCREEN_WIDTH + 20) {
                         p.state = 'finished';
-                        // 判定冠军
                         if (!existingWinner && !winnerFoundThisFrame) {
                             p.hasCrown = true;
                             winnerFoundThisFrame = true;
@@ -575,13 +556,11 @@
                     }
                 } 
                 else if (p.state === 'finished') {
-                    p.x += 0.1; // 保持稍微移动，不要完全静止
+                    p.x += 0.1;
                 }
                 else if (p.state === 'roaming') {
-                    // 寻找最近的草
                     let targetGrass = null;
                     let minDist = 150;
-                    
                     grass.forEach(g => {
                         const dx = g.x - p.x;
                         const dy = g.y - p.y;
@@ -595,12 +574,10 @@
                     if (targetGrass) {
                         p.state = 'walking_to_food';
                     } else {
-                        // 随机游荡
                         handleRoamingMovement(p);
                     }
                 }
                 else if (p.state === 'walking_to_food') {
-                    // 重新找一下最近的草
                     let closest = null; 
                     let d = 9999;
                     grass.forEach(item => {
@@ -614,11 +591,9 @@
                         const dx = closest.x - p.x;
                         const dy = closest.y - p.y;
                         const dist = Math.sqrt(dx*dx + dy*dy);
-                        
                         if (dist < 5) {
                             p.state = 'eating';
                             p.timer = 100;
-                            // 吃掉草
                             grass = grass.filter(item => item !== closest);
                         } else {
                             p.x += (dx/dist) * 1.0;
@@ -633,19 +608,16 @@
                 }
             });
 
-            // 数量限制清理 (比赛结束后清理)
             if (!isRaceOngoing && ponies.length > 10) {
                 const winner = ponies.find(p => p.hasCrown);
                 const others = ponies.filter(p => !p.hasCrown);
                 const keepCount = winner ? 9 : 10;
-                // 保留最新的
                 const keptOthers = others.slice(-keepCount);
                 ponies = winner ? [...keptOthers, winner] : keptOthers;
             }
         }
 
         function handleRoamingMovement(p) {
-            // 越界弹回
             if (p.x < -50 || p.x > SCREEN_WIDTH || p.y < -50 || p.y > SCREEN_HEIGHT) {
                 const dx = (SCREEN_WIDTH/2) - p.x;
                 const dy = (SCREEN_HEIGHT/2) - p.y;
@@ -659,12 +631,11 @@
             if (p.timer > 0) {
                 p.timer--;
             } else {
-                // 决策
                 if (Math.random() > 0.3) {
                     p.targetX = Math.random() * (SCREEN_WIDTH - 40);
                     p.timer = 60 + Math.random() * 100;
                 } else {
-                    p.state = 'eating'; // 假装吃空气/休息
+                    p.state = 'eating';
                     p.timer = 60;
                 }
             }
@@ -679,7 +650,6 @@
                 }
             }
 
-            // 垂直抖动
             if (Math.random() < 0.05) {
                 p.y += (Math.random() - 0.5) * 2;
                 if (p.y < 35) p.y = 35;
@@ -692,7 +662,6 @@
             const ponyLayer = document.getElementById('pony-layer');
             const grassLayer = document.getElementById('grass-layer');
             
-            // 渲染草
             grassLayer.innerHTML = '';
             grass.forEach(g => {
                 const el = document.createElement('div');
@@ -701,16 +670,13 @@
                 grassLayer.appendChild(el);
             });
 
-            // 渲染小马
             const existingNodes = Array.from(ponyLayer.children);
             const activeIds = new Set(ponies.map(p => p.id));
 
-            // 删除
             existingNodes.forEach(node => {
                 if (!activeIds.has(node.id)) node.remove();
             });
 
-            // 更新或创建
             ponies.forEach(p => {
                 let el = document.getElementById(p.id);
                 if (!el) {
@@ -718,11 +684,9 @@
                     ponyLayer.appendChild(el);
                 }
                 
-                // 更新位置
                 el.style.transform = `translate3d(${p.x}px, ${p.y}px, 0)`;
                 el.style.zIndex = Math.floor(p.y);
 
-                // 更新朝向
                 const pixelContainer = el.querySelector('.pixel-grid-container');
                 if (p.facing === 'left') {
                     pixelContainer.style.transform = 'scaleX(-1)';
@@ -730,21 +694,17 @@
                     pixelContainer.style.transform = 'scaleX(1)';
                 }
 
-                // 修复皇冠显示逻辑
                 const crownContainer = el.querySelector('.crown-container');
-                // 使用 classList 来切换 hidden 类
                 if (p.hasCrown) {
                     crownContainer.classList.remove('hidden');
                 } else {
                     crownContainer.classList.add('hidden');
                 }
 
-                // 名字颜色
                 const nameEl = el.querySelector('.name-tag');
                 nameEl.style.color = p.hasCrown ? COLORS.GOLD : p.color;
                 nameEl.style.opacity = p.hasCrown ? 1 : 0.8;
 
-                // 动画帧更新
                 updatePonyAnimation(p, el);
             });
         }
@@ -756,14 +716,11 @@
             div.style.width = PONY_WIDTH + 'px';
             div.style.height = PONY_HEIGHT + 'px';
 
-            // 【修改点2】创建像素皇冠容器
             const crownContainer = document.createElement('div');
-            crownContainer.className = 'crown-container hidden'; // 默认隐藏
+            crownContainer.className = 'crown-container hidden';
             
-            // 创建皇冠的像素网格
             const crownGrid = document.createElement('div');
             crownGrid.className = 'pixel-grid';
-            // 渲染皇冠像素
             let crownHtml = '';
             for(let y=0; y<8; y++) {
                 for(let x=0; x<8; x++) {
@@ -776,17 +733,13 @@
             crownContainer.appendChild(crownGrid);
             div.appendChild(crownContainer);
 
-            // 名字
             const name = document.createElement('div');
             name.className = 'name-tag vfd-glow';
             name.innerText = p.name;
             div.appendChild(name);
 
-            // 像素网格容器 (用于翻转)
             const gridContainer = document.createElement('div');
             gridContainer.className = 'pixel-grid-container';
-            
-            // 像素网格
             const grid = document.createElement('div');
             grid.className = 'pixel-grid';
             gridContainer.appendChild(grid);
@@ -805,7 +758,7 @@
             
             if (isMoving) {
                 p.frameTimer++;
-                if (p.frameTimer > 10) { // 约 150ms
+                if (p.frameTimer > 10) { 
                     p.currentFrame = (p.currentFrame + 1) % 2;
                     p.frameTimer = 0;
                     renderPixels(gridEl, p);
@@ -816,7 +769,6 @@
                     renderPixels(gridEl, p);
                 }
             }
-            // 第一次渲染
             if (gridEl.children.length === 0) {
                 renderPixels(gridEl, p);
             }
@@ -825,9 +777,9 @@
         function renderPixels(gridEl, p) {
             const frame1 = p.pixels;
             let frame2 = frame1.map((row, y) => {
-                if (y < 6) { // 身体部分，下沉
+                if (y < 6) { 
                     return y > 0 ? frame1[y-1] : [0,0,0,0,0,0,0,0];
-                } else { // 腿部分
+                } else { 
                     let newRow = [...row];
                     const shift = 2;
                     for(let i=0; i<8; i++) {
@@ -857,11 +809,9 @@
             gridEl.innerHTML = html;
         }
 
-        // --- 交互逻辑 ---
         function createPony(name, pixels, color) {
             const id = 'p-' + Date.now() + '-' + Math.random();
             
-            // 限制数量
             if (ponies.length >= 10) {
                 const winnerIdx = ponies.findIndex(p => p.hasCrown);
                 const removeIdx = ponies.findIndex(p => !p.hasCrown);
@@ -869,7 +819,6 @@
                 else ponies.shift();
             }
 
-            // 重置现有小马到起点
             ponies.forEach(p => {
                 p.state = 'racing';
                 p.x = 20;
@@ -879,7 +828,6 @@
                 p.targetX = null;
             });
 
-            // 添加新小马
             const newPony = {
                 id,
                 name: name || getRandomName(),
@@ -890,31 +838,25 @@
                 speed: 1.5 + Math.random() * 2.0,
                 hasCrown: false,
                 color: color || COLORS.TURQUOISE,
-                // 【修改点3】关键修复：使用 JSON.parse(JSON.stringify()) 进行深拷贝
-                // 确保每只小马的像素数据是独立的
                 pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_FRAME_1)),
                 timer: 0
             };
             ponies.push(newPony);
             
-            // 清除草
             grass = [];
         }
 
         function savePony() {
             const name = document.getElementById('editor-name').value;
-            // 这里的 editorGrid 已经是深拷贝过的，可以直接用
             createPony(name, editorGrid, selectedColor);
             closeEditor();
         }
 
-        // --- 辅助功能 ---
         function getRandomName() {
             const names = ["PIXEL", "VFD", "GLOW", "NEON", "BIT", "BYTE", "ECHO", "FLUX", "SYNC", "WAVE", "DATA", "ZAP"];
             return names[Math.floor(Math.random() * names.length)];
         }
 
-        // --- 编辑器 UI 逻辑 ---
         function openEditor() {
             document.getElementById('modal-editor').classList.remove('hidden');
         }
@@ -930,9 +872,7 @@
             const container = document.getElementById(containerId);
             container.innerHTML = '';
             Object.values(COLORS).forEach(c => {
-                // 不显示金色在选择器中
                 if (c === COLORS.GOLD) return;
-
                 const div = document.createElement('div');
                 div.className = 'color-dot';
                 div.style.backgroundColor = c;
@@ -984,7 +924,6 @@
             renderEditorGrid(containerId);
         }
 
-        // --- 二维码逻辑 (修改为固定生成) ---
         function generateFixedQR() {
             if (!peerId) return;
             const url = `${window.location.protocol}//${window.location.host}${window.location.pathname}?connectTo=${peerId}`;
@@ -992,21 +931,18 @@
             document.getElementById('qrcode').innerHTML = '';
             new QRCode(document.getElementById('qrcode'), {
                 text: url,
-                // 【修改点1】设置二维码大小为 90x90，留一点边距
-                width: 90,
-                height: 90,
+                width: 128,
+                height: 128,
                 colorDark : "#000000",
                 colorLight : "#ffffff",
                 correctLevel : QRCode.CorrectLevel.H
             });
         }
 
-        // --- 移动端逻辑 ---
         function initMobile(hostId) {
             buildColorPicker('mobile-color-picker');
             const container = document.getElementById('mobile-editor-container');
             container.innerHTML = '<div id="mobile-editor-grid" class="editor-grid"></div>';
-            // 【修改点3】确保移动端编辑器也使用深拷贝的默认值
             editorGrid = JSON.parse(JSON.stringify(DEFAULT_FRAME_1));
             renderEditorGrid('mobile-editor-grid');
 
@@ -1029,14 +965,12 @@
             const name = document.getElementById('mobile-name-input').value || "MOBILE";
             conn.send({
                 name: name,
-                // 发送前进行深拷贝，虽然在这里不是必须的，但好习惯
                 pixels: JSON.parse(JSON.stringify(editorGrid)),
                 color: selectedColor
             });
             alert("Sent!");
         }
 
-        // 启动
         init();
 
     </script>
