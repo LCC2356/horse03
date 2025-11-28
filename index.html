@@ -241,13 +241,21 @@
         /* SVG 皇冠容器 */
         .crown-container {
             position: absolute;
-            top: -45px; /* 保持在名字上方 */
+            top: -45px; 
             left: 50%;
             transform: translateX(-50%);
             width: 24px;
             height: 24px;
             animation: bounce 1s infinite;
             z-index: 10;
+            display: flex;
+            flex-direction: column-reverse; 
+            align-items: center;
+        }
+        
+        .crown-icon {
+            margin-bottom: -14px; 
+            filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
         }
 
         /* 连胜爆气光环 */
@@ -261,7 +269,7 @@
             box-shadow: 0 0 15px #facc15;
             z-index: -1;
             animation: pulse-aura 0.8s infinite alternate;
-            display: none; /* 默认隐藏 */
+            display: none; 
         }
         @keyframes pulse-aura {
             from { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
@@ -615,6 +623,7 @@
                 });
             }
 
+            // 草生成
             if (!isRaceOngoing && ponies.length > 0 && ponies.every(p=>p.state !== 'racing') && grass.length < 8 && Math.random() < 0.01) {
                 grass.push({
                     id: Math.random(),
@@ -641,10 +650,8 @@
                             winnerFoundThisFrame = true;
                             // 【连胜逻辑】
                             if (p.hasCrown) {
-                                // 已经有皇冠，触发连胜
-                                p.isStreak = true; 
+                                p.isStreak = true; // 爆气
                             } else {
-                                // 第一次夺冠
                                 p.hasCrown = true;
                                 p.isStreak = false;
                             }
@@ -722,6 +729,7 @@
         }
 
         function handleRoamingMovement(p) {
+            // 散步范围限制
             if (p.x < 10 || p.x > SCREEN_WIDTH - 40 || p.y < 5 || p.y > SCREEN_HEIGHT - 40) {
                 const dx = (SCREEN_WIDTH/2) - p.x;
                 const dy = (SCREEN_HEIGHT/2) - p.y;
@@ -843,8 +851,18 @@
 
                 // 皇冠渲染
                 const crownContainer = el.querySelector('.crown-container');
+                crownContainer.innerHTML = ''; 
                 if (p.hasCrown) {
                     crownContainer.classList.remove('hidden');
+                    // 永远只显示一个皇冠
+                    const crownSvg = `
+                        <svg class="crown-icon" width="24" height="24" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path>
+                        </svg>
+                    `;
+                    crownContainer.innerHTML = crownSvg;
+                    // 位置固定在名字上方
+                    crownContainer.style.top = '-45px';
                 } else {
                     crownContainer.classList.add('hidden');
                 }
@@ -880,12 +898,6 @@
             // SVG 皇冠
             const crownContainer = document.createElement('div');
             crownContainer.className = 'crown-container hidden';
-            crownContainer.innerHTML = `
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path>
-                </svg>
-            `;
-            crownContainer.style.filter = "drop-shadow(0 0 5px rgba(250, 204, 21, 0.8))";
             div.appendChild(crownContainer);
 
             const name = document.createElement('div');
@@ -970,13 +982,10 @@
         function createPony(name, pixels, color) {
             const id = 'p-' + Date.now() + '-' + Math.random();
             
-            if (ponies.length >= 10) {
-                const winnerIdx = ponies.findIndex(p => p.hasCrown);
-                const removeIdx = ponies.findIndex(p => !p.hasCrown);
-                if (removeIdx !== -1) ponies.splice(removeIdx, 1);
-                else ponies.shift();
-            }
+            // 【关键修改】不再限制为10个，允许无限添加，通过“末位淘汰”来控制数量
+            // 原来的 limit check 已被移除
 
+            // 重置现有小马到起点
             ponies.forEach(p => {
                 p.state = 'racing';
                 p.x = 20;
@@ -1160,9 +1169,7 @@
         function initMobile(hostId) {
             buildColorPicker('mobile-color-picker');
             
-            // 修复：先创建容器，且重要：初始化独立的 mobileEditorGrid
-            mobileEditorGrid = JSON.parse(JSON.stringify(DEFAULT_FRAME_1));
-            
+            // 修复：先创建容器
             const container = document.getElementById('mobile-editor-container');
             container.innerHTML = '<div id="mobile-editor-grid" class="editor-grid"></div>';
             
