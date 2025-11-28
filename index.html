@@ -4,12 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>HORSE RUNRUN</title>
-    <!-- PeerJS for P2P connection -->
+    <!-- 引入外部库 CDN -->
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <!-- QRCodeJS for generating QR codes -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
-    <!-- VT323 Font for retro look -->
+    <!-- 字体 -->
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 
     <style>
@@ -39,7 +38,7 @@
             justify-content: center;
         }
 
-        /* Utilities */
+        /* 通用样式类 */
         .hidden { display: none !important; }
         .vfd-glow { text-shadow: 0 0 5px rgba(64, 224, 208, 0.6), 0 0 10px rgba(64, 224, 208, 0.4); }
         .btn {
@@ -57,7 +56,7 @@
         .btn:hover { background: var(--color-primary); color: #00251a; }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* Background Grid */
+        /* 背景网格 */
         .bg-grid {
             position: absolute;
             inset: 0;
@@ -69,10 +68,11 @@
             z-index: -1;
         }
 
-        /* --- Main Game Screen --- */
+        /* --- 主屏幕区域 --- */
         #game-container {
             position: relative;
             transform-origin: center;
+            /* 适配移动端或小屏幕 */
             transform: scale(1);
         }
 
@@ -106,7 +106,7 @@
             background-size: 4px 4px;
         }
 
-        /* Screws */
+        /* 装饰螺丝 */
         .screw {
             position: absolute;
             width: 6px;
@@ -118,7 +118,7 @@
         .tl { top: 2px; left: 2px; } .tr { top: 2px; right: 2px; }
         .bl { bottom: 2px; left: 2px; } .br { bottom: 2px; right: 2px; }
 
-        /* Start Line */
+        /* 起跑线 */
         .start-line {
             position: absolute;
             top: 0; bottom: 0; left: 12px;
@@ -126,7 +126,7 @@
             border-left: 2px dashed rgba(64, 224, 208, 0.3);
         }
 
-        /* HUD Text */
+        /* HUD */
         .hud {
             position: absolute;
             bottom: 4px; right: 8px;
@@ -135,16 +135,10 @@
             letter-spacing: 2px;
         }
 
-        /* --- Entities (Pony/Grass) --- */
+        /* --- 实体 (小马/草) --- */
         .entity {
             position: absolute;
             will-change: transform;
-        }
-
-        .pixel-grid-container {
-            width: 32px;
-            height: 32px;
-            transition: transform 0s; /* Instant flip */
         }
 
         .pixel-grid {
@@ -159,23 +153,14 @@
             height: 4px;
         }
 
-        /* Crown Animation */
-        @keyframes crown-float {
-            0%, 100% { transform: translate(-50%, 0); }
-            50% { transform: translate(-50%, -8px); }
-        }
-
         .crown {
             position: absolute;
-            top: -30px;
+            top: -24px;
             left: 50%;
             transform: translateX(-50%);
             color: #facc15; /* Yellow */
-            font-size: 24px;
-            animation: crown-float 1.5s ease-in-out infinite;
-            filter: drop-shadow(0 0 5px rgba(250, 204, 21, 0.8));
-            z-index: 1000;
-            display: block !important; /* Force show if class present */
+            font-size: 20px;
+            animation: bounce 1s infinite;
         }
 
         .name-tag {
@@ -186,8 +171,6 @@
             font-size: 10px;
             white-space: nowrap;
             opacity: 0.8;
-            font-weight: bold;
-            letter-spacing: 1px;
         }
 
         .grass {
@@ -198,7 +181,12 @@
             box-shadow: 0 0 4px #69f0ae;
         }
 
-        /* --- Modals --- */
+        @keyframes bounce {
+            0%, 100% { transform: translate(-50%, 0); }
+            50% { transform: translate(-50%, -5px); }
+        }
+
+        /* --- 模态框 --- */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -220,7 +208,7 @@
             max-width: 90%;
         }
 
-        /* Editor */
+        /* 绘图编辑器 */
         .editor-grid {
             display: grid;
             grid-template-rows: repeat(8, 1fr);
@@ -259,7 +247,7 @@
         }
         .color-dot.selected { border-color: white; transform: scale(1.2); }
 
-        /* Mobile View */
+        /* 移动端视图 */
         #mobile-view {
             width: 100%;
             height: 100%;
@@ -269,6 +257,7 @@
             padding: 20px;
         }
 
+        /* 输入框 */
         input[type="text"] {
             background: #00251a;
             border: 1px solid var(--color-border);
@@ -282,43 +271,17 @@
         }
         input:focus { outline: none; border-color: var(--color-primary); }
 
-        /* QR Code HUD (Bottom Right) */
-        #qr-hud {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 10px;
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(64, 224, 208, 0.2);
-            z-index: 50;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            opacity: 0.8;
-            transition: opacity 0.3s;
-        }
-        #qr-hud:hover { opacity: 1; }
-        #qrcode img { margin: 0 auto; }
-        .qr-label {
-            color: #000;
-            font-size: 12px;
-            margin-top: 5px;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-
     </style>
 </head>
 <body>
 
-    <!-- Background -->
+    <!-- 背景纹理 -->
     <div class="bg-grid"></div>
 
-    <!-- ===== DESKTOP VIEW ===== -->
+    <!-- ===== 桌面端视图 ===== -->
     <div id="desktop-view">
         <div style="position: absolute; top: 40px; width: 100%; text-align: center;">
-            <h1 class="vfd-glow" style="font-size: 4rem; margin: 0; letter-spacing: 0.2em;">HORSE RUNRUN</h1>
+            <h1 class="vfd-glow" style="font-size: 3rem; margin: 0;">HORSE RUNRUN</h1>
             <p style="color: var(--color-border); letter-spacing: 2px;">ADD RUNNER TO START RACE</p>
         </div>
 
@@ -332,7 +295,7 @@
                     <div class="start-line"></div>
                     <div class="hud">MODE:RACE // STATUS:LIVE</div>
                     
-                    <!-- Layers -->
+                    <!-- 动态内容容器 -->
                     <div id="grass-layer"></div>
                     <div id="pony-layer"></div>
                 </div>
@@ -341,16 +304,11 @@
 
         <div style="position: absolute; bottom: 40px; display: flex; gap: 20px;">
             <button class="btn" onclick="openEditor()">+ NEW RUNNER</button>
-        </div>
-
-        <!-- Persistent QR HUD -->
-        <div id="qr-hud" class="hidden">
-            <div id="qrcode"></div>
-            <div class="qr-label">SCAN TO DRAW</div>
+            <button class="btn" onclick="openQR()" id="btn-mobile">MOBILE LINK</button>
         </div>
     </div>
 
-    <!-- ===== MOBILE VIEW ===== -->
+    <!-- ===== 移动端视图 ===== -->
     <div id="mobile-view" class="hidden">
         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--color-border); padding-bottom: 10px;">
             <span style="font-size: 1.5rem;" class="vfd-glow">REMOTE DRAW</span>
@@ -368,7 +326,7 @@
         </div>
     </div>
 
-    <!-- ===== EDITOR MODAL ===== -->
+    <!-- ===== 弹窗：编辑器 ===== -->
     <div id="modal-editor" class="modal-overlay hidden">
         <div class="modal-content">
             <h2 class="vfd-glow" style="margin-top: 0;">// ENTITY DESIGNER</h2>
@@ -388,12 +346,22 @@
         </div>
     </div>
 
+    <!-- ===== 弹窗：二维码 ===== -->
+    <div id="modal-qr" class="modal-overlay hidden" onclick="closeQR()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h2 class="vfd-glow">// MOBILE LINK</h2>
+            <div id="qrcode" style="background: white; padding: 10px; margin: 20px auto; width: fit-content;"></div>
+            <p style="font-size: 0.8rem; color: var(--color-border);">SCAN TO DRAW ON PHONE</p>
+            <button class="btn" onclick="closeQR()">CLOSE</button>
+        </div>
+    </div>
+
     <script>
-        // --- CONSTANTS ---
+        // --- 常量与配置 ---
         const SCREEN_WIDTH = 1000;
         const SCREEN_HEIGHT = 120;
         const PONY_SCALE = 4;
-        const PONY_WIDTH = 8 * PONY_SCALE; 
+        const PONY_WIDTH = 8 * PONY_SCALE; // 8x8 Grid
         const PONY_HEIGHT = 8 * PONY_SCALE;
         
         const COLORS = {
@@ -405,7 +373,7 @@
             WHITE: '#ffffff'
         };
 
-        // --- DEFAULT PIXEL ART (8x8) ---
+        // --- 默认像素画 (8x8) ---
         const DEFAULT_FRAME_1 = [
             [0,0,0,0,0,1,0,0],
             [0,0,0,0,1,1,1,1],
@@ -417,35 +385,40 @@
             [0,0,1,0,0,0,1,0]
         ];
 
-        // --- STATE ---
-        let ponies = []; 
-        let grass = [];  
+        // --- 状态管理 ---
+        let ponies = []; // { id, name, x, y, state, speed, hasCrown, color, pixels, facing, timer, targetX }
+        let grass = [];  // { id, x, y }
         let peerId = null;
         let peer = null;
-        let conn = null; 
+        let conn = null; // 移动端用
         
+        // 编辑器状态
         let editorGrid = JSON.parse(JSON.stringify(DEFAULT_FRAME_1));
         let selectedColor = COLORS.TURQUOISE;
 
-        // --- INIT ---
+        // --- 初始化 ---
         function init() {
             const params = new URLSearchParams(window.location.search);
             const connectTo = params.get('connectTo');
 
             if (connectTo) {
+                // 移动端模式
                 document.getElementById('desktop-view').classList.add('hidden');
                 document.getElementById('mobile-view').classList.remove('hidden');
                 initMobile(connectTo);
             } else {
+                // 桌面端模式
                 initDesktop();
             }
         }
 
-        // --- DESKTOP LOGIC ---
+        // --- 桌面端逻辑 ---
         function initDesktop() {
             initPeerHost();
             buildColorPicker('desktop-color-picker');
             buildEditorGrid('desktop-editor-grid');
+            
+            // 游戏循环
             requestAnimationFrame(gameLoop);
         }
 
@@ -453,36 +426,17 @@
             peer = new Peer();
             peer.on('open', (id) => {
                 peerId = id;
-                generateQR(); // Auto generate QR HUD
+                document.getElementById('btn-mobile').innerText = "MOBILE LINK";
             });
             peer.on('connection', (c) => {
                 c.on('data', (data) => {
+                    // 收到手机端发来的小马
                     createPony(data.name, data.pixels, data.color);
                 });
             });
         }
 
-        function generateQR() {
-            if (!peerId) return;
-            const url = `${window.location.protocol}//${window.location.host}${window.location.pathname}?connectTo=${peerId}`;
-            const container = document.getElementById('qrcode');
-            container.innerHTML = '';
-            
-            // Generate QR Code
-            new QRCode(container, {
-                text: url,
-                width: 100,
-                height: 100,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.L
-            });
-            
-            // Show HUD
-            document.getElementById('qr-hud').classList.remove('hidden');
-        }
-
-        // --- PHYSICS ENGINE ---
+        // --- 游戏主循环 (物理引擎) ---
         function gameLoop() {
             updatePhysics();
             render();
@@ -490,14 +444,15 @@
         }
 
         function updatePhysics() {
+            // 检查比赛是否还有人没跑完
             const totalPonies = ponies.length;
             const finishedPonies = ponies.filter(p => p.state === 'finished').length;
             const isRaceOngoing = ponies.some(p => p.state === 'racing');
             
-            // Trigger when ALL ponies have crossed the line
+            // 全员到达终点触发器
             let allFinishedTrigger = (totalPonies > 0 && finishedPonies === totalPonies);
 
-            // Spawn Grass
+            // 1. 生成草 (比赛结束后)
             if (!isRaceOngoing && totalPonies > 0 && grass.length < 8 && Math.random() < 0.01) {
                 grass.push({
                     id: Math.random(),
@@ -506,67 +461,77 @@
                 });
             }
 
-            // Winner Logic
+            // 2. 更新每只小马
             let winnerFoundThisFrame = false;
             const existingWinner = ponies.some(p => p.hasCrown);
 
             ponies.forEach(p => {
-                // RESET TO ROAMING
+                // 如果所有马都跑完了，重置为散步
                 if (allFinishedTrigger && p.state === 'finished') {
                     p.state = 'roaming';
                     p.timer = 0;
                     p.targetX = null;
                     
-                    // Omni-directional Spawn
-                    const side = Math.floor(Math.random() * 4); 
+                    // 全方位随机出生
+                    const side = Math.floor(Math.random() * 4); // 0:Top, 1:Right, 2:Bottom, 3:Left
                     const SAFE_TOP = 35; 
                     const SAFE_H = SCREEN_HEIGHT - PONY_HEIGHT - 10 - SAFE_TOP;
                     
-                    if (side === 0) { p.x = 20 + Math.random() * 900; p.y = -50; } // Top
-                    else if (side === 1) { p.x = SCREEN_WIDTH + 10; p.y = SAFE_TOP + Math.random() * SAFE_H; } // Right
-                    else if (side === 2) { p.x = 20 + Math.random() * 900; p.y = SCREEN_HEIGHT + 10; } // Bottom
-                    else { p.x = -50; p.y = SAFE_TOP + Math.random() * SAFE_H; } // Left
+                    if (side === 0) { p.x = 20 + Math.random() * 900; p.y = -50; }
+                    else if (side === 1) { p.x = SCREEN_WIDTH + 10; p.y = SAFE_TOP + Math.random() * SAFE_H; }
+                    else if (side === 2) { p.x = 20 + Math.random() * 900; p.y = SCREEN_HEIGHT + 10; }
+                    else { p.x = -50; p.y = SAFE_TOP + Math.random() * SAFE_H; }
                 }
 
-                // STATE: RACING
+                // 状态机
                 if (p.state === 'racing') {
+                    // 速度波动 (0.5x - 2.0x)
                     let variance = 0.5 + Math.random() * 1.5;
                     p.x += p.speed * variance;
                     p.facing = 'right';
 
-                    // Finish Line (Off screen right)
+                    // 冲过屏幕右侧
                     if (p.x > SCREEN_WIDTH + 20) {
                         p.state = 'finished';
-                        // Award Crown
+                        // 判定冠军
                         if (!existingWinner && !winnerFoundThisFrame) {
                             p.hasCrown = true;
                             winnerFoundThisFrame = true;
                         }
                     }
                 } 
-                // STATE: FINISHED
                 else if (p.state === 'finished') {
-                    p.x += 0.1; 
+                    p.x += 0.1; // 保持稍微移动，不要完全静止
                 }
-                // STATE: ROAMING
                 else if (p.state === 'roaming') {
-                    // Check for grass
-                    let closest = null; 
+                    // 寻找最近的草
+                    let targetGrass = null;
                     let minDist = 150;
+                    
                     grass.forEach(g => {
-                        const d = Math.sqrt(Math.pow(g.x - p.x, 2) + Math.pow(g.y - p.y, 2));
-                        if(d < minDist) { minDist = d; closest = g; }
+                        const dx = g.x - p.x;
+                        const dy = g.y - p.y;
+                        const d = Math.sqrt(dx*dx + dy*dy);
+                        if (d < minDist) {
+                            minDist = d;
+                            targetGrass = g;
+                        }
                     });
 
-                    if (closest) {
+                    if (targetGrass) {
                         p.state = 'walking_to_food';
                     } else {
+                        // 随机游荡
                         handleRoamingMovement(p);
                     }
                 }
-                // STATE: WALKING TO FOOD
                 else if (p.state === 'walking_to_food') {
-                    // Re-find closest grass (it might be gone)
+                    // 重新确认草还在不在
+                    let g = grass.find(item => Math.abs(item.x - p.x) < 150 && Math.abs(item.y - p.y) < 150);
+                    // 简单逻辑：如果范围内有草，就向它走去（取第一个）
+                    // 为了更精确，这里简化为向最近的草走
+                    // 实际上上面已经探测过了，这里简单向最近草移动
+                    // 重新找一下最近的草
                     let closest = null; 
                     let d = 9999;
                     grass.forEach(item => {
@@ -584,7 +549,8 @@
                         if (dist < 5) {
                             p.state = 'eating';
                             p.timer = 100;
-                            grass = grass.filter(item => item !== closest); // Eat it
+                            // 吃掉草
+                            grass = grass.filter(item => item !== closest);
                         } else {
                             p.x += (dx/dist) * 1.0;
                             p.y += (dy/dist) * 1.0;
@@ -592,25 +558,25 @@
                         }
                     }
                 }
-                // STATE: EATING
                 else if (p.state === 'eating') {
                     if (p.timer > 0) p.timer--;
                     else p.state = 'roaming';
                 }
             });
 
-            // Cleanup (>10)
+            // 数量限制清理 (比赛结束后清理)
             if (!isRaceOngoing && ponies.length > 10) {
                 const winner = ponies.find(p => p.hasCrown);
                 const others = ponies.filter(p => !p.hasCrown);
                 const keepCount = winner ? 9 : 10;
+                // 保留最新的
                 const keptOthers = others.slice(-keepCount);
                 ponies = winner ? [...keptOthers, winner] : keptOthers;
             }
         }
 
         function handleRoamingMovement(p) {
-            // Bounds check
+            // 越界弹回
             if (p.x < -50 || p.x > SCREEN_WIDTH || p.y < -50 || p.y > SCREEN_HEIGHT) {
                 const dx = (SCREEN_WIDTH/2) - p.x;
                 const dy = (SCREEN_HEIGHT/2) - p.y;
@@ -624,11 +590,12 @@
             if (p.timer > 0) {
                 p.timer--;
             } else {
+                // 决策
                 if (Math.random() > 0.3) {
                     p.targetX = Math.random() * (SCREEN_WIDTH - 40);
                     p.timer = 60 + Math.random() * 100;
                 } else {
-                    p.state = 'eating';
+                    p.state = 'eating'; // 假装吃空气/休息
                     p.timer = 60;
                 }
             }
@@ -643,6 +610,7 @@
                 }
             }
 
+            // 垂直抖动
             if (Math.random() < 0.05) {
                 p.y += (Math.random() - 0.5) * 2;
                 if (p.y < 35) p.y = 35;
@@ -650,12 +618,12 @@
             }
         }
 
-        // --- RENDERER ---
+        // --- 渲染 ---
         function render() {
             const ponyLayer = document.getElementById('pony-layer');
             const grassLayer = document.getElementById('grass-layer');
             
-            // Render Grass
+            // 渲染草 (简单的 diff 优化: 如果数量没变，先假设 DOM 不用大动，但为了简单这里全重绘，草很少)
             grassLayer.innerHTML = '';
             grass.forEach(g => {
                 const el = document.createElement('div');
@@ -664,14 +632,19 @@
                 grassLayer.appendChild(el);
             });
 
-            // Render Ponies (Diff)
+            // 渲染小马
+            // 这是一个简单的 DOM Diff 实现，避免每帧都在innerHTML
+            // 查找现有节点，更新 transform。如果没有，创建。如果有多的，删除。
+            
             const existingNodes = Array.from(ponyLayer.children);
             const activeIds = new Set(ponies.map(p => p.id));
 
+            // 删除
             existingNodes.forEach(node => {
                 if (!activeIds.has(node.id)) node.remove();
             });
 
+            // 更新或创建
             ponies.forEach(p => {
                 let el = document.getElementById(p.id);
                 if (!el) {
@@ -679,24 +652,28 @@
                     ponyLayer.appendChild(el);
                 }
                 
+                // 更新位置
                 el.style.transform = `translate3d(${p.x}px, ${p.y}px, 0)`;
                 el.style.zIndex = Math.floor(p.y);
 
+                // 更新朝向
                 const pixelContainer = el.querySelector('.pixel-grid-container');
-                pixelContainer.style.transform = p.facing === 'left' ? 'scaleX(-1)' : 'scaleX(1)';
-
-                // Crown Logic
-                const crownEl = el.querySelector('.crown');
-                if (p.hasCrown) {
-                    crownEl.classList.remove('hidden');
+                if (p.facing === 'left') {
+                    pixelContainer.style.transform = 'scaleX(-1)';
                 } else {
-                    crownEl.classList.add('hidden');
+                    pixelContainer.style.transform = 'scaleX(1)';
                 }
 
+                // 皇冠显示
+                const crownEl = el.querySelector('.crown');
+                crownEl.style.display = p.hasCrown ? 'block' : 'none';
+
+                // 名字颜色
                 const nameEl = el.querySelector('.name-tag');
                 nameEl.style.color = p.hasCrown ? '#facc15' : p.color;
                 nameEl.style.opacity = p.hasCrown ? 1 : 0.8;
 
+                // 动画帧更新
                 updatePonyAnimation(p, el);
             });
         }
@@ -708,18 +685,23 @@
             div.style.width = PONY_WIDTH + 'px';
             div.style.height = PONY_HEIGHT + 'px';
 
+            // 皇冠
             const crown = document.createElement('div');
             crown.className = 'crown hidden';
             crown.innerText = '👑';
             div.appendChild(crown);
 
+            // 名字
             const name = document.createElement('div');
             name.className = 'name-tag vfd-glow';
             name.innerText = p.name;
             div.appendChild(name);
 
+            // 像素网格容器 (用于翻转)
             const gridContainer = document.createElement('div');
             gridContainer.className = 'pixel-grid-container';
+            
+            // 像素网格
             const grid = document.createElement('div');
             grid.className = 'pixel-grid';
             gridContainer.appendChild(grid);
@@ -730,6 +712,8 @@
 
         function updatePonyAnimation(p, el) {
             const gridEl = el.querySelector('.pixel-grid');
+            
+            // 简单的帧计数器挂载在对象上
             if (!p.frameTimer) p.frameTimer = 0;
             if (!p.currentFrame) p.currentFrame = 0;
 
@@ -737,7 +721,7 @@
             
             if (isMoving) {
                 p.frameTimer++;
-                if (p.frameTimer > 10) {
+                if (p.frameTimer > 10) { // 约 150ms
                     p.currentFrame = (p.currentFrame + 1) % 2;
                     p.frameTimer = 0;
                     renderPixels(gridEl, p);
@@ -748,26 +732,35 @@
                     renderPixels(gridEl, p);
                 }
             }
+            // 第一次渲染
             if (gridEl.children.length === 0) {
                 renderPixels(gridEl, p);
             }
         }
 
         function renderPixels(gridEl, p) {
+            // 生成走路帧 (自动计算 Frame 2)
             const frame1 = p.pixels;
-            // Auto-animate logic (8 rows)
+            // 简单的自动动画逻辑：身体下沉，腿移动
+            // Frame 2
             let frame2 = frame1.map((row, y) => {
-                if (y < 6) { 
+                if (y < 6) { // 身体部分，下沉
+                    // 取上一行，如果是第一行则空
                     return y > 0 ? frame1[y-1] : [0,0,0,0,0,0,0,0];
-                } else { 
+                } else { // 腿部分
+                    // 循环移位
                     let newRow = [...row];
+                    // 简单移位模拟走路
+                    const shift = 2;
                     for(let i=0; i<8; i++) {
                         newRow[i] = row[(i+3)%8];
                     }
                     return newRow;
                 }
             });
+            // 吃东西动画
             if (p.state === 'eating') {
+               // 只是 Frame 1 把头低下来
                frame2 = frame1.map((row, y) => {
                    if (y >= 1 && y <= 4) return frame1[y-1];
                    if (y===0) return [0,0,0,0,0,0,0,0];
@@ -788,35 +781,30 @@
             gridEl.innerHTML = html;
         }
 
-        // --- ACTIONS ---
+        // --- 交互逻辑 ---
         function createPony(name, pixels, color) {
             const id = 'p-' + Date.now() + '-' + Math.random();
             
-            // Limit 10 (keep newest)
+            // 限制数量：如果超过10，删掉最旧的（非冠军）
             if (ponies.length >= 10) {
-                // Keep winner + 9
                 const winnerIdx = ponies.findIndex(p => p.hasCrown);
-                if (winnerIdx !== -1) {
-                    const nonWinners = ponies.filter(p => !p.hasCrown);
-                    // Keep last 8 non-winners + winner
-                    const kept = nonWinners.slice(-8);
-                    ponies = [...kept, ponies[winnerIdx]];
-                } else {
-                    ponies = ponies.slice(-9);
-                }
+                // 简单处理：删掉第一个不是冠军的
+                const removeIdx = ponies.findIndex(p => !p.hasCrown);
+                if (removeIdx !== -1) ponies.splice(removeIdx, 1);
+                else ponies.shift(); // 全是冠军？不可能，但以防万一
             }
 
-            // RESET
+            // 重置现有小马到起点
             ponies.forEach(p => {
                 p.state = 'racing';
                 p.x = 20;
                 p.y = 20 + Math.random() * (SCREEN_HEIGHT - PONY_HEIGHT - 40);
-                p.speed = 1.5 + Math.random() * 2.0; 
+                p.speed = 1.5 + Math.random() * 2.0; // 1.5 - 3.5
                 p.hasCrown = false;
                 p.targetX = null;
             });
 
-            // ADD NEW
+            // 添加新小马
             const newPony = {
                 id,
                 name: name || getRandomName(),
@@ -831,21 +819,25 @@
                 timer: 0
             };
             ponies.push(newPony);
-            grass = []; // Clear grass for race
+            
+            // 清除草
+            grass = [];
         }
 
         function savePony() {
             const name = document.getElementById('editor-name').value;
+            // 这里的 editorGrid 已经是 8x8 数组
             createPony(name, editorGrid, selectedColor);
             closeEditor();
         }
 
-        // --- UI UTILS ---
+        // --- 辅助功能 ---
         function getRandomName() {
             const names = ["PIXEL", "VFD", "GLOW", "NEON", "BIT", "BYTE", "ECHO", "FLUX", "SYNC", "WAVE", "DATA", "ZAP"];
             return names[Math.floor(Math.random() * names.length)];
         }
 
+        // --- 编辑器 UI 逻辑 ---
         function openEditor() {
             document.getElementById('modal-editor').classList.remove('hidden');
         }
@@ -870,6 +862,7 @@
                     selectedColor = c;
                     document.querySelectorAll('.color-dot').forEach(el => el.classList.remove('selected'));
                     div.classList.add('selected');
+                    // 重新渲染格子以应用新颜色
                     if (containerId === 'desktop-color-picker') renderEditorGrid('desktop-editor-grid');
                     else renderEditorGrid('mobile-editor-grid');
                 };
@@ -884,6 +877,7 @@
         function renderEditorGrid(containerId) {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
+            // 假设 editorGrid 是 8x8
             editorGrid.forEach((row, r) => {
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'editor-row';
@@ -895,8 +889,11 @@
                         cell.style.backgroundColor = selectedColor;
                         cell.style.boxShadow = `0 0 4px ${selectedColor}`;
                     }
+                    // 简单点击切换
                     cell.onmousedown = () => togglePixel(r, c, containerId);
+                    // 拖拽支持 (简单版)
                     cell.onmouseenter = (e) => { if(e.buttons === 1) togglePixel(r, c, containerId, true); }
+                    
                     rowDiv.appendChild(cell);
                 });
                 container.appendChild(rowDiv);
@@ -904,6 +901,7 @@
         }
 
         function togglePixel(r, c, containerId, isDrag) {
+            // 如果是拖拽，只设为1（画笔模式），或者根据第一次点击决定？简单起见：翻转
             if (isDrag) {
                 editorGrid[r][c] = 1;
             } else {
@@ -912,9 +910,32 @@
             renderEditorGrid(containerId);
         }
 
-        // --- MOBILE ---
+        // --- 二维码逻辑 ---
+        function openQR() {
+            if (!peerId) return;
+            const url = `${window.location.protocol}//${window.location.host}${window.location.pathname}?connectTo=${peerId}`;
+            
+            document.getElementById('qrcode').innerHTML = '';
+            new QRCode(document.getElementById('qrcode'), {
+                text: url,
+                width: 200,
+                height: 200,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+            
+            document.getElementById('modal-qr').classList.remove('hidden');
+        }
+        function closeQR() {
+            document.getElementById('modal-qr').classList.add('hidden');
+        }
+
+        // --- 移动端逻辑 ---
         function initMobile(hostId) {
             buildColorPicker('mobile-color-picker');
+            
+            // 移动端也需要一个网格容器
             const container = document.getElementById('mobile-editor-container');
             container.innerHTML = '<div id="mobile-editor-grid" class="editor-grid"></div>';
             renderEditorGrid('mobile-editor-grid');
@@ -944,7 +965,9 @@
             alert("Sent!");
         }
 
+        // 启动
         init();
+
     </script>
 </body>
 </html>
