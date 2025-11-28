@@ -3,534 +3,255 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN</title>
+    <title>HORSE RUNRUN 1:35</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --color-bg: #111;
-            --color-primary: #40e0d0; /* Turquoise */
-            --color-panel: #004d40;
-            --color-border: #00695c;
-            --color-border-dark: #00251a;
-            --scale: 4px;
+            --bg: #000;
+            --primary: #40e0d0;
+            --panel: #004d40;
+            --border: #00695c;
+            
+            /* 核心修改：1:35 比例 */
+            /* 高度 64px, 宽度 2240px */
+            --game-w: 2240px; 
+            --game-h: 64px;
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         
         body {
-            margin: 0;
-            padding: 0;
-            background-color: var(--color-bg);
+            margin: 0; padding: 0;
+            background-color: #111; 
             font-family: 'VT323', monospace;
-            color: var(--color-primary);
+            color: var(--primary);
+            height: 100vh; width: 100vw;
             overflow: hidden;
-            height: 100vh;
-            width: 100vw;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+
+        /* === 桌面布局 (上下结构) === */
+        #desktop-view {
             display: flex;
-            flex-direction: column;
+            flex-direction: column; /* 垂直排列 */
+            width: 100%; height: 100%;
             align-items: center;
             justify-content: center;
+            gap: 40px; /* 跑道和下方区域的间距 */
         }
 
-        /* 通用样式类 */
-        .hidden { display: none !important; }
-        .vfd-glow { text-shadow: 0 0 5px rgba(64, 224, 208, 0.6), 0 0 10px rgba(64, 224, 208, 0.4); }
-        
-        .btn {
-            background: #00251a;
-            border: 2px solid var(--color-primary);
-            color: var(--color-primary);
-            padding: 10px 30px;
-            font-family: 'VT323', monospace;
-            font-size: 1.4rem;
-            cursor: pointer;
-            text-transform: uppercase;
-            box-shadow: 0 0 15px rgba(64, 224, 208, 0.2);
-            transition: all 0.2s;
-            margin-top: 20px;
-            touch-action: manipulation;
-        }
-        .btn:hover { background: var(--color-primary); color: #00251a; }
-        .btn:active { transform: translateY(2px); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .btn-outline {
-            background: transparent;
-            border: 2px solid var(--color-border);
-            color: var(--color-primary);
-            opacity: 0.8;
-        }
-
-        /* 背景网格 */
-        .bg-grid {
-            position: absolute;
-            inset: 0;
-            opacity: 0.1;
-            pointer-events: none;
-            background-image: linear-gradient(var(--color-border) 1px, transparent 1px), 
-                              linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
-            background-size: 40px 40px;
-            z-index: -1;
-        }
-
-        /* --- 布局容器 --- */
-        #main-layout {
+        /* --- 上半部分：跑道视口 --- */
+        #game-scaler {
+            width: 95vw; /* 视口占宽 95% */
+            height: 100px; /* 视觉高度，留出一点空间给皇冠 */
             display: flex;
-            align-items: flex-start;
             justify-content: center;
-            gap: 20px;
-            transform-origin: center;
-            transform: scale(1);
-        }
-
-        /* --- 主屏幕区域 (左侧) --- */
-        #game-section {
-            display: flex;
-            flex-direction: column;
             align-items: center;
+            /* 允许皇冠超出框框显示 */
+            overflow: visible; 
         }
 
-        .screen-frame {
-            width: 900px; 
-            height: 120px;
-            background: var(--color-panel);
-            border-top: 1px solid var(--color-border);
-            border-left: 1px solid var(--color-border);
-            border-right: 4px solid var(--color-border-dark);
-            border-bottom: 4px solid var(--color-border-dark);
-            position: relative;
-            border-radius: 4px;
-            box-shadow: 0 0 50px rgba(64, 224, 208, 0.1);
-        }
-
-        .screen-glass {
-            position: absolute;
-            inset: 2px;
+        #game-screen {
+            /* 强制逻辑分辨率 2240x64 */
+            width: var(--game-w);
+            height: var(--game-h);
             background: #000;
-            border: 1px solid #222;
-            overflow: hidden;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+            position: relative;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 30px rgba(64, 224, 208, 0.2);
+            overflow: visible; /* 允许皇冠冒头 */
+            transform-origin: center center;
         }
 
-        .screen-grid {
-            position: absolute;
-            inset: 0;
-            opacity: 0.1;
-            background-image: radial-gradient(var(--color-primary) 1px, transparent 1px);
-            background-size: 4px 4px;
+        /* 跑道内部元素 */
+        .grid-bg {
+            position: absolute; inset: 0; opacity: 0.2;
+            background-image: linear-gradient(rgba(64, 224, 208, 0.3) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(64, 224, 208, 0.3) 1px, transparent 1px);
+            background-size: 32px 32px;
+            pointer-events: none;
         }
-
-        /* 装饰螺丝 */
-        .screw {
-            position: absolute;
-            width: 6px;
-            height: 6px;
-            background: #1a1c20;
-            border: 1px solid var(--color-border);
-            border-radius: 50%;
-        }
-        .tl { top: 2px; left: 2px; } .tr { top: 2px; right: 2px; }
-        .bl { bottom: 2px; left: 2px; } .br { bottom: 2px; right: 2px; }
-
-        /* 起跑线 */
-        .start-line {
-            position: absolute;
-            top: 0; bottom: 0; left: 12px;
-            width: 1px;
-            border-left: 2px dashed rgba(64, 224, 208, 0.3);
-        }
-
-        /* 终点线 */
         .finish-line {
-            position: absolute;
-            top: 0; bottom: 0; right: 100px; 
-            width: 4px;
+            position: absolute; top: 0; bottom: 0; 
+            right: 200px; /* 终点线位置 */
+            width: 8px;
             background-image: linear-gradient(45deg, #40e0d0 25%, transparent 25%, transparent 50%, #40e0d0 50%, #40e0d0 75%, transparent 75%, transparent);
-            background-size: 10px 10px;
-            opacity: 0.5;
-            z-index: 0;
+            background-size: 8px 8px; opacity: 0.8; z-index: 0;
         }
-
-        /* HUD */
         .hud {
-            position: absolute;
-            bottom: 4px; right: 8px;
-            font-size: 10px;
-            opacity: 0.4;
-            letter-spacing: 2px;
+            position: absolute; bottom: 2px; right: 10px;
+            font-size: 20px; opacity: 0.5; letter-spacing: 2px;
         }
 
-        /* --- 二维码区域 (右侧) --- */
-        #qr-section {
-            height: 120px;
+        /* --- 下半部分：控制区域 (二维码 + 按钮) --- */
+        #bottom-controls {
             display: flex;
-            flex-direction: row; 
+            flex-direction: row;
             align-items: center;
-            justify-content: space-between;
-            gap: 15px;
-            border: 2px solid var(--color-border);
-            background: rgba(0, 37, 26, 0.8);
-            padding: 10px 20px;
-            border-radius: 4px;
-            box-shadow: 0 0 20px rgba(64, 224, 208, 0.1);
+            gap: 60px;
+            padding: 20px;
+            background: rgba(0, 20, 0, 0.5);
+            border-radius: 16px;
+            border: 1px solid var(--color-border);
         }
 
-        .qr-text-group {
+        /* 二维码卡片 */
+        #qr-card {
             display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            justify-content: center;
-            min-width: 80px;
+            flex-direction: row;
+            align-items: center;
+            gap: 20px;
         }
-
         #qrcode {
             background: white;
             padding: 5px;
-            width: 90px;
-            height: 90px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-shrink: 0; 
-            border-radius: 2px;
-        }
-        
-        #qrcode img {
-            width: 100% !important;
-            height: 100% !important;
-            display: block;
-        }
-
-        .qr-text {
-            font-size: 1.2rem;
-            color: var(--color-primary);
-            line-height: 1.1;
-            letter-spacing: 1px;
-            margin-bottom: 4px;
-        }
-
-        .qr-sub-text {
-            font-size: 0.8rem;
-            color: var(--color-primary);
-            opacity: 0.6;
-            letter-spacing: 1px;
-        }
-
-        /* --- 实体 (小马/草/特效) --- */
-        .entity {
-            position: absolute;
-            will-change: transform;
-        }
-
-        .pixel-grid {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            width: 32px; /* 8 cols * 4px scale */
-            height: 32px;
-        }
-        
-        .pixel {
-            width: 4px;
-            height: 4px;
-        }
-
-        /* SVG 皇冠容器 */
-        .crown-container {
-            position: absolute;
-            top: -45px; 
-            left: 50%;
-            transform: translateX(-50%);
-            width: 24px;
-            height: 24px;
-            animation: bounce 1s infinite;
-            z-index: 10;
-            display: flex;
-            flex-direction: column-reverse; 
-            align-items: center;
-        }
-        
-        .crown-icon {
-            margin-bottom: -14px; 
-            filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
-        }
-
-        /* 连胜爆气光环 */
-        .aura {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 140%; height: 140%;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(250,204,21,0.3) 0%, transparent 70%);
-            box-shadow: 0 0 15px #facc15;
-            z-index: -1;
-            animation: pulse-aura 0.8s infinite alternate;
-            display: none; 
-        }
-        @keyframes pulse-aura {
-            from { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
-            to { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-        }
-
-        .name-tag {
-            position: absolute;
-            top: -16px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 10px;
-            white-space: nowrap;
-            opacity: 0.8;
-            text-shadow: 1px 1px 0 #000;
-        }
-
-        .grass {
-            position: absolute;
-            width: 4px;
-            height: 4px;
-            background-color: #69f0ae;
-            box-shadow: 0 0 4px #69f0ae;
-        }
-        
-        /* 爆炸粒子 */
-        .explosion-particle {
-            position: absolute;
-            width: 4px;
-            height: 4px;
-            background-color: #ff5252;
-            box-shadow: 0 0 4px #ff5252;
-            pointer-events: none;
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: translate(-50%, 0); }
-            50% { transform: translate(-50%, -4px); }
-        }
-
-        /* --- 模态框 --- */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(4px);
-            z-index: 100;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background: #1a1c20;
-            border: 2px solid var(--color-primary);
-            padding: 24px;
-            border-radius: 8px;
-            box-shadow: 0 0 30px rgba(64, 224, 208, 0.3);
-            text-align: center;
-            max-width: 90%;
-        }
-
-        /* 绘图编辑器 */
-        .editor-grid {
-            display: grid;
-            grid-template-rows: repeat(8, 1fr);
-            gap: 1px;
-            background: #222;
-            padding: 4px;
-            border: 1px solid var(--color-border);
-            margin: 0 auto;
-            width: fit-content;
-            touch-action: none;
-            -webkit-user-select: none;
-        }
-        .editor-row { display: flex; gap: 1px; }
-        .editor-cell {
-            width: 40px; 
-            height: 40px;
-            background: #001a15;
-            border: 1px solid #333;
-            cursor: pointer;
-        }
-        .editor-cell.active {
-            opacity: 1;
-            box-shadow: 0 0 4px currentColor;
-        }
-
-        .color-picker {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 10px;
-        }
-        .color-dot {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid transparent;
-        }
-        .color-dot.selected { border-color: white; transform: scale(1.2); }
-
-        /* 移动端视图布局调整 */
-        #mobile-view {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            background: #000;
-            padding: 20px;
-            overflow: hidden;
-        }
-
-        .mobile-header {
-            display: flex; 
-            justify-content: space-between; 
-            border-bottom: 1px solid var(--color-border); 
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-
-        /* 输入框 */
-        input[type="text"] {
-            background: #00251a;
-            border: 1px solid var(--color-border);
-            color: var(--color-primary);
-            padding: 10px;
-            font-family: inherit;
-            text-align: center;
-            font-size: 1.4rem;
-            width: 100%;
-            margin-bottom: 15px;
+            width: 120px; height: 120px;
+            display: flex; justify-content: center; align-items: center;
             border-radius: 4px;
         }
-        input:focus { outline: none; border-color: var(--color-primary); }
+        #qrcode img { display: block; width: 100%; height: 100%; }
+        .qr-info h2 { margin: 0; font-size: 1.8rem; color: #fff; }
+        .qr-info p { margin: 5px 0 0 0; font-size: 1rem; color: var(--primary); opacity: 0.8; }
 
-        .mobile-controls-top {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 10px;
+        /* 按钮 */
+        .btn {
+            background: #00251a; border: 2px solid var(--primary); color: var(--primary);
+            padding: 15px 40px; font-family: 'VT323', monospace; font-size: 1.5rem;
+            cursor: pointer; text-transform: uppercase; box-shadow: 0 0 15px rgba(64, 224, 208, 0.2);
+            transition: all 0.2s; height: 60px; display: flex; align-items: center;
         }
+        .btn:hover { background: var(--primary); color: #000; }
+        .btn:active { transform: translateY(2px); }
 
-        .mobile-canvas-area {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 20px;
-        }
 
-        .mobile-controls-bottom {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 20px;
+        /* --- 实体 (小马) --- */
+        .entity { position: absolute; will-change: transform; }
+        /* 32px 像素格 (8x4px) */
+        .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 32px; height: 32px; }
+        .pixel { width: 4px; height: 4px; }
+
+        /* 皇冠 (SVG) */
+        .crown-container {
+            position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
+            width: 24px; height: 24px; animation: bounce 1s infinite; z-index: 10;
         }
+        /* 爆气 */
+        .aura {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 150%; height: 150%; border-radius: 50%;
+            background: radial-gradient(circle, rgba(250,204,21,0.4) 0%, transparent 70%);
+            box-shadow: 0 0 10px #facc15; z-index: -1;
+            animation: pulse 0.5s infinite alternate; display: none;
+        }
+        @keyframes pulse { from { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.2); } }
+        
+        .name-tag {
+            position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+            font-size: 14px; white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000; font-weight: bold;
+        }
+        .grass { position: absolute; width: 4px; height: 4px; background: #69f0ae; box-shadow: 0 0 4px #69f0ae; }
+        .explosion { position: absolute; width: 4px; height: 4px; background: #ff5252; pointer-events: none; }
+        @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
+
+        /* --- 移动端样式 (保持完美修复版) --- */
+        #mobile-view {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #111; display: flex; flex-direction: column; z-index: 20000;
+            padding: 20px;
+        }
+        .m-header { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+        .m-status { background: #004d40; padding: 4px 8px; border-radius: 4px; font-size: 1rem; color: #40e0d0; }
+        
+        .m-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; }
+        input[type="text"] {
+            background: #222; border: 1px solid #444; color: white; padding: 12px;
+            font-family: inherit; text-align: center; font-size: 1.5rem; width: 100%; border-radius: 4px;
+        }
+        
+        .m-canvas-container {
+            flex: 1; display: flex; justify-content: center; align-items: center;
+            background: #1a1a1a; border-radius: 8px; margin-bottom: 20px;
+            overflow: hidden; 
+        }
+        
+        /* 8x8 网格 */
+        .editor-grid { 
+            display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr);
+            gap: 2px; background: #333; border: 2px solid #555; touch-action: none; 
+        }
+        .editor-cell { width: 38px; height: 38px; background: #000; }
+        
+        .color-picker { display: flex; justify-content: center; gap: 12px; }
+        .c-dot { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #333; }
+        .c-dot.active { border-color: white; transform: scale(1.2); }
+        
+        .m-footer { display: flex; gap: 15px; height: 60px; }
+        .btn-outline { background: transparent; border: 2px solid #ff5252; color: #ff5252; width: 100px; }
 
     </style>
 </head>
 <body>
 
-    <div class="bg-grid"></div>
-
     <div id="desktop-view">
-        <div id="main-layout">
-            
-            <div id="game-section">
-                <div id="game-container">
-                    <div class="screen-frame">
-                        <div class="screw tl"></div><div class="screw tr"></div>
-                        <div class="screw bl"></div><div class="screw br"></div>
-                        
-                        <div class="screen-glass" id="screen-glass">
-                            <div class="screen-grid"></div>
-                            <div class="start-line"></div>
-                            <div class="finish-line"></div>
-                            <div class="hud">MODE:RACE // STATUS:LIVE</div>
-                            
-                            <div id="grass-layer"></div>
-                            <div id="pony-layer"></div>
-                            <div id="fx-layer"></div> </div>
-                    </div>
-                </div>
+        <div id="game-scaler">
+            <div id="game-screen">
+                <div class="grid-bg"></div>
+                <div class="finish-line"></div>
+                <div class="hud">MODE:RACE // RATIO:1:35 // STATUS:LIVE</div>
                 
-                <button class="btn" style="margin-top:20px;" onclick="openEditor()">+ NEW RUNNER</button>
+                <div id="layer-grass"></div>
+                <div id="layer-pony"></div>
+                <div id="layer-fx"></div>
             </div>
+        </div>
 
-            <div id="qr-section">
-                <div class="qr-text-group">
-                    <div class="qr-text">SCAN<br>TO JOIN</div>
-                    <div class="qr-sub-text">MOBILE</div>
-                </div>
+        <div id="bottom-controls">
+            <div id="qr-card">
                 <div id="qrcode"></div>
-            </div>
-
-        </div>
-    </div>
-
-    <div id="mobile-view" class="hidden">
-        
-        <div class="mobile-header">
-            <span style="font-size: 1.2rem;" class="vfd-glow">REMOTE LINK</span>
-            <span id="mobile-status" style="background: #004d40; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">CONNECTING</span>
-        </div>
-
-        <div class="mobile-controls-top">
-            <input type="text" id="mobile-name-input" placeholder="ENTER NAME" maxlength="8">
-            <div class="color-picker" id="mobile-color-picker"></div>
-        </div>
-        
-        <div class="mobile-canvas-area">
-            <div id="mobile-editor-container"></div>
-        </div>
-
-        <div class="mobile-controls-bottom">
-            <button class="btn btn-outline" style="border-color: #ff5252; color: #ff5252;" onclick="clearMobileEditor()">CLEAR</button>
-            <button class="btn" style="flex: 1;" onclick="sendPonyFromMobile()">CAST TO SCREEN</button>
-        </div>
-    </div>
-
-    <div id="modal-editor" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h2 class="vfd-glow" style="margin-top: 0;">// ENTITY DESIGNER</h2>
-            <input type="text" id="editor-name" placeholder="NAME" maxlength="8" value="CUSTOM">
-            
-            <div class="color-picker" id="desktop-color-picker"></div>
-            
-            <div id="desktop-editor-grid" class="editor-grid"></div>
-            
-            <div style="display: flex; justify-content: space-between; margin-top: 20px;">
-                <button class="btn" style="border-color: #ff5252; color: #ff5252;" onclick="clearEditor()">CLEAR</button>
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn" style="border-color: transparent;" onclick="closeEditor()">CANCEL</button>
-                    <button class="btn" onclick="savePony()">CREATE</button>
+                <div class="qr-info">
+                    <h2>SCAN TO JOIN</h2>
+                    <p>MOBILE CONTROLLER</p>
                 </div>
             </div>
+
+            <button class="btn" id="add-pony-btn">+ ADD PONY</button>
+        </div>
+    </div>
+
+    <div id="mobile-view" style="display: none;">
+        <div class="m-header">
+            <span style="font-size: 1.5rem; color:white;">DRAW PONY</span>
+            <span id="m-status" class="m-status">Wait...</span>
+        </div>
+        <div class="m-controls">
+            <input type="text" id="m-name" placeholder="ENTER NAME" maxlength="8">
+            <div class="color-picker" id="m-colors"></div>
+        </div>
+        <div class="m-canvas-container">
+            <div id="m-grid" class="editor-grid"></div>
+        </div>
+        <div class="m-footer">
+            <button class="btn btn-outline" id="m-clear-btn">CLEAR</button>
+            <button class="btn" style="flex:1" id="m-send-btn">CAST TO SCREEN</button>
         </div>
     </div>
 
     <script>
-        // --- 常量与配置 ---
-        const SCREEN_WIDTH = 900; 
-        const SCREEN_HEIGHT = 120;
-        const PONY_SCALE = 4;
-        const PONY_WIDTH = 8 * PONY_SCALE; 
-        const PONY_HEIGHT = 8 * PONY_SCALE;
-        const FINISH_LINE_X = 800;
+        // === 配置 ===
+        const TARGET_W = 2240; // 1:35 (64 * 35)
+        const TARGET_H = 64;
         
-        const COLORS = {
-            TURQUOISE: '#40e0d0',
-            AMBER: '#ffb300',
-            RED: '#ff5252',
-            GREEN: '#69f0ae',
-            PURPLE: '#e040fb',
-            WHITE: '#ffffff',
-            GOLD: '#facc15' 
-        };
-
-        const DEFAULT_FRAME_1 = [
+        const SCREEN_WIDTH = TARGET_W; 
+        const FINISH_X = SCREEN_WIDTH - 200; 
+        const PONY_SIZE = 32; // 保持 32px 的马，在 64px 高度里正好占一半
+        
+        const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#fff' };
+        
+        const DEFAULT_PIXELS = [
             [0,0,0,0,0,0,1,0],
             [0,0,0,0,0,1,1,1],
             [0,0,0,0,0,1,1,0],
@@ -541,674 +262,338 @@
             [0,1,0,0,0,1,0,0]
         ];
 
-        // 状态管理
-        let ponies = []; 
-        let grass = [];  
-        let peerId = null;
+        let ponies = [];
+        let grass = [];
         let peer = null;
-        let conn = null; 
-        
-        let editorGrid = JSON.parse(JSON.stringify(DEFAULT_FRAME_1)); 
-        let mobileEditorGrid = JSON.parse(JSON.stringify(DEFAULT_FRAME_1));
-        let selectedColor = COLORS.TURQUOISE;
+        let conn = null;
+        let mobileEditorGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
+        let selectedColor = COLORS.CYAN;
 
-        function init() {
-            const params = new URLSearchParams(window.location.search);
-            const connectTo = params.get('connectTo');
+        // === 初始化 ===
+        window.onload = function() {
+            // 启动游戏
+            requestAnimationFrame(gameLoop);
+            
+            // 适配屏幕
+            window.addEventListener('resize', fitScreen);
+            fitScreen();
 
-            if (connectTo) {
-                document.getElementById('desktop-view').classList.add('hidden');
-                document.getElementById('mobile-view').classList.remove('hidden');
-                initMobile(connectTo);
+            // 绑定按钮
+            document.getElementById('add-pony-btn').addEventListener('click', () => spawnPony('PC', null, COLORS.CYAN));
+            document.getElementById('m-clear-btn').addEventListener('click', clearMobile);
+            document.getElementById('m-send-btn').addEventListener('click', sendMobile);
+
+            // 判断设备
+            const isMobile = new URLSearchParams(window.location.search).has('host');
+            if(isMobile) {
+                document.getElementById('desktop-view').style.display = 'none';
+                document.getElementById('mobile-view').style.display = 'flex';
+                initMobile();
             } else {
                 initDesktop();
             }
+        };
+
+        function fitScreen() {
+            const el = document.getElementById('game-screen');
+            const availableW = window.innerWidth * 0.95; // 留边距
+            // 自动计算缩放：保证宽度完整显示
+            const scale = Math.min(availableW / TARGET_W, 1);
+            el.style.transform = `scale(${scale})`;
         }
 
         function initDesktop() {
-            initPeerHost();
-            buildColorPicker('desktop-color-picker');
-            buildEditorGrid('desktop-editor-grid', editorGrid); 
-            requestAnimationFrame(gameLoop);
+            try {
+                peer = new Peer();
+                peer.on('open', id => {
+                    const url = `${location.href}?host=${id}`;
+                    new QRCode(document.getElementById("qrcode"), {
+                        text: url, width: 120, height: 120,
+                        colorDark : "#000000", colorLight : "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.L
+                    });
+                });
+                peer.on('connection', c => {
+                    c.on('data', data => spawnPony(data.name, data.pixels, data.color));
+                });
+            } catch(e) { console.error(e); }
         }
 
-        function initPeerHost() {
-            peer = new Peer();
-            peer.on('open', (id) => {
-                peerId = id;
-                generateFixedQR();
+        function spawnPony(name, pixels, color) {
+            const id = Math.random().toString(36).substr(2, 9);
+            // 重置
+            ponies.forEach(p => { p.x = 20; p.state = 'racing'; p.finishedWalking = false; });
+            
+            // 安全 Y (0~32)
+            const safeY = 5 + Math.random() * (TARGET_H - PONY_SIZE - 5);
+
+            ponies.push({
+                id, name: name || 'PONY',
+                pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_PIXELS)),
+                color: color || COLORS.CYAN,
+                x: 20, y: safeY, 
+                speed: 3.5 + Math.random() * 3, // 跑道变长，速度加快
+                state: 'racing',
+                hasCrown: false, isStreak: false,
+                timer: 0, frame: 0
             });
-            peer.on('connection', (c) => {
-                c.on('data', (data) => {
-                    createPony(data.name, data.pixels, data.color);
-                });
-            });
+            grass = []; 
         }
 
         function gameLoop() {
-            updatePhysics();
-            render();
+            update();
+            draw();
             requestAnimationFrame(gameLoop);
         }
 
-        function updatePhysics() {
-            const totalPonies = ponies.length;
-            const finishedPonies = ponies.filter(p => p.state === 'finished').length;
-            const isRaceOngoing = ponies.some(p => p.state === 'racing');
+        function update() {
+            const active = ponies.filter(p => p.state === 'racing');
+            const finished = ponies.filter(p => p.state === 'finished');
             
-            let raceOverTrigger = false;
-            
-            if (totalPonies <= 10) {
-                if (totalPonies > 0 && finishedPonies === totalPonies) raceOverTrigger = true;
-            } else {
-                if (finishedPonies >= 10) raceOverTrigger = true;
-            }
+            let raceOver = false;
+            if (ponies.length > 10) { if (finished.length >= 10) raceOver = true; }
+            else { if (ponies.length > 0 && finished.length === ponies.length) raceOver = true; }
 
-            // 1. 比赛结束处理逻辑
-            if (raceOverTrigger) {
-                if (totalPonies > 10) {
+            if (raceOver) {
+                if (ponies.length > 10) {
                     const losers = ponies.filter(p => p.state === 'racing');
-                    losers.forEach(loser => {
-                        explodePony(loser);
-                    });
+                    losers.forEach(p => explode(p));
                     ponies = ponies.filter(p => p.state === 'finished');
                 }
-
-                ponies.forEach(p => {
-                    if (p.state === 'finished') {
-                        p.state = 'roaming';
-                        p.timer = 0;
-                        p.targetX = null;
-                    }
-                });
+                ponies.forEach(p => { if(p.state === 'finished') { p.state = 'roaming'; p.timer = 0; }});
             }
 
-            // 草生成
-            if (!isRaceOngoing && ponies.length > 0 && ponies.every(p=>p.state !== 'racing') && grass.length < 8 && Math.random() < 0.01) {
-                grass.push({
-                    id: Math.random(),
-                    x: 100 + Math.random() * (SCREEN_WIDTH - 200),
-                    y: 40 + Math.random() * (SCREEN_HEIGHT - 60)
-                });
+            if (active.length === 0 && Math.random() < 0.05 && grass.length < 20) {
+                grass.push({ x: Math.random() * SCREEN_WIDTH, y: 5 + Math.random() * (TARGET_H - 10) });
             }
 
-            let winnerFoundThisFrame = false;
-            
+            let winnerFound = false;
             ponies.forEach(p => {
-                // 2. 比赛逻辑
+                p.frame++;
                 if (p.state === 'racing') {
-                    let variance = 0.5 + Math.random() * 1.5;
-                    p.x += p.speed * variance;
-                    p.facing = 'right';
-
-                    // 冲过终点线
-                    if (p.x > FINISH_LINE_X) {
+                    p.x += p.speed * (0.9 + Math.random() * 0.2); 
+                    if (p.x >= FINISH_X) {
                         p.state = 'finished';
-                        
-                        // 判定冠军：这一轮还没有人到达终点
-                        if (finishedPonies === 0 && !winnerFoundThisFrame) {
-                            winnerFoundThisFrame = true;
-                            // 【连胜逻辑】
-                            if (p.hasCrown) {
-                                p.isStreak = true; // 爆气
-                            } else {
-                                p.hasCrown = true;
-                                p.isStreak = false;
-                            }
-                            
-                            // 其他所有马重置状态
-                            ponies.forEach(other => {
-                                if (other.id !== p.id) {
-                                    other.hasCrown = false;
-                                    other.isStreak = false;
-                                    other.crownCount = 0; // 确保重置
-                                }
-                            });
-                            
-                            // 确保当前马有 crownCount 属性
-                            if (!p.crownCount) p.crownCount = 0;
-                            p.crownCount++;
+                        if (finished.length === 0 && !winnerFound) {
+                            winnerFound = true;
+                            if (p.hasCrown) p.isStreak = true;
+                            else { p.hasCrown = true; p.isStreak = false; }
+                            ponies.forEach(o => { if(o !== p) { o.hasCrown = false; o.isStreak = false; }});
                         }
                     }
-                } 
-                // 3. 终点等待逻辑
+                }
                 else if (p.state === 'finished') {
-                    if (p.x < SCREEN_WIDTH - PONY_WIDTH - 5) {
-                        p.x += 0.5; 
-                        p.isWalkingAtFinish = true; 
-                    } else {
-                        p.isWalkingAtFinish = false;
-                    }
+                    if (p.x < SCREEN_WIDTH - 50) { p.x += 0.8; p.finishedWalking = true; }
+                    else p.finishedWalking = false;
                 }
-                // 4. 散步逻辑
-                else if (p.state === 'roaming') {
-                    p.isWalkingAtFinish = false;
-                    let targetGrass = null;
-                    let minDist = 200;
-                    grass.forEach(g => {
-                        const dx = g.x - p.x;
-                        const dy = g.y - p.y;
-                        const d = Math.sqrt(dx*dx + dy*dy);
-                        if (d < minDist) {
-                            minDist = d;
-                            targetGrass = g;
-                        }
-                    });
-
-                    if (targetGrass) {
-                        p.state = 'walking_to_food';
-                    } else {
-                        handleRoamingMovement(p);
-                    }
-                }
-                else if (p.state === 'walking_to_food') {
-                    let closest = null; 
-                    let d = 9999;
-                    grass.forEach(item => {
-                        let dist = Math.sqrt(Math.pow(item.x - p.x, 2) + Math.pow(item.y - p.y, 2));
-                        if(dist < d) { d = dist; closest = item; }
-                    });
-
-                    if (!closest) {
-                        p.state = 'roaming';
-                    } else {
-                        const dx = closest.x - p.x;
-                        const dy = closest.y - p.y;
-                        const dist = Math.sqrt(dx*dx + dy*dy);
-                        if (dist < 5) {
-                            p.state = 'eating';
-                            p.timer = 100;
-                            grass = grass.filter(item => item !== closest);
-                        } else {
-                            p.x += (dx/dist) * 1.0;
-                            p.y += (dy/dist) * 1.0;
-                            p.facing = dx > 0 ? 'right' : 'left';
-                        }
-                    }
-                }
-                else if (p.state === 'eating') {
-                    if (p.timer > 0) p.timer--;
-                    else p.state = 'roaming';
+                else if (p.state === 'roaming' || p.state === 'eating') {
+                    p.finishedWalking = false;
+                    aiBehavior(p);
                 }
             });
         }
 
-        function handleRoamingMovement(p) {
-            // 散步范围限制
-            if (p.x < 10 || p.x > SCREEN_WIDTH - 40 || p.y < 5 || p.y > SCREEN_HEIGHT - 40) {
-                const dx = (SCREEN_WIDTH/2) - p.x;
-                const dy = (SCREEN_HEIGHT/2) - p.y;
-                const len = Math.sqrt(dx*dx + dy*dy);
-                p.x += (dx/len) * 1.5;
-                p.y += (dy/len) * 1.5;
-                p.facing = dx > 0 ? 'right' : 'left';
-                return;
-            }
-
-            if (p.timer > 0) {
-                p.timer--;
-            } else {
-                if (Math.random() > 0.3) {
-                    p.targetX = Math.random() * SCREEN_WIDTH; 
-                    p.timer = 60 + Math.random() * 100;
-                } else {
-                    p.state = 'eating';
-                    p.timer = 60;
-                }
-            }
-
-            if (p.targetX !== undefined && p.targetX !== null) {
-                const dist = p.targetX - p.x;
-                if (Math.abs(dist) > 2) {
-                    p.x += Math.sign(dist) * 0.5;
-                    p.facing = dist > 0 ? 'right' : 'left';
-                } else {
-                    p.targetX = null;
-                }
-            }
-
-            if (Math.random() < 0.05) {
-                p.y += (Math.random() - 0.5) * 2;
-                if (p.y < 5) p.y = 5;
-                if (p.y > SCREEN_HEIGHT - 40) p.y = SCREEN_HEIGHT - 40;
-            }
-        }
-
-        function explodePony(p) {
-            const fxLayer = document.getElementById('fx-layer');
-            const particleCount = 20;
-            for(let i=0; i<particleCount; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'explosion-particle';
-                particle.style.left = (p.x + PONY_WIDTH/2) + 'px';
-                particle.style.top = (p.y + PONY_HEIGHT/2) + 'px';
-                particle.style.backgroundColor = p.color;
-                
-                const angle = Math.random() * Math.PI * 2;
-                const velocity = 2 + Math.random() * 4;
-                const vx = Math.cos(angle) * velocity;
-                const vy = Math.sin(angle) * velocity;
-                
-                fxLayer.appendChild(particle);
-                
-                let life = 30;
-                const anim = () => {
-                    if (life <= 0) {
-                        particle.remove();
-                        return;
-                    }
-                    const currentLeft = parseFloat(particle.style.left);
-                    const currentTop = parseFloat(particle.style.top);
-                    particle.style.left = (currentLeft + vx) + 'px';
-                    particle.style.top = (currentTop + vy) + 'px';
-                    particle.style.opacity = life / 30;
-                    life--;
-                    requestAnimationFrame(anim);
-                };
-                requestAnimationFrame(anim);
-            }
-
-            for(let i=0; i<3; i++) {
-                grass.push({
-                    id: Math.random(),
-                    x: p.x + (Math.random() - 0.5) * 40,
-                    y: p.y + (Math.random() - 0.5) * 40
+        function aiBehavior(p) {
+            if (p.state === 'roaming') {
+                let target = null, minD = 500;
+                grass.forEach(g => {
+                    let d = Math.abs(g.x - p.x);
+                    if (d < minD) { minD = d; target = g; }
                 });
+                if (target) {
+                    let dir = Math.sign(target.x - p.x);
+                    if (Math.abs(target.x - p.x) > 5) { p.x += dir * 0.8; p.facing = dir; }
+                    else { p.state = 'eating'; p.timer = 100; grass = grass.filter(g => g !== target); }
+                } else {
+                    if (p.timer-- <= 0) { p.timer = 60 + Math.random() * 100; p.targetX = Math.random() * SCREEN_WIDTH; }
+                    if (p.targetX && Math.abs(p.targetX - p.x) > 5) {
+                        let dir = Math.sign(p.targetX - p.x);
+                        p.x += dir * 0.8; p.facing = dir;
+                    }
+                }
+            } else if (p.state === 'eating') {
+                if (p.timer-- <= 0) p.state = 'roaming';
+            }
+            if (Math.random() < 0.05) p.y += (Math.random() - 0.5) * 2;
+            p.y = Math.max(2, Math.min(TARGET_H - 34, p.y));
+        }
+
+        function explode(p) {
+            const fx = document.getElementById('layer-fx');
+            for(let i=0; i<20; i++) {
+                const el = document.createElement('div');
+                el.className = 'explosion';
+                el.style.left = (p.x + 16) + 'px';
+                el.style.top = (p.y + 16) + 'px';
+                el.style.background = p.color;
+                fx.appendChild(el);
+                const angle = Math.random() * 6.28, spd = 3 + Math.random() * 5;
+                let vx = Math.cos(angle) * spd, vy = Math.sin(angle) * spd, life = 40;
+                const tick = () => {
+                    if (life-- <= 0) return el.remove();
+                    el.style.left = (parseFloat(el.style.left) + vx) + 'px';
+                    el.style.top = (parseFloat(el.style.top) + vy) + 'px';
+                    el.style.opacity = life/40;
+                    requestAnimationFrame(tick);
+                };
+                tick();
             }
         }
 
-        // --- 渲染 ---
-        function render() {
-            const ponyLayer = document.getElementById('pony-layer');
-            const grassLayer = document.getElementById('grass-layer');
-            
-            grassLayer.innerHTML = '';
-            grass.forEach(g => {
-                const el = document.createElement('div');
-                el.className = 'grass';
-                el.style.transform = `translate3d(${g.x}px, ${g.y}px, 0)`;
-                grassLayer.appendChild(el);
-            });
+        function draw() {
+            const grassL = document.getElementById('layer-grass');
+            grassL.innerHTML = grass.map(g => `<div class="grass" style="left:${g.x}px; top:${g.y}px"></div>`).join('');
 
-            const existingNodes = Array.from(ponyLayer.children);
-            const activeIds = new Set(ponies.map(p => p.id));
-
-            existingNodes.forEach(node => {
-                if (!activeIds.has(node.id)) node.remove();
-            });
+            const ponyL = document.getElementById('layer-pony');
+            const nodes = Array.from(ponyL.children);
+            const ids = new Set(ponies.map(p => p.id));
+            nodes.forEach(n => { if(!ids.has(n.id)) n.remove(); });
 
             ponies.forEach(p => {
                 let el = document.getElementById(p.id);
                 if (!el) {
-                    el = createPonyDOM(p);
-                    ponyLayer.appendChild(el);
+                    el = document.createElement('div');
+                    el.id = p.id; el.className = 'entity';
+                    el.innerHTML = `
+                        <div class="aura"></div>
+                        <div class="crown-container hidden">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path></svg>
+                        </div>
+                        <div class="name-tag">${p.name}</div>
+                        <div class="p-grid" style="display:grid; grid-template-columns:repeat(8,1fr); width:100%; height:100%;"></div>
+                    `;
+                    ponyL.appendChild(el);
                 }
-                
-                el.style.transform = `translate3d(${p.x}px, ${p.y}px, 0)`;
+
+                el.style.transform = `translate(${p.x}px, ${p.y}px)`;
                 el.style.zIndex = Math.floor(p.y);
+                el.querySelector('.p-grid').style.transform = `scaleX(${p.facing || 1})`;
 
-                const pixelContainer = el.querySelector('.pixel-grid-container');
-                if (p.facing === 'left') {
-                    pixelContainer.style.transform = 'scaleX(-1)';
-                } else {
-                    pixelContainer.style.transform = 'scaleX(1)';
-                }
+                const crownC = el.querySelector('.crown-container');
+                if (p.hasCrown) crownC.classList.remove('hidden');
+                else crownC.classList.add('hidden');
 
-                // 皇冠渲染 (叠加)
-                const crownContainer = el.querySelector('.crown-container');
-                crownContainer.innerHTML = ''; 
-                if (p.hasCrown) {
-                    crownContainer.classList.remove('hidden');
-                    // 循环生成皇冠
-                    for(let i=0; i<p.crownCount; i++) {
-                        const crownSvg = `
-                            <svg class="crown-icon" width="24" height="24" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path>
-                            </svg>
-                        `;
-                        crownContainer.innerHTML += crownSvg;
+                el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none';
+                el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
+
+                const isMoving = p.state !== 'idle' && p.state !== 'eating';
+                const frameStep = isMoving ? Math.floor(p.frame / 10) % 2 : 0;
+                let html = '';
+                for(let y=0; y<8; y++) {
+                    let row = p.pixels[y];
+                    if (frameStep === 1 && y > 5) row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[0]]; 
+                    if (p.state === 'eating') { if(y===1) row = [0,0,0,0,0,0,0,0]; if(y===3) row = p.pixels[1]; }
+                    for(let x=0; x<8; x++) {
+                        if (row[x]) html += `<div style="background:${p.color}; width:4px; height:4px; grid-column:${x+1}; grid-row:${y+1}"></div>`;
                     }
-                    // 调整容器高度位置，防止堆太高挡住名字
-                    crownContainer.style.top = (-45 - (p.crownCount - 1) * 10) + 'px';
-                } else {
-                    crownContainer.classList.add('hidden');
                 }
-
-                // 爆气光环渲染
-                const aura = el.querySelector('.aura');
-                if (p.isStreak) {
-                    aura.style.display = 'block';
-                } else {
-                    aura.style.display = 'none';
-                }
-
-                const nameEl = el.querySelector('.name-tag');
-                nameEl.style.color = p.hasCrown ? COLORS.GOLD : p.color;
-                nameEl.style.opacity = p.hasCrown ? 1 : 0.8;
-
-                updatePonyAnimation(p, el);
+                el.querySelector('.p-grid').innerHTML = html;
             });
         }
 
-        function createPonyDOM(p) {
-            const div = document.createElement('div');
-            div.id = p.id;
-            div.className = 'entity';
-            div.style.width = PONY_WIDTH + 'px';
-            div.style.height = PONY_HEIGHT + 'px';
-
-            // 爆气光环
-            const aura = document.createElement('div');
-            aura.className = 'aura';
-            div.appendChild(aura);
-
-            // SVG 皇冠
-            const crownContainer = document.createElement('div');
-            crownContainer.className = 'crown-container hidden';
-            div.appendChild(crownContainer);
-
-            const name = document.createElement('div');
-            name.className = 'name-tag vfd-glow';
-            name.innerText = p.name;
-            div.appendChild(name);
-
-            const gridContainer = document.createElement('div');
-            gridContainer.className = 'pixel-grid-container';
-            const grid = document.createElement('div');
-            grid.className = 'pixel-grid';
-            gridContainer.appendChild(grid);
-            div.appendChild(gridContainer);
-
-            return div;
-        }
-
-        function updatePonyAnimation(p, el) {
-            const gridEl = el.querySelector('.pixel-grid-container .pixel-grid');
-            
-            if (!p.frameTimer) p.frameTimer = 0;
-            if (!p.currentFrame) p.currentFrame = 0;
-
-            const isMoving = p.state === 'racing' || 
-                             p.state === 'roaming' || 
-                             p.state === 'walking_to_food' ||
-                             (p.state === 'finished' && p.isWalkingAtFinish);
-            
-            if (isMoving) {
-                p.frameTimer++;
-                if (p.frameTimer > 10) { 
-                    p.currentFrame = (p.currentFrame + 1) % 2;
-                    p.frameTimer = 0;
-                    renderPixels(gridEl, p);
-                }
-            } else {
-                if (p.currentFrame !== 0) {
-                    p.currentFrame = 0;
-                    renderPixels(gridEl, p);
-                }
-            }
-            if (gridEl.children.length === 0) {
-                renderPixels(gridEl, p);
-            }
-        }
-
-        function renderPixels(gridEl, p) {
-            const frame1 = p.pixels;
-            let frame2 = frame1.map((row, y) => {
-                if (y < 6) { 
-                    return y > 0 ? frame1[y-1] : [0,0,0,0,0,0,0,0];
-                } else { 
-                    let newRow = [...row];
-                    const shift = 2;
-                    for(let i=0; i<8; i++) {
-                        newRow[i] = row[(i+3)%8];
-                    }
-                    return newRow;
-                }
-            });
-            if (p.state === 'eating') {
-               frame2 = frame1.map((row, y) => {
-                   if (y >= 1 && y <= 4) return frame1[y-1];
-                   if (y===0) return [0,0,0,0,0,0,0,0];
-                   return row;
-               });
-            }
-
-            const currentData = p.currentFrame === 0 ? frame1 : frame2;
-            
-            let html = '';
-            for(let y=0; y<8; y++) {
-                for(let x=0; x<8; x++) {
-                    if (currentData[y][x]) {
-                        html += `<div class="pixel" style="background-color: ${p.color}; box-shadow: 0 0 4px ${p.color}; grid-column: ${x+1}; grid-row: ${y+1};"></div>`;
-                    }
-                }
-            }
-            gridEl.innerHTML = html;
-        }
-
-        function createPony(name, pixels, color) {
-            const id = 'p-' + Date.now() + '-' + Math.random();
-            
-            // 【关键修改】不再限制为10个，允许无限添加，通过“末位淘汰”来控制数量
-            // 原来的 limit check 已被移除
-
-            // 重置现有小马到起点
-            ponies.forEach(p => {
-                p.state = 'racing';
-                p.x = 20;
-                p.y = 20 + Math.random() * (SCREEN_HEIGHT - PONY_HEIGHT - 40);
-                p.speed = 1.5 + Math.random() * 2.0;
-                // 不重置 hasCrown 和 isStreak，保留连胜
-                p.targetX = null;
-            });
-
-            const newPony = {
-                id,
-                name: name || getRandomName(),
-                x: 20,
-                y: 20 + Math.random() * (SCREEN_HEIGHT - PONY_HEIGHT - 40),
-                facing: 'right',
-                state: 'racing',
-                speed: 1.5 + Math.random() * 2.0,
-                hasCrown: false,
-                isStreak: false,
-                // 新马初始皇冠数
-                crownCount: 0,
-                color: color || COLORS.TURQUOISE,
-                pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_FRAME_1)),
-                timer: 0
-            };
-            ponies.push(newPony);
-            
-            grass = [];
-        }
-
-        function savePony() {
-            const name = document.getElementById('editor-name').value;
-            createPony(name, editorGrid, selectedColor);
-            closeEditor();
-        }
-
-        function getRandomName() {
-            const names = ["PIXEL", "VFD", "GLOW", "NEON", "BIT", "BYTE", "ECHO", "FLUX", "SYNC", "WAVE", "DATA", "ZAP"];
-            return names[Math.floor(Math.random() * names.length)];
-        }
-
-        function openEditor() {
-            document.getElementById('modal-editor').classList.remove('hidden');
-        }
-        function closeEditor() {
-            document.getElementById('modal-editor').classList.add('hidden');
-        }
-        function clearEditor() {
-            editorGrid = Array(8).fill(0).map(() => Array(8).fill(0));
-            renderEditorGrid('desktop-editor-grid', editorGrid);
-        }
-        
-        function clearMobileEditor() {
-            mobileEditorGrid = Array(8).fill(0).map(() => Array(8).fill(0));
-            renderEditorGrid('mobile-editor-grid', mobileEditorGrid);
-        }
-
-        function buildColorPicker(containerId) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = '';
-            Object.values(COLORS).forEach(c => {
-                if (c === COLORS.GOLD) return;
-                const div = document.createElement('div');
-                div.className = 'color-dot';
-                div.style.backgroundColor = c;
-                div.style.boxShadow = `0 0 5px ${c}`;
-                if (c === selectedColor) div.classList.add('selected');
-                div.onclick = () => {
-                    selectedColor = c;
-                    document.querySelectorAll('.color-dot').forEach(el => el.classList.remove('selected'));
-                    div.classList.add('selected');
-                    document.querySelectorAll('.color-dot').forEach(el => {
-                        if (el.style.backgroundColor === c) el.classList.add('selected');
-                    });
-                    
-                    if (containerId === 'desktop-color-picker') renderEditorGrid('desktop-editor-grid', editorGrid);
-                    else renderEditorGrid('mobile-editor-grid', mobileEditorGrid);
-                };
-                container.appendChild(div);
-            });
-        }
-
-        function buildEditorGrid(containerId, gridData) {
-            renderEditorGrid(containerId, gridData);
-            
-            if (containerId === 'mobile-editor-grid') {
-                const gridEl = document.getElementById(containerId);
-                let isTouching = false;
-                let drawMode = 1; 
-
-                const handleTouch = (e) => {
-                    if (e.cancelable) e.preventDefault(); 
-                    const touch = e.touches[0];
-                    const target = document.elementFromPoint(touch.clientX, touch.clientY);
-                    
-                    if (target && target.classList.contains('editor-cell')) {
-                        const r = parseInt(target.dataset.r);
-                        const c = parseInt(target.dataset.c);
-
-                        if (e.type === 'touchstart') {
-                            drawMode = mobileEditorGrid[r][c] ? 0 : 1;
-                        }
-
-                        if (mobileEditorGrid[r][c] !== drawMode) {
-                            mobileEditorGrid[r][c] = drawMode;
-                            if (drawMode) {
-                                target.classList.add('active');
-                                target.style.backgroundColor = selectedColor;
-                                target.style.boxShadow = `0 0 4px ${selectedColor}`;
-                            } else {
-                                target.classList.remove('active');
-                                target.style.backgroundColor = '';
-                                target.style.boxShadow = '';
-                            }
-                        }
-                    }
-                };
-
-                gridEl.addEventListener('touchstart', (e) => {
-                    isTouching = true;
-                    handleTouch(e);
-                }, { passive: false });
-
-                gridEl.addEventListener('touchmove', (e) => {
-                    if (isTouching) handleTouch(e);
-                }, { passive: false });
-
-                gridEl.addEventListener('touchend', () => {
-                    isTouching = false;
+        // === 移动端 ===
+        function initMobile() {
+            const host = new URLSearchParams(window.location.search).get('host');
+            initEditor('m-grid', 'm-colors');
+            peer = new Peer();
+            peer.on('open', () => {
+                conn = peer.connect(host);
+                conn.on('open', () => {
+                    document.getElementById('m-status').innerText = "CONNECTED";
+                    document.getElementById('m-status').style.color = "#69f0ae";
                 });
-            }
+            });
         }
 
-        function renderEditorGrid(containerId, gridData) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = '';
-            gridData.forEach((row, r) => {
-                const rowDiv = document.createElement('div');
-                rowDiv.className = 'editor-row';
+        function sendMobile() {
+            if(!conn) return alert("Not Connected!");
+            conn.send({
+                name: document.getElementById('m-name').value.toUpperCase() || 'MOBILE',
+                pixels: myGrid,
+                color: myColor
+            });
+            const btn = document.querySelector('.m-footer .btn:last-child');
+            btn.innerText = "SENT!";
+            setTimeout(() => btn.innerText = "CAST TO SCREEN", 1000);
+        }
+
+        function clearMobile() {
+            myGrid = Array(8).fill(0).map(()=>Array(8).fill(0));
+            renderGrid('m-grid', myGrid, myColor);
+        }
+
+        function initEditor(gridId, colorId) {
+            const gridEl = document.getElementById(gridId);
+            const colorEl = document.getElementById(colorId);
+            
+            colorEl.innerHTML = '';
+            Object.values(COLORS).forEach(c => {
+                if(c === COLORS.WHITE) return;
+                const dot = document.createElement('div');
+                dot.className = `c-dot ${c === myColor ? 'active' : ''}`;
+                dot.style.background = c;
+                dot.onclick = () => {
+                    myColor = c;
+                    renderGrid(gridId, myGrid, myColor);
+                    Array.from(colorEl.children).forEach(d => d.classList.remove('active'));
+                    dot.classList.add('active');
+                };
+                colorEl.appendChild(dot);
+            });
+
+            renderGrid(gridId, myGrid, myColor);
+
+            let drawing = false, eraseMode = false;
+            const updateCell = (r, c) => {
+                const newVal = eraseMode ? 0 : 1;
+                if (myGrid[r][c] !== newVal) {
+                    myGrid[r][c] = newVal;
+                    renderGrid(gridId, myGrid, myColor);
+                }
+            };
+            const start = (e) => {
+                if(e.cancelable) e.preventDefault();
+                const t = e.touches ? e.touches[0] : e;
+                const el = document.elementFromPoint(t.clientX, t.clientY);
+                if(el && el.dataset.r) {
+                    drawing = true;
+                    const r = parseInt(el.dataset.r), c = parseInt(el.dataset.c);
+                    eraseMode = myGrid[r][c] === 1;
+                    updateCell(r, c);
+                }
+            };
+            const move = (e) => {
+                if(!drawing) return;
+                if(e.cancelable) e.preventDefault();
+                const t = e.touches ? e.touches[0] : e;
+                const el = document.elementFromPoint(t.clientX, t.clientY);
+                if(el && el.dataset.r) {
+                    updateCell(parseInt(el.dataset.r), parseInt(el.dataset.c));
+                }
+            };
+            const end = () => { drawing = false; };
+
+            gridEl.addEventListener('mousedown', start);
+            gridEl.addEventListener('touchstart', start, {passive: false});
+            window.addEventListener('mousemove', move);
+            window.addEventListener('touchmove', move, {passive: false});
+            window.addEventListener('mouseup', end);
+            window.addEventListener('touchend', end);
+        }
+
+        function renderGrid(id, data, color) {
+            const el = document.getElementById(id);
+            el.innerHTML = '';
+            data.forEach((row, r) => {
                 row.forEach((val, c) => {
                     const cell = document.createElement('div');
                     cell.className = 'editor-cell';
-                    cell.dataset.r = r;
-                    cell.dataset.c = c;
-                    
-                    if (val) {
-                        cell.classList.add('active');
-                        cell.style.backgroundColor = selectedColor;
-                        cell.style.boxShadow = `0 0 4px ${selectedColor}`;
-                    }
-                    cell.onmousedown = () => togglePixel(r, c, containerId, gridData);
-                    cell.onmouseenter = (e) => { if(e.buttons === 1) togglePixel(r, c, containerId, gridData, true); }
-                    rowDiv.appendChild(cell);
-                });
-                container.appendChild(rowDiv);
-            });
-        }
-
-        function togglePixel(r, c, containerId, gridData, isDrag) {
-            if (isDrag) {
-                gridData[r][c] = 1;
-            } else {
-                gridData[r][c] = gridData[r][c] ? 0 : 1;
-            }
-            renderEditorGrid(containerId, gridData);
-        }
-
-        function generateFixedQR() {
-            if (!peerId) return;
-            const url = `${window.location.protocol}//${window.location.host}${window.location.pathname}?connectTo=${peerId}`;
-            
-            document.getElementById('qrcode').innerHTML = '';
-            new QRCode(document.getElementById('qrcode'), {
-                text: url,
-                width: 100,
-                height: 100,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
-            });
-        }
-
-        function initMobile(hostId) {
-            buildColorPicker('mobile-color-picker');
-            const container = document.getElementById('mobile-editor-container');
-            container.innerHTML = '<div id="mobile-editor-grid" class="editor-grid"></div>';
-            editorGrid = JSON.parse(JSON.stringify(DEFAULT_FRAME_1));
-            renderEditorGrid('mobile-editor-grid');
-
-            peer = new Peer();
-            peer.on('open', () => {
-                conn = peer.connect(hostId);
-                conn.on('open', () => {
-                    document.getElementById('mobile-status').innerText = "CONNECTED";
-                    document.getElementById('mobile-status').style.background = "#004d40";
-                });
-                conn.on('error', () => {
-                    document.getElementById('mobile-status').innerText = "ERROR";
-                    document.getElementById('mobile-status').style.background = "red";
+                    cell.dataset.r = r; cell.dataset.c = c;
+                    if(val) { cell.style.background = color; cell.style.boxShadow = `0 0 5px ${color}`; }
+                    el.appendChild(cell);
                 });
             });
         }
-
-        function sendPonyFromMobile() {
-            if (!conn) return;
-            const name = document.getElementById('mobile-name-input').value || "MOBILE";
-            conn.send({
-                name: name,
-                pixels: JSON.parse(JSON.stringify(mobileEditorGrid)), 
-                color: selectedColor
-            });
-            alert("Sent!");
-        }
-
-        init();
-
     </script>
 </body>
 </html>
