@@ -51,10 +51,19 @@
             text-transform: uppercase;
             box-shadow: 0 0 15px rgba(64, 224, 208, 0.2);
             transition: all 0.2s;
-            margin-top: 20px;
+            /* 手机端按钮样式优化 */
+            touch-action: manipulation;
         }
         .btn:hover { background: var(--color-primary); color: #00251a; }
+        .btn:active { transform: translateY(2px); }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--color-border);
+            color: var(--color-primary);
+            opacity: 0.8;
+        }
 
         /* 背景网格 */
         .bg-grid {
@@ -71,7 +80,7 @@
         /* --- 布局容器 --- */
         #main-layout {
             display: flex;
-            align-items: flex-start; /* 顶部对齐 */
+            align-items: flex-start;
             justify-content: center;
             gap: 20px;
             transform-origin: center;
@@ -218,10 +227,10 @@
             height: 4px;
         }
 
-        /* SVG 皇冠容器 - 【修改点】位置上移 */
+        /* 像素皇冠容器 */
         .crown-container {
             position: absolute;
-            top: -38px; /* 从 -20px 改为 -38px，移到名字上方 */
+            top: -38px;
             left: 50%;
             transform: translateX(-50%);
             width: 24px;
@@ -284,13 +293,15 @@
             background: #222;
             padding: 4px;
             border: 1px solid var(--color-border);
-            margin: 20px auto;
+            margin: 0 auto;
             width: fit-content;
+            /* 关键：阻止触摸时的默认滚动行为，允许滑动绘制 */
+            touch-action: none; 
         }
         .editor-row { display: flex; gap: 1px; }
         .editor-cell {
-            width: 30px;
-            height: 30px;
+            width: 35px; /* 稍微加大一点，方便手指点 */
+            height: 35px;
             background: #001a15;
             border: 1px solid #333;
             cursor: pointer;
@@ -303,19 +314,19 @@
         .color-picker {
             display: flex;
             justify-content: center;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 15px;
+            margin-bottom: 10px;
         }
         .color-dot {
-            width: 24px;
-            height: 24px;
+            width: 32px; /* 颜色点加大 */
+            height: 32px;
             border-radius: 50%;
             cursor: pointer;
             border: 2px solid transparent;
         }
         .color-dot.selected { border-color: white; transform: scale(1.2); }
 
-        /* 移动端视图 */
+        /* 移动端视图布局调整 */
         #mobile-view {
             width: 100%;
             height: 100%;
@@ -323,6 +334,15 @@
             flex-direction: column;
             background: #000;
             padding: 20px;
+            overflow: hidden; /* 防止页面滚动 */
+        }
+
+        .mobile-header {
+            display: flex; 
+            justify-content: space-between; 
+            border-bottom: 1px solid var(--color-border); 
+            padding-bottom: 10px;
+            margin-bottom: 20px;
         }
 
         /* 输入框 */
@@ -330,14 +350,37 @@
             background: #00251a;
             border: 1px solid var(--color-border);
             color: var(--color-primary);
-            padding: 8px;
+            padding: 10px;
             font-family: inherit;
             text-align: center;
-            font-size: 1.2rem;
-            width: 200px;
-            margin-bottom: 10px;
+            font-size: 1.4rem;
+            width: 100%;
+            margin-bottom: 15px;
+            border-radius: 4px;
         }
         input:focus { outline: none; border-color: var(--color-primary); }
+
+        .mobile-controls-top {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .mobile-canvas-area {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .mobile-controls-bottom {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
 
     </style>
 </head>
@@ -365,7 +408,7 @@
                     </div>
                 </div>
                 
-                <button class="btn" onclick="openEditor()">+ NEW RUNNER</button>
+                <button class="btn" style="margin-top:20px;" onclick="openEditor()">+ NEW RUNNER</button>
             </div>
 
             <div id="qr-section">
@@ -380,19 +423,24 @@
     </div>
 
     <div id="mobile-view" class="hidden">
-        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--color-border); padding-bottom: 10px;">
-            <span style="font-size: 1.5rem;" class="vfd-glow">REMOTE DRAW</span>
+        
+        <div class="mobile-header">
+            <span style="font-size: 1.2rem;" class="vfd-glow">REMOTE LINK</span>
             <span id="mobile-status" style="background: #004d40; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">CONNECTING</span>
         </div>
+
+        <div class="mobile-controls-top">
+            <input type="text" id="mobile-name-input" placeholder="ENTER NAME" maxlength="8">
+            <div class="color-picker" id="mobile-color-picker"></div>
+        </div>
         
-        <div style="flex: 1; display: flex; justify-content: center; align-items: center; overflow: auto;">
+        <div class="mobile-canvas-area">
             <div id="mobile-editor-container"></div>
         </div>
 
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
-            <div class="color-picker" id="mobile-color-picker"></div>
-            <input type="text" id="mobile-name-input" placeholder="NAME" maxlength="8">
-            <button class="btn" style="width: 100%;" onclick="sendPonyFromMobile()">CAST TO SCREEN</button>
+        <div class="mobile-controls-bottom">
+            <button class="btn btn-outline" style="border-color: #ff5252; color: #ff5252;" onclick="clearMobileEditor()">CLEAR</button>
+            <button class="btn" style="flex: 1;" onclick="sendPonyFromMobile()">CAST TO SCREEN</button>
         </div>
     </div>
 
@@ -435,24 +483,27 @@
 
         // 默认像素画 (8x8)
         const DEFAULT_FRAME_1 = [
-            [0,0,0,0,0,0,1,0], // 耳朵
-            [0,0,0,0,0,1,1,1], // 头
-            [0,0,0,0,0,1,1,0], // 脖子
-            [0,0,1,1,1,1,1,0], // 身体
-            [0,1,1,1,1,1,1,0], // 身体
-            [1,1,1,1,1,1,1,0], // 身体+尾巴
-            [0,1,0,0,0,1,0,0], // 腿
-            [0,1,0,0,0,1,0,0]  // 腿
+            [0,0,0,0,0,0,1,0],
+            [0,0,0,0,0,1,1,1],
+            [0,0,0,0,0,1,1,0],
+            [0,0,1,1,1,1,1,0],
+            [0,1,1,1,1,1,1,0],
+            [1,1,1,1,1,1,1,0],
+            [0,1,0,0,0,1,0,0],
+            [0,1,0,0,0,1,0,0]
         ];
 
-        // --- 状态管理 ---
+        // 状态管理
         let ponies = []; 
         let grass = [];  
         let peerId = null;
         let peer = null;
         let conn = null; 
         
-        let editorGrid = JSON.parse(JSON.stringify(DEFAULT_FRAME_1));
+        // 桌面和移动端使用独立的 Grid 变量，互不干扰
+        let editorGrid = JSON.parse(JSON.stringify(DEFAULT_FRAME_1)); 
+        let mobileEditorGrid = JSON.parse(JSON.stringify(DEFAULT_FRAME_1));
+        
         let selectedColor = COLORS.TURQUOISE;
 
         // --- 初始化 ---
@@ -473,7 +524,7 @@
         function initDesktop() {
             initPeerHost();
             buildColorPicker('desktop-color-picker');
-            buildEditorGrid('desktop-editor-grid');
+            buildEditorGrid('desktop-editor-grid', editorGrid); // 传入桌面 grid
             requestAnimationFrame(gameLoop);
         }
 
@@ -490,7 +541,7 @@
             });
         }
 
-        // --- 游戏主循环 (物理引擎) ---
+        // --- 游戏循环 ---
         function gameLoop() {
             updatePhysics();
             render();
@@ -703,9 +754,9 @@
             div.style.width = PONY_WIDTH + 'px';
             div.style.height = PONY_HEIGHT + 'px';
 
+            // SVG 皇冠
             const crownContainer = document.createElement('div');
             crownContainer.className = 'crown-container hidden';
-            // 使用 SVG 皇冠
             crownContainer.innerHTML = `
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path>
@@ -829,6 +880,7 @@
 
         function savePony() {
             const name = document.getElementById('editor-name').value;
+            // 使用桌面端的 editorGrid
             createPony(name, editorGrid, selectedColor);
             closeEditor();
         }
@@ -838,6 +890,7 @@
             return names[Math.floor(Math.random() * names.length)];
         }
 
+        // --- 编辑器 UI 逻辑 ---
         function openEditor() {
             document.getElementById('modal-editor').classList.remove('hidden');
         }
@@ -846,7 +899,12 @@
         }
         function clearEditor() {
             editorGrid = Array(8).fill(0).map(() => Array(8).fill(0));
-            renderEditorGrid('desktop-editor-grid');
+            renderEditorGrid('desktop-editor-grid', editorGrid);
+        }
+        
+        function clearMobileEditor() {
+            mobileEditorGrid = Array(8).fill(0).map(() => Array(8).fill(0));
+            renderEditorGrid('mobile-editor-grid', mobileEditorGrid);
         }
 
         function buildColorPicker(containerId) {
@@ -863,46 +921,86 @@
                     selectedColor = c;
                     document.querySelectorAll('.color-dot').forEach(el => el.classList.remove('selected'));
                     div.classList.add('selected');
-                    if (containerId === 'desktop-color-picker') renderEditorGrid('desktop-editor-grid');
-                    else renderEditorGrid('mobile-editor-grid');
+                    // 更新所有选择器状态
+                    document.querySelectorAll('.color-dot').forEach(el => {
+                        if (el.style.backgroundColor === c) el.classList.add('selected');
+                    });
+                    
+                    if (containerId === 'desktop-color-picker') renderEditorGrid('desktop-editor-grid', editorGrid);
+                    else renderEditorGrid('mobile-editor-grid', mobileEditorGrid);
                 };
                 container.appendChild(div);
             });
         }
 
-        function buildEditorGrid(containerId) {
-            renderEditorGrid(containerId);
+        function buildEditorGrid(containerId, gridData) {
+            renderEditorGrid(containerId, gridData);
+            
+            // 为移动端添加滑动支持
+            if (containerId === 'mobile-editor-grid') {
+                const gridEl = document.getElementById(containerId);
+                let isTouching = false;
+
+                const handleTouch = (e) => {
+                    e.preventDefault(); // 防止滚动
+                    const touch = e.touches[0];
+                    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                    
+                    if (target && target.classList.contains('editor-cell') && target.parentElement.parentElement.id === 'mobile-editor-grid') {
+                        const r = parseInt(target.dataset.r);
+                        const c = parseInt(target.dataset.c);
+                        mobileEditorGrid[r][c] = 1; // 滑动默认只画，不擦
+                        renderEditorGrid('mobile-editor-grid', mobileEditorGrid);
+                    }
+                };
+
+                gridEl.addEventListener('touchstart', (e) => {
+                    isTouching = true;
+                    handleTouch(e);
+                }, { passive: false });
+
+                gridEl.addEventListener('touchmove', (e) => {
+                    if (isTouching) handleTouch(e);
+                }, { passive: false });
+
+                gridEl.addEventListener('touchend', () => {
+                    isTouching = false;
+                });
+            }
         }
 
-        function renderEditorGrid(containerId) {
+        function renderEditorGrid(containerId, gridData) {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
-            editorGrid.forEach((row, r) => {
+            gridData.forEach((row, r) => {
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'editor-row';
                 row.forEach((val, c) => {
                     const cell = document.createElement('div');
                     cell.className = 'editor-cell';
+                    cell.dataset.r = r;
+                    cell.dataset.c = c;
                     if (val) {
                         cell.classList.add('active');
                         cell.style.backgroundColor = selectedColor;
                         cell.style.boxShadow = `0 0 4px ${selectedColor}`;
                     }
-                    cell.onmousedown = () => togglePixel(r, c, containerId);
-                    cell.onmouseenter = (e) => { if(e.buttons === 1) togglePixel(r, c, containerId, true); }
+                    // 桌面鼠标事件
+                    cell.onmousedown = () => togglePixel(r, c, containerId, gridData);
+                    cell.onmouseenter = (e) => { if(e.buttons === 1) togglePixel(r, c, containerId, gridData, true); }
                     rowDiv.appendChild(cell);
                 });
                 container.appendChild(rowDiv);
             });
         }
 
-        function togglePixel(r, c, containerId, isDrag) {
+        function togglePixel(r, c, containerId, gridData, isDrag) {
             if (isDrag) {
-                editorGrid[r][c] = 1;
+                gridData[r][c] = 1;
             } else {
-                editorGrid[r][c] = editorGrid[r][c] ? 0 : 1;
+                gridData[r][c] = gridData[r][c] ? 0 : 1;
             }
-            renderEditorGrid(containerId);
+            renderEditorGrid(containerId, gridData);
         }
 
         function generateFixedQR() {
@@ -922,10 +1020,8 @@
 
         function initMobile(hostId) {
             buildColorPicker('mobile-color-picker');
-            const container = document.getElementById('mobile-editor-container');
-            container.innerHTML = '<div id="mobile-editor-grid" class="editor-grid"></div>';
-            editorGrid = JSON.parse(JSON.stringify(DEFAULT_FRAME_1));
-            renderEditorGrid('mobile-editor-grid');
+            // 初始化移动端 Grid
+            buildEditorGrid('mobile-editor-grid', mobileEditorGrid);
 
             peer = new Peer();
             peer.on('open', () => {
@@ -946,7 +1042,7 @@
             const name = document.getElementById('mobile-name-input').value || "MOBILE";
             conn.send({
                 name: name,
-                pixels: JSON.parse(JSON.stringify(editorGrid)),
+                pixels: JSON.parse(JSON.stringify(mobileEditorGrid)), // 发送移动端的 Grid
                 color: selectedColor
             });
             alert("Sent!");
