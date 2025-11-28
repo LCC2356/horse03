@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - FINAL POLISH v2</title>
+    <title>HORSE RUNRUN - FINAL FIXED</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
             --primary: #40e0d0;
             --panel: #004d40;
             --border: #00695c;
-            /* 1:35 比例 */
+            /* 1:35 */
             --game-w: 3500px; 
             --game-h: 100px;
         }
@@ -56,7 +56,6 @@
             flex-shrink: 0; 
         }
 
-        /* 跑道元素 */
         .grid-bg {
             position: absolute; inset: 0; opacity: 0.2;
             background-image: linear-gradient(rgba(64, 224, 208, 0.3) 1px, transparent 1px),
@@ -71,30 +70,20 @@
         }
         .hud { position: absolute; bottom: 4px; right: 10px; font-size: 32px; opacity: 0.5; letter-spacing: 2px; }
         
-        /* 候补队列提示 */
         .queue-alert {
             position: absolute; top: 10px; right: 10px;
             font-size: 24px; color: #ffb300; text-shadow: 0 0 5px #ffb300;
             display: none; z-index: 20;
         }
 
-        /* 实体 */
-        /* 32px 大小 */
         .entity { position: absolute; width: 32px; height: 32px; will-change: transform; }
         .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; }
         
-        /* 皇冠容器 - 修复位置 */
         .crown-container {
-            position: absolute; 
-            top: -24px; /* 贴近头顶 */
-            left: 50%; transform: translateX(-50%);
-            width: 24px; height: 24px; 
-            animation: bounce 1s infinite; 
-            z-index: 50; /* 确保在最上层 */
+            position: absolute; top: -24px; left: 50%; transform: translateX(-50%);
+            width: 24px; height: 24px; animation: bounce 1s infinite; z-index: 10;
             display: flex; flex-direction: column-reverse; align-items: center;
-            filter: drop-shadow(0 0 4px rgba(250,204,21,0.8));
         }
-        
         .aura {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 160%; height: 160%; border-radius: 50%;
@@ -106,8 +95,7 @@
         
         .name-tag {
             position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
-            font-size: 18px; white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000;
-            opacity: 0.8; /* 稍微淡一点，不抢皇冠戏 */
+            font-size: 16px; white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000;
         }
         .grass { position: absolute; width: 6px; height: 6px; background: #69f0ae; box-shadow: 0 0 4px #69f0ae; }
         .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
@@ -133,7 +121,6 @@
         .qr-info h2 { margin: 0; font-size: 2rem; text-shadow: 0 0 10px var(--primary); line-height: 1; }
         .qr-info p { margin: 5px 0 0 0; font-size: 1.2rem; opacity: 0.7; }
 
-        /* 按钮 */
         .btn {
             background: #00251a; border: 2px solid var(--primary); color: var(--primary);
             padding: 15px 40px; font-family: 'VT323', monospace; font-size: 1.5rem;
@@ -192,8 +179,8 @@
             <div id="game-screen">
                 <div class="grid-bg"></div>
                 <div class="finish-line"></div>
-                <div class="hud">MODE:RACE // STATUS:LIVE</div>
-                <div id="queue-alert" class="queue-alert"></div>
+                <div id="hud" class="hud">NOWHERE RUNRUN</div>
+                <div id="queue-text" class="queue-alert">NEXT RACE IN: 5...</div>
                 
                 <div id="layer-grass"></div>
                 <div id="layer-pony"></div>
@@ -209,7 +196,6 @@
                     <p>SCAN TO PLAY</p>
                 </div>
             </div>
-
             <button class="btn" onclick="openDesktopEditor()">+ ADD PONY</button>
         </div>
     </div>
@@ -241,7 +227,7 @@
             <div id="m-grid" class="editor-grid"></div>
         </div>
         <div class="m-footer">
-            <button class="btn btn-outline btn-flex" onclick="clearMobile()">CLEAR</button>
+            <button class="btn btn-outline btn-flex" onclick="clearMobile()">CLEAR CANVAS</button>
             <button class="btn btn-flex" onclick="sendMobile()">RUN</button>
         </div>
     </div>
@@ -263,10 +249,8 @@
         let ponies = [];
         let ponyQueue = []; 
         let grass = [];
-        
         let gameState = 'ROAMING';
         let cooldownTimer = 0;
-
         let peer = null, conn = null;
         let pcGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
         let mobileGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
@@ -301,7 +285,7 @@
                 peer.on('open', id => {
                     const url = `${location.href}?host=${id}`;
                     new QRCode(document.getElementById("qrcode"), {
-                        text: url, width: 140, height: 140,
+                        text: url, width: 110, height: 110,
                         colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L
                     });
                 });
@@ -311,25 +295,26 @@
             } catch(e) { console.error(e); }
         }
 
-        // === 核心：添加请求逻辑 ===
+        // === 核心：小马生成 ===
         function requestSpawnPony(name, pixels, color) {
             const newPony = {
                 id: Math.random().toString(36).substr(2, 9),
                 name: name || 'PONY',
                 pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_PIXELS)),
                 color: color || COLORS.CYAN,
-                x: 20, 
-                y: 30 + Math.random() * (GAME_H - PONY_SIZE - 30), 
+                x: 20, y: 30 + Math.random() * (GAME_H - 60), 
                 speed: 3.5 + Math.random() * 3,
                 state: 'racing',
-                hasCrown: false, isStreak: false, crownCount: 0,
+                hasCrown: false, isStreak: false, crownCount: 0, // 强制归零
                 timer: 0, frame: 0, finishedWalking: false
             };
 
+            // 游戏逻辑：如果比赛中 -> 进队列
             if (gameState === 'RACING' || gameState === 'COOLDOWN') {
                 ponyQueue.push(newPony);
                 updateHUD();
             } else {
+                // 闲逛中 -> 直接开始新比赛
                 ponies.push(newPony);
                 startRace();
             }
@@ -337,7 +322,7 @@
 
         function startCooldown() {
             gameState = 'COOLDOWN';
-            cooldownTimer = 180; // 3s
+            cooldownTimer = 300; // 5s
         }
 
         function startRace() {
@@ -348,9 +333,10 @@
             
             ponies.forEach(p => {
                 p.x = 20;
-                p.y = 30 + Math.random() * (GAME_H - PONY_SIZE - 30);
+                p.y = 30 + Math.random() * (GAME_H - 60);
                 p.state = 'racing';
                 p.finishedWalking = false;
+                // 保留 crownCount 和 isStreak 状态，不重置
             });
 
             grass = [];
@@ -364,13 +350,14 @@
         }
 
         function updateGameLogic() {
-            const alert = document.getElementById('queue-alert');
+            const hud = document.getElementById('hud');
+            const alert = document.getElementById('queue-text');
 
             if (gameState === 'COOLDOWN') {
                 cooldownTimer--;
                 alert.style.display = 'block';
                 alert.innerText = `NEXT RACE IN: ${Math.ceil(cooldownTimer/60)}`;
-                
+                hud.innerText = `STATUS: PREPARING...`;
                 if (cooldownTimer <= 0) {
                     alert.style.display = 'none';
                     startRace();
@@ -378,20 +365,22 @@
                 updatePoniesMovement(); 
             }
             else if (gameState === 'RACING') {
+                hud.innerText = "STATUS: RACING!!!";
                 if (ponyQueue.length > 0) {
                     alert.style.display = 'block';
                     alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`;
                 } else {
                     alert.style.display = 'none';
                 }
-                
                 updatePoniesMovement();
                 checkRaceEnd();
             }
             else if (gameState === 'ROAMING') {
+                hud.innerText = "NOWHERE RUNRUN";
                 alert.style.display = 'none';
                 updatePoniesMovement();
-                if (ponyQueue.length > 0) startCooldown(); 
+                // 散步时有人加，直接开赛，不需要倒计时
+                if (ponyQueue.length > 0) startRace(); 
             }
 
             const active = ponies.filter(p => p.state === 'racing');
@@ -406,11 +395,8 @@
             const finished = ponies.filter(p => p.state === 'finished');
             let raceOverTrigger = false;
             
-            if (ponies.length > 10) {
-                if (finished.length >= 10) raceOverTrigger = true;
-            } else {
-                if (ponies.length > 0 && finished.length === ponies.length) raceOverTrigger = true;
-            }
+            if (ponies.length > 10) { if (finished.length >= 10) raceOverTrigger = true; }
+            else { if (ponies.length > 0 && finished.length === ponies.length) raceOverTrigger = true; }
 
             if (raceOverTrigger) {
                 if (ponies.length > 10) {
@@ -418,18 +404,11 @@
                     losers.forEach(p => explode(p));
                     ponies = ponies.filter(p => p.state === 'finished');
                 }
-                
                 ponies.forEach(p => { 
-                    p.state = 'roaming'; 
-                    p.timer = 0; 
-                    p.targetX = null; 
+                    if(p.state === 'finished') { p.state = 'roaming'; p.timer = 0; p.targetX = null; }
                 });
-
                 gameState = 'ROAMING';
-                
-                if (ponyQueue.length > 0) {
-                    startCooldown();
-                }
+                if (ponyQueue.length > 0) startCooldown();
             }
         }
 
@@ -439,28 +418,27 @@
 
             ponies.forEach(p => {
                 p.frame++;
-                
                 if (p.state === 'racing') {
                     p.x += p.speed * (0.9 + Math.random() * 0.2);
                     p.facing = 1;
-                    
                     if (p.x >= FINISH_X) {
                         p.state = 'finished';
                         if (finishedCount === 0 && !winnerFoundThisFrame && gameState === 'RACING') {
                             winnerFoundThisFrame = true;
-                            
+                            // 冠军判定逻辑重写
                             if (p.hasCrown) {
-                                p.isStreak = true; 
+                                p.isStreak = true; // 连胜
                             } else {
                                 p.hasCrown = true;
                                 p.isStreak = false;
+                                p.crownCount = 1; 
                             }
-                            
-                            // 冠军确定，清理其他人的皇冠
+                            // 其他所有马皇冠归零
                             ponies.forEach(o => { 
-                                if(o !== p) { 
+                                if(o.id !== p.id) { 
                                     o.hasCrown = false; 
                                     o.isStreak = false; 
+                                    o.crownCount = 0; 
                                 }
                             });
                         }
@@ -492,7 +470,6 @@
                         if (d < minD) { minD = d; target = g; }
                     });
                 }
-                
                 if (target) {
                     let dir = Math.sign(target.x - p.x);
                     if (Math.abs(target.x - p.x) > 5) { p.x += dir * 0.8; p.facing = dir; }
@@ -570,6 +547,7 @@
                 el.querySelector('.p-grid').style.transform = `scaleX(${p.facing || 1})`;
 
                 const crownC = el.querySelector('.crown-container');
+                // 只有皇冠开关打开，且是真正的冠军
                 if (p.hasCrown) {
                     crownC.classList.remove('hidden');
                 } else {
@@ -579,7 +557,6 @@
                 el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none';
                 el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
 
-                // 像素渲染
                 const isMoving = p.state !== 'idle' && p.state !== 'eating';
                 const frameStep = isMoving ? Math.floor(p.frame / 10) % 2 : 0;
                 let html = '';
@@ -595,16 +572,6 @@
             });
         }
 
-        function updateHUD() {
-            // 状态更新时显示队列信息
-            const alert = document.getElementById('queue-alert');
-            if (gameState === 'RACING' && ponyQueue.length > 0) {
-                alert.style.display = 'block';
-                alert.innerText = `${ponyQueue.length} WAITING...`;
-            }
-        }
-
-        // === 移动端 & 编辑器 ===
         function initMobile() {
             initEditor('m-grid', 'm-colors', mobileGrid);
             try {
@@ -623,9 +590,16 @@
             conn.send({ name: document.getElementById('m-name').value.toUpperCase() || 'MOBILE', pixels: mobileGrid, color: selectedColor });
             alert("Sent!");
         }
-        function clearMobile() { clearGridData(mobileGrid); renderGrid('m-grid', mobileGrid, selectedColor); }
-        function clearDesktop() { clearGridData(pcGrid); renderGrid('pc-grid', pcGrid, selectedColor); }
-        function clearGridData(grid) { for(let r=0; r<8; r++) for(let c=0; c<8; c++) grid[r][c] = 0; }
+        
+        // === 修复 Clear 逻辑 ===
+        function clearMobile() {
+            for(let r=0; r<8; r++) for(let c=0; c<8; c++) mobileGrid[r][c] = 0;
+            renderGrid('m-grid', mobileGrid, selectedColor);
+        }
+        function clearDesktop() {
+            for(let r=0; r<8; r++) for(let c=0; c<8; c++) pcGrid[r][c] = 0;
+            renderGrid('pc-grid', pcGrid, selectedColor);
+        }
 
         function openDesktopEditor() {
             renderGrid('pc-grid', pcGrid, selectedColor);
