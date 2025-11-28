@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - STABLE 35:1</title>
+    <title>HORSE RUNRUN - FINAL FIX</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -14,8 +14,7 @@
             --primary: #40e0d0;
             --panel: #004d40;
             --border: #00695c;
-            
-            /* 逻辑分辨率 35:1 */
+            /* 1:35 逻辑分辨率 */
             --game-w: 3500px; 
             --game-h: 100px;
         }
@@ -60,8 +59,8 @@
 
         /* 2. 中间：跑道视口 (自动缩放) */
         #game-scaler {
-            width: 98vw; /* 占满屏幕宽度 */
-            height: 120px; /* 视觉高度 */
+            width: 98vw; 
+            height: 150px; /* 视觉高度 */
             display: flex; justify-content: center; align-items: center;
         }
 
@@ -71,7 +70,7 @@
             height: var(--game-h);
             background: #000; 
             position: relative;
-            border: 4px solid var(--primary); /* 边框加粗 */
+            border: 4px solid var(--primary); 
             box-shadow: 0 0 30px rgba(64, 224, 208, 0.3);
             overflow: hidden; 
             transform-origin: center center;
@@ -102,12 +101,12 @@
         }
         .hud { position: absolute; bottom: 4px; right: 10px; font-size: 32px; opacity: 0.5; letter-spacing: 2px; }
 
-        /* 实体 - 尺寸调整适配 100px 高度 */
+        /* 实体 */
         .entity { position: absolute; width: 50px; height: 50px; will-change: transform; }
         .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; }
         
         .crown-container {
-            position: absolute; top: -25px; left: 50%; transform: translateX(-50%);
+            position: absolute; top: -35px; left: 50%; transform: translateX(-50%);
             width: 30px; height: 30px; animation: bounce 1s infinite; z-index: 10;
             display: flex; flex-direction: column-reverse; align-items: center;
         }
@@ -152,6 +151,7 @@
             overflow: hidden; min-height: 300px;
         }
         
+        /* 核心修复：强制设置 Grid 列数，防止变竖条 */
         .editor-grid {
             display: grid;
             grid-template-columns: repeat(8, 1fr); 
@@ -160,7 +160,9 @@
             background: #333; border: 2px solid #555;
             touch-action: none;
         }
-        .editor-cell { width: 38px; height: 38px; background: #000; }
+        .editor-cell { 
+            width: 38px; height: 38px; background: #000; 
+        }
         
         .color-picker { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
         .c-dot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #333; }
@@ -186,7 +188,7 @@
             <div id="game-screen">
                 <div class="grid-bg"></div>
                 <div class="finish-line"></div>
-                <div class="hud">MODE:RACE // STATUS:LIVE</div>
+                <div class="hud">MODE:RACE // RATIO:1:35 // STATUS:LIVE</div>
                 
                 <div id="layer-grass"></div>
                 <div id="layer-pony"></div>
@@ -195,14 +197,14 @@
         </div>
 
         <div class="desktop-btn-container">
-            <button class="btn" id="add-pony-btn">+ ADD PONY</button>
+            <button class="btn" onclick="spawnPony('PC-USER', null, COLORS.CYAN)">+ ADD PONY</button>
         </div>
     </div>
 
     <div id="mobile-view" style="display: none;">
         <div class="m-header">
             <span class="m-title">PIXEL MAKER</span>
-            <span id="m-status" class="m-status">Connecting...</span>
+            <span id="m-status" class="m-status">Wait...</span>
         </div>
         <div class="m-controls">
             <input type="text" id="m-name" placeholder="ENTER NAME" maxlength="8">
@@ -212,20 +214,17 @@
             <div id="m-grid" class="editor-grid"></div>
         </div>
         <div class="m-footer">
-            <button class="btn btn-outline" id="m-clear-btn">CLEAR</button>
-            <button class="btn" style="flex:1" id="m-send-btn">CAST TO SCREEN</button>
+            <button class="btn btn-outline" onclick="clearMobile()">CLEAR</button>
+            <button class="btn" style="flex:1" onclick="sendMobile()">CAST TO SCREEN</button>
         </div>
     </div>
 
     <script>
-        // === 核心逻辑参数 ===
-        const LOGICAL_WIDTH = 3500;
-        const LOGICAL_HEIGHT = 100;
-        
-        const SCREEN_WIDTH = LOGICAL_WIDTH;
-        const SCREEN_HEIGHT = LOGICAL_HEIGHT;
-        const FINISH_X = SCREEN_WIDTH - 400; 
-        const PONY_SIZE = 50; // 实体大小
+        // === 配置 ===
+        const GAME_W = 3500;
+        const GAME_H = 100;
+        const FINISH_X = GAME_W - 300;
+        const PONY_SIZE = 50;
         
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#fff' };
         
@@ -244,43 +243,44 @@
         let grass = [];
         let peer = null;
         let conn = null;
-        let mobileEditorGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
-        let selectedColor = COLORS.CYAN;
+        let myGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
+        let myColor = COLORS.CYAN;
 
+        // === 初始化：优先启动游戏逻辑 ===
         window.onload = function() {
-            // 绑定按钮事件
-            document.getElementById('add-pony-btn').addEventListener('click', () => {
-                spawnPony('PC-USER', null, COLORS.CYAN);
-            });
-            document.getElementById('m-clear-btn').addEventListener('click', clearMobile);
-            document.getElementById('m-send-btn').addEventListener('click', sendMobile);
-
+            // 1. 启动游戏循环
+            requestAnimationFrame(gameLoop);
+            
+            // 2. 适配屏幕
             window.addEventListener('resize', fitScreen);
             fitScreen();
 
+            // 3. 检查是否是移动端
             const isMobile = new URLSearchParams(window.location.search).has('host');
             if(isMobile) {
                 document.getElementById('desktop-view').style.display = 'none';
                 document.getElementById('mobile-view').style.display = 'flex';
-                initMobile();
+                // 延迟一点初始化移动端，确保 DOM 就绪
+                setTimeout(initMobile, 100);
             } else {
-                initDesktop();
+                // 4. 桌面端：尝试连接网络，但如果不通也不影响本地按钮
+                initPeerNetwork();
             }
-
-            requestAnimationFrame(gameLoop);
         };
 
         function fitScreen() {
             const el = document.getElementById('game-screen');
+            if(!el) return;
             const availableW = window.innerWidth * 0.95;
-            const scale = Math.min(availableW / LOGICAL_WIDTH, 1);
+            const scale = Math.min(availableW / GAME_W, 1);
             el.style.transform = `scale(${scale})`;
         }
 
-        function initDesktop() {
+        function initPeerNetwork() {
             try {
                 peer = new Peer();
                 peer.on('open', id => {
+                    console.log("Peer ID:", id);
                     const url = `${location.href}?host=${id}`;
                     new QRCode(document.getElementById("qrcode"), {
                         text: url, width: 140, height: 140,
@@ -289,48 +289,53 @@
                     });
                 });
                 peer.on('connection', c => {
-                    c.on('data', data => spawnPony(data.name, data.pixels, data.color));
+                    c.on('data', data => {
+                        console.log("Data from mobile:", data);
+                        spawnPony(data.name, data.pixels, data.color);
+                    });
                 });
-            } catch(e) { console.error(e); }
+                peer.on('error', err => console.error("PeerJS Error:", err));
+            } catch(e) {
+                console.error("PeerJS Init Exception:", e);
+                // 就算网络报错，也不影响下面的 spawnPony 运行
+            }
         }
 
+        // === 核心：生成小马 ===
         function spawnPony(name, pixels, color) {
             const id = Math.random().toString(36).substr(2, 9);
-            // 重置
-            ponies.forEach(p => { p.x = 20; p.state = 'racing'; p.finishedWalking = false; });
             
-            // 安全高度 10~40 (高度100px，马50px)
-            const safeY = 10 + Math.random() * (SCREEN_HEIGHT - 60);
+            // 重置所有马回起点
+            ponies.forEach(p => { 
+                p.x = 20; 
+                p.state = 'racing'; 
+                p.finishedWalking = false; 
+            });
+            
+            const safeY = 10 + Math.random() * (GAME_H - PONY_SIZE - 20);
 
             ponies.push({
                 id, name: name || 'PONY',
                 pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_PIXELS)),
                 color: color || COLORS.CYAN,
                 x: 20, y: safeY, 
-                speed: 3.0 + Math.random() * 3, // 速度
+                speed: 3.0 + Math.random() * 3,
                 state: 'racing',
                 hasCrown: false, isStreak: false, crownCount: 0,
                 timer: 0, frame: 0
             });
             grass = []; 
+            console.log("Pony spawned. Total:", ponies.length);
         }
 
-        function gameLoop() {
-            update();
-            draw();
-            requestAnimationFrame(gameLoop);
-        }
-
+        // === 游戏循环 ===
         function update() {
             const active = ponies.filter(p => p.state === 'racing');
             const finished = ponies.filter(p => p.state === 'finished');
             
             let raceOver = false;
-            if (ponies.length > 10) { 
-                if (finished.length >= 10) raceOver = true; 
-            } else { 
-                if (ponies.length > 0 && finished.length === ponies.length) raceOver = true; 
-            }
+            if (ponies.length > 10) { if (finished.length >= 10) raceOver = true; }
+            else { if (ponies.length > 0 && finished.length === ponies.length) raceOver = true; }
 
             if (raceOver) {
                 if (ponies.length > 10) {
@@ -343,12 +348,13 @@
                 });
             }
 
+            // 草
             const maxGrass = 5 + ponies.length * 2;
             const growthRate = 0.02 + ponies.length * 0.005;
             if (active.length === 0 && Math.random() < growthRate && grass.length < maxGrass) {
                 grass.push({ 
-                    x: Math.random() * SCREEN_WIDTH, 
-                    y: 10 + Math.random() * (SCREEN_HEIGHT - 20) 
+                    x: Math.random() * GAME_W, 
+                    y: 10 + Math.random() * (GAME_H - 20) 
                 });
             }
 
@@ -357,12 +363,13 @@
                 p.frame++;
                 if (p.state === 'racing') {
                     p.x += p.speed * (0.9 + Math.random() * 0.2); 
-                    if (p.x >= FINISH_LINE_X) {
+                    if (p.x >= FINISH_X) {
                         p.state = 'finished';
                         if (finished.length === 0 && !winnerFound) {
                             winnerFound = true;
                             if (p.hasCrown) p.isStreak = true;
                             else { p.hasCrown = true; p.isStreak = false; }
+                            
                             ponies.forEach(o => { if(o !== p) { o.hasCrown = false; o.isStreak = false; o.crownCount = 0; }});
                             if (!p.crownCount) p.crownCount = 0;
                             p.crownCount++;
@@ -370,7 +377,7 @@
                     }
                 }
                 else if (p.state === 'finished') {
-                    if (p.x < SCREEN_WIDTH - 80) { p.x += 0.8; p.finishedWalking = true; }
+                    if (p.x < GAME_W - 80) { p.x += 0.8; p.finishedWalking = true; }
                     else p.finishedWalking = false;
                 }
                 else if (p.state === 'roaming' || p.state === 'eating') {
@@ -392,7 +399,7 @@
                     if (Math.abs(target.x - p.x) > 5) { p.x += dir * 0.8; p.facing = dir; }
                     else { p.state = 'eating'; p.timer = 100; grass = grass.filter(g => g !== target); }
                 } else {
-                    if (p.timer-- <= 0) { p.timer = 60 + Math.random() * 100; p.targetX = Math.random() * SCREEN_WIDTH; }
+                    if (p.timer-- <= 0) { p.timer = 60 + Math.random() * 100; p.targetX = Math.random() * GAME_W; }
                     if (p.targetX && Math.abs(p.targetX - p.x) > 5) {
                         let dir = Math.sign(p.targetX - p.x);
                         p.x += dir * 0.8; p.facing = dir;
@@ -402,7 +409,7 @@
                 if (p.timer-- <= 0) p.state = 'roaming';
             }
             if (Math.random() < 0.05) p.y += (Math.random() - 0.5) * 2;
-            p.y = Math.max(5, Math.min(SCREEN_HEIGHT - 55, p.y));
+            p.y = Math.max(5, Math.min(GAME_H - PONY_SIZE - 5, p.y));
         }
 
         function explode(p) {
@@ -461,9 +468,6 @@
                 const crownC = el.querySelector('.crown-container');
                 if (p.hasCrown) {
                     crownC.classList.remove('hidden');
-                    let crowns = '';
-                    for(let i=0; i<p.crownCount; i++) crowns += `<svg class="crown-icon" width="24" height="24" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path></svg>`;
-                    crownC.innerHTML = crowns;
                     crownC.style.top = (-25 - (p.crownCount - 1) * 10) + 'px';
                 } else {
                     crownC.classList.add('hidden');
@@ -472,7 +476,7 @@
                 el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none';
                 el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
 
-                // 像素绘制
+                // 像素渲染
                 const isMoving = p.state !== 'idle' && p.state !== 'eating';
                 const frameStep = isMoving ? Math.floor(p.frame / 10) % 2 : 0;
                 let html = '';
@@ -488,86 +492,72 @@
             });
         }
 
-        // === 移动端逻辑 ===
+        // === 移动端逻辑 (独立) ===
         function initMobile() {
             const host = new URLSearchParams(window.location.search).get('host');
-            initEditor();
+            initEditor('m-grid', 'm-colors');
             
-            peer = new Peer();
-            peer.on('open', () => {
-                conn = peer.connect(host);
-                conn.on('open', () => {
-                    document.getElementById('m-status').innerText = "CONNECTED";
-                    document.getElementById('m-status').style.color = "#69f0ae";
+            try {
+                peer = new Peer();
+                peer.on('open', () => {
+                    conn = peer.connect(host);
+                    conn.on('open', () => {
+                        document.getElementById('m-status').innerText = "CONNECTED";
+                        document.getElementById('m-status').style.color = "#69f0ae";
+                    });
                 });
-            });
+            } catch (e) { console.error(e); }
         }
 
         function sendMobile() {
-            if(!conn) return alert("Not Connected!");
+            if(!conn) return alert("WAIT FOR CONNECT");
             conn.send({
                 name: document.getElementById('m-name').value.toUpperCase() || 'MOBILE',
-                pixels: mobileEditorGrid,
-                color: selectedColor
+                pixels: myGrid,
+                color: myColor
             });
-            const btn = document.getElementById('m-send-btn');
+            const btn = document.querySelector('.m-footer .btn:last-child');
             btn.innerText = "SENT!";
             setTimeout(() => btn.innerText = "CAST TO SCREEN", 1000);
         }
 
         function clearMobile() {
-            mobileEditorGrid = Array(8).fill(0).map(()=>Array(8).fill(0));
-            renderGrid(mobileEditorGrid, selectedColor);
+            myGrid = Array(8).fill(0).map(()=>Array(8).fill(0));
+            renderGrid('m-grid', myGrid, myColor);
         }
 
-        function initEditor() {
-            // 颜色选择器
-            const colorEl = document.getElementById('m-colors');
+        function initEditor(gridId, colorId) {
+            const gridEl = document.getElementById(gridId);
+            const colorEl = document.getElementById(colorId);
+            
             colorEl.innerHTML = '';
             Object.values(COLORS).forEach(c => {
                 if(c === COLORS.WHITE) return;
                 const dot = document.createElement('div');
-                dot.className = `c-dot ${c === selectedColor ? 'active' : ''}`;
+                dot.className = `c-dot ${c === myColor ? 'active' : ''}`;
                 dot.style.background = c;
                 dot.onclick = () => {
-                    selectedColor = c;
-                    renderGrid(mobileEditorGrid, selectedColor);
+                    myColor = c;
+                    renderGrid(gridId, myGrid, myColor);
                     Array.from(colorEl.children).forEach(d => d.classList.remove('active'));
                     dot.classList.add('active');
                 };
                 colorEl.appendChild(dot);
             });
 
-            // 网格容器
-            const container = document.getElementById('m-grid');
-            container.innerHTML = '';
-            mobileEditorGrid.forEach((row, r) => {
-                row.forEach((val, c) => {
-                    const cell = document.createElement('div');
-                    cell.className = 'editor-cell';
-                    cell.dataset.r = r; cell.dataset.c = c;
-                    container.appendChild(cell);
-                });
-            });
-            renderGrid(mobileEditorGrid, selectedColor);
+            renderGrid(gridId, myGrid, myColor);
 
-            // 触摸事件
+            // 优化的绘图事件
             let drawing = false, eraseMode = false;
+            
             const updateCell = (r, c) => {
                 const newVal = eraseMode ? 0 : 1;
-                if (mobileEditorGrid[r][c] !== newVal) {
-                    mobileEditorGrid[r][c] = newVal;
-                    const cell = container.children[r * 8 + c];
-                    if (newVal) {
-                        cell.style.background = selectedColor;
-                        cell.style.boxShadow = `0 0 5px ${selectedColor}`;
-                    } else {
-                        cell.style.background = '#000';
-                        cell.style.boxShadow = 'none';
-                    }
+                if (myGrid[r][c] !== newVal) {
+                    myGrid[r][c] = newVal;
+                    renderGrid(gridId, myGrid, myColor);
                 }
             };
-
+            
             const start = (e) => {
                 if(e.cancelable) e.preventDefault();
                 const t = e.touches ? e.touches[0] : e;
@@ -575,7 +565,7 @@
                 if(el && el.dataset.r) {
                     drawing = true;
                     const r = parseInt(el.dataset.r), c = parseInt(el.dataset.c);
-                    eraseMode = mobileEditorGrid[r][c] === 1;
+                    eraseMode = myGrid[r][c] === 1;
                     updateCell(r, c);
                 }
             };
@@ -590,28 +580,25 @@
             };
             const end = () => { drawing = false; };
 
-            container.addEventListener('mousedown', start);
-            container.addEventListener('touchstart', start, {passive: false});
+            gridEl.addEventListener('mousedown', start);
+            gridEl.addEventListener('touchstart', start, {passive: false});
             window.addEventListener('mousemove', move);
             window.addEventListener('touchmove', move, {passive: false});
             window.addEventListener('mouseup', end);
             window.addEventListener('touchend', end);
         }
 
-        function renderGrid(data, color) {
-            const container = document.getElementById('m-grid');
+        function renderGrid(id, data, color) {
+            const el = document.getElementById(id);
+            // 简单粗暴：全量重绘保证不闪烁
+            let html = '';
             data.forEach((row, r) => {
                 row.forEach((val, c) => {
-                    const cell = container.children[r * 8 + c];
-                    if(val) {
-                        cell.style.background = color;
-                        cell.style.boxShadow = `0 0 5px ${color}`;
-                    } else {
-                        cell.style.background = '#000';
-                        cell.style.boxShadow = 'none';
-                    }
+                    let style = val ? `background:${color}; box-shadow:0 0 5px ${color}` : `background:#000`;
+                    html += `<div class="editor-cell" style="${style}" data-r="${r}" data-c="${c}"></div>`;
                 });
             });
+            el.innerHTML = html;
         }
     </script>
 </body>
