@@ -4,11 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>HORSE RUNRUN</title>
-    <!-- 引入外部库 CDN -->
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
-    <!-- 字体 -->
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 
     <style>
@@ -68,16 +66,26 @@
             z-index: -1;
         }
 
-        /* --- 主屏幕区域 --- */
-        #game-container {
-            position: relative;
+        /* --- 布局容器 --- */
+        /* 使用 Flexbox 将游戏区和二维码区横向排列 */
+        #main-layout {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px; /* 间距 */
             transform-origin: center;
-            /* 适配移动端或小屏幕 */
             transform: scale(1);
         }
 
+        /* --- 主屏幕区域 (左侧) --- */
+        #game-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
         .screen-frame {
-            width: 1000px;
+            width: 900px; /* 稍微缩小一点给二维码腾地儿 */
             height: 120px;
             background: var(--color-panel);
             border-top: 1px solid var(--color-border);
@@ -133,6 +141,39 @@
             font-size: 10px;
             opacity: 0.4;
             letter-spacing: 2px;
+        }
+
+        /* --- 二维码区域 (右侧) --- */
+        #qr-section {
+            width: 160px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 2px solid var(--color-border);
+            background: rgba(0, 37, 26, 0.8);
+            padding: 15px;
+            border-radius: 4px;
+            box-shadow: 0 0 20px rgba(64, 224, 208, 0.1);
+        }
+
+        #qrcode {
+            background: white;
+            padding: 5px;
+            margin-bottom: 10px;
+            /* 确保二维码不会超出容器 */
+            max-width: 100%; 
+        }
+        
+        #qrcode img {
+            display: block; /* 消除图片底部的间隙 */
+        }
+
+        .qr-text {
+            font-size: 0.9rem;
+            color: var(--color-primary);
+            text-align: center;
+            line-height: 1.2;
+            letter-spacing: 1px;
         }
 
         /* --- 实体 (小马/草) --- */
@@ -275,40 +316,47 @@
 </head>
 <body>
 
-    <!-- 背景纹理 -->
     <div class="bg-grid"></div>
 
-    <!-- ===== 桌面端视图 ===== -->
     <div id="desktop-view">
         <div style="position: absolute; top: 40px; width: 100%; text-align: center;">
             <h1 class="vfd-glow" style="font-size: 3rem; margin: 0;">HORSE RUNRUN</h1>
             <p style="color: var(--color-border); letter-spacing: 2px;">ADD RUNNER TO START RACE</p>
         </div>
 
-        <div id="game-container">
-            <div class="screen-frame">
-                <div class="screw tl"></div><div class="screw tr"></div>
-                <div class="screw bl"></div><div class="screw br"></div>
+        <div id="main-layout">
+            
+            <div id="game-section">
+                <div id="game-container">
+                    <div class="screen-frame">
+                        <div class="screw tl"></div><div class="screw tr"></div>
+                        <div class="screw bl"></div><div class="screw br"></div>
+                        
+                        <div class="screen-glass" id="screen-glass">
+                            <div class="screen-grid"></div>
+                            <div class="start-line"></div>
+                            <div class="hud">MODE:RACE // STATUS:LIVE</div>
+                            
+                            <div id="grass-layer"></div>
+                            <div id="pony-layer"></div>
+                        </div>
+                    </div>
+                </div>
                 
-                <div class="screen-glass" id="screen-glass">
-                    <div class="screen-grid"></div>
-                    <div class="start-line"></div>
-                    <div class="hud">MODE:RACE // STATUS:LIVE</div>
-                    
-                    <!-- 动态内容容器 -->
-                    <div id="grass-layer"></div>
-                    <div id="pony-layer"></div>
+                <div style="margin-top: 20px;">
+                    <button class="btn" onclick="openEditor()">+ NEW RUNNER</button>
                 </div>
             </div>
-        </div>
 
-        <div style="position: absolute; bottom: 40px; display: flex; gap: 20px;">
-            <button class="btn" onclick="openEditor()">+ NEW RUNNER</button>
-            <button class="btn" onclick="openQR()" id="btn-mobile">MOBILE LINK</button>
+            <div id="qr-section">
+                <div class="qr-text" style="margin-bottom: 5px;">SCAN TO JOIN</div>
+                <div id="qrcode"></div>
+                <div class="qr-text" style="font-size: 0.7rem; opacity: 0.7; margin-top: 5px;">MOBILE LINK</div>
+            </div>
+
         </div>
     </div>
 
-    <!-- ===== 移动端视图 ===== -->
     <div id="mobile-view" class="hidden">
         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--color-border); padding-bottom: 10px;">
             <span style="font-size: 1.5rem;" class="vfd-glow">REMOTE DRAW</span>
@@ -326,7 +374,6 @@
         </div>
     </div>
 
-    <!-- ===== 弹窗：编辑器 ===== -->
     <div id="modal-editor" class="modal-overlay hidden">
         <div class="modal-content">
             <h2 class="vfd-glow" style="margin-top: 0;">// ENTITY DESIGNER</h2>
@@ -346,19 +393,9 @@
         </div>
     </div>
 
-    <!-- ===== 弹窗：二维码 ===== -->
-    <div id="modal-qr" class="modal-overlay hidden" onclick="closeQR()">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <h2 class="vfd-glow">// MOBILE LINK</h2>
-            <div id="qrcode" style="background: white; padding: 10px; margin: 20px auto; width: fit-content;"></div>
-            <p style="font-size: 0.8rem; color: var(--color-border);">SCAN TO DRAW ON PHONE</p>
-            <button class="btn" onclick="closeQR()">CLOSE</button>
-        </div>
-    </div>
-
     <script>
         // --- 常量与配置 ---
-        const SCREEN_WIDTH = 1000;
+        const SCREEN_WIDTH = 900; // 对应 CSS .screen-frame 的宽度
         const SCREEN_HEIGHT = 120;
         const PONY_SCALE = 4;
         const PONY_WIDTH = 8 * PONY_SCALE; // 8x8 Grid
@@ -426,7 +463,8 @@
             peer = new Peer();
             peer.on('open', (id) => {
                 peerId = id;
-                document.getElementById('btn-mobile').innerText = "MOBILE LINK";
+                // 生成并显示固定二维码
+                generateFixedQR();
             });
             peer.on('connection', (c) => {
                 c.on('data', (data) => {
@@ -477,9 +515,9 @@
                     const SAFE_TOP = 35; 
                     const SAFE_H = SCREEN_HEIGHT - PONY_HEIGHT - 10 - SAFE_TOP;
                     
-                    if (side === 0) { p.x = 20 + Math.random() * 900; p.y = -50; }
+                    if (side === 0) { p.x = 20 + Math.random() * (SCREEN_WIDTH - 100); p.y = -50; }
                     else if (side === 1) { p.x = SCREEN_WIDTH + 10; p.y = SAFE_TOP + Math.random() * SAFE_H; }
-                    else if (side === 2) { p.x = 20 + Math.random() * 900; p.y = SCREEN_HEIGHT + 10; }
+                    else if (side === 2) { p.x = 20 + Math.random() * (SCREEN_WIDTH - 100); p.y = SCREEN_HEIGHT + 10; }
                     else { p.x = -50; p.y = SAFE_TOP + Math.random() * SAFE_H; }
                 }
 
@@ -526,11 +564,6 @@
                     }
                 }
                 else if (p.state === 'walking_to_food') {
-                    // 重新确认草还在不在
-                    let g = grass.find(item => Math.abs(item.x - p.x) < 150 && Math.abs(item.y - p.y) < 150);
-                    // 简单逻辑：如果范围内有草，就向它走去（取第一个）
-                    // 为了更精确，这里简化为向最近的草走
-                    // 实际上上面已经探测过了，这里简单向最近草移动
                     // 重新找一下最近的草
                     let closest = null; 
                     let d = 9999;
@@ -623,7 +656,7 @@
             const ponyLayer = document.getElementById('pony-layer');
             const grassLayer = document.getElementById('grass-layer');
             
-            // 渲染草 (简单的 diff 优化: 如果数量没变，先假设 DOM 不用大动，但为了简单这里全重绘，草很少)
+            // 渲染草
             grassLayer.innerHTML = '';
             grass.forEach(g => {
                 const el = document.createElement('div');
@@ -633,9 +666,6 @@
             });
 
             // 渲染小马
-            // 这是一个简单的 DOM Diff 实现，避免每帧都在innerHTML
-            // 查找现有节点，更新 transform。如果没有，创建。如果有多的，删除。
-            
             const existingNodes = Array.from(ponyLayer.children);
             const activeIds = new Set(ponies.map(p => p.id));
 
@@ -713,7 +743,6 @@
         function updatePonyAnimation(p, el) {
             const gridEl = el.querySelector('.pixel-grid');
             
-            // 简单的帧计数器挂载在对象上
             if (!p.frameTimer) p.frameTimer = 0;
             if (!p.currentFrame) p.currentFrame = 0;
 
@@ -739,18 +768,12 @@
         }
 
         function renderPixels(gridEl, p) {
-            // 生成走路帧 (自动计算 Frame 2)
             const frame1 = p.pixels;
-            // 简单的自动动画逻辑：身体下沉，腿移动
-            // Frame 2
             let frame2 = frame1.map((row, y) => {
                 if (y < 6) { // 身体部分，下沉
-                    // 取上一行，如果是第一行则空
                     return y > 0 ? frame1[y-1] : [0,0,0,0,0,0,0,0];
                 } else { // 腿部分
-                    // 循环移位
                     let newRow = [...row];
-                    // 简单移位模拟走路
                     const shift = 2;
                     for(let i=0; i<8; i++) {
                         newRow[i] = row[(i+3)%8];
@@ -758,9 +781,7 @@
                     return newRow;
                 }
             });
-            // 吃东西动画
             if (p.state === 'eating') {
-               // 只是 Frame 1 把头低下来
                frame2 = frame1.map((row, y) => {
                    if (y >= 1 && y <= 4) return frame1[y-1];
                    if (y===0) return [0,0,0,0,0,0,0,0];
@@ -785,13 +806,12 @@
         function createPony(name, pixels, color) {
             const id = 'p-' + Date.now() + '-' + Math.random();
             
-            // 限制数量：如果超过10，删掉最旧的（非冠军）
+            // 限制数量
             if (ponies.length >= 10) {
                 const winnerIdx = ponies.findIndex(p => p.hasCrown);
-                // 简单处理：删掉第一个不是冠军的
                 const removeIdx = ponies.findIndex(p => !p.hasCrown);
                 if (removeIdx !== -1) ponies.splice(removeIdx, 1);
-                else ponies.shift(); // 全是冠军？不可能，但以防万一
+                else ponies.shift();
             }
 
             // 重置现有小马到起点
@@ -799,7 +819,7 @@
                 p.state = 'racing';
                 p.x = 20;
                 p.y = 20 + Math.random() * (SCREEN_HEIGHT - PONY_HEIGHT - 40);
-                p.speed = 1.5 + Math.random() * 2.0; // 1.5 - 3.5
+                p.speed = 1.5 + Math.random() * 2.0;
                 p.hasCrown = false;
                 p.targetX = null;
             });
@@ -826,7 +846,6 @@
 
         function savePony() {
             const name = document.getElementById('editor-name').value;
-            // 这里的 editorGrid 已经是 8x8 数组
             createPony(name, editorGrid, selectedColor);
             closeEditor();
         }
@@ -862,7 +881,6 @@
                     selectedColor = c;
                     document.querySelectorAll('.color-dot').forEach(el => el.classList.remove('selected'));
                     div.classList.add('selected');
-                    // 重新渲染格子以应用新颜色
                     if (containerId === 'desktop-color-picker') renderEditorGrid('desktop-editor-grid');
                     else renderEditorGrid('mobile-editor-grid');
                 };
@@ -877,7 +895,6 @@
         function renderEditorGrid(containerId) {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
-            // 假设 editorGrid 是 8x8
             editorGrid.forEach((row, r) => {
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'editor-row';
@@ -889,11 +906,8 @@
                         cell.style.backgroundColor = selectedColor;
                         cell.style.boxShadow = `0 0 4px ${selectedColor}`;
                     }
-                    // 简单点击切换
                     cell.onmousedown = () => togglePixel(r, c, containerId);
-                    // 拖拽支持 (简单版)
                     cell.onmouseenter = (e) => { if(e.buttons === 1) togglePixel(r, c, containerId, true); }
-                    
                     rowDiv.appendChild(cell);
                 });
                 container.appendChild(rowDiv);
@@ -901,7 +915,6 @@
         }
 
         function togglePixel(r, c, containerId, isDrag) {
-            // 如果是拖拽，只设为1（画笔模式），或者根据第一次点击决定？简单起见：翻转
             if (isDrag) {
                 editorGrid[r][c] = 1;
             } else {
@@ -910,32 +923,25 @@
             renderEditorGrid(containerId);
         }
 
-        // --- 二维码逻辑 ---
-        function openQR() {
+        // --- 二维码逻辑 (修改为固定生成) ---
+        function generateFixedQR() {
             if (!peerId) return;
             const url = `${window.location.protocol}//${window.location.host}${window.location.pathname}?connectTo=${peerId}`;
             
             document.getElementById('qrcode').innerHTML = '';
             new QRCode(document.getElementById('qrcode'), {
                 text: url,
-                width: 200,
-                height: 200,
+                width: 128,
+                height: 128,
                 colorDark : "#000000",
                 colorLight : "#ffffff",
                 correctLevel : QRCode.CorrectLevel.H
             });
-            
-            document.getElementById('modal-qr').classList.remove('hidden');
-        }
-        function closeQR() {
-            document.getElementById('modal-qr').classList.add('hidden');
         }
 
         // --- 移动端逻辑 ---
         function initMobile(hostId) {
             buildColorPicker('mobile-color-picker');
-            
-            // 移动端也需要一个网格容器
             const container = document.getElementById('mobile-editor-container');
             container.innerHTML = '<div id="mobile-editor-grid" class="editor-grid"></div>';
             renderEditorGrid('mobile-editor-grid');
