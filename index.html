@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - FINAL FIX</title>
+    <title>HORSE RUNRUN - FINAL POLISH</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -48,12 +48,10 @@
         }
 
         #game-screen {
-            /* --- 关键修复 --- */
             width: var(--game-w); 
             height: var(--game-h);
-            /* 强制不许被挤压！保持3500px实宽 */
+            /* 关键：禁止挤压 */
             flex-shrink: 0; 
-            
             background: #000; 
             position: relative;
             border: 4px solid var(--primary); 
@@ -75,6 +73,7 @@
             background-image: linear-gradient(45deg, #40e0d0 25%, transparent 25%, transparent 50%, #40e0d0 50%, #40e0d0 75%, transparent 75%, transparent);
             background-size: 12px 12px; opacity: 0.8; z-index: 0;
         }
+        /* 问题4修复：文案修改 */
         .hud { position: absolute; bottom: 4px; right: 10px; font-size: 32px; opacity: 0.5; letter-spacing: 2px; }
 
         /* 实体 */
@@ -86,7 +85,6 @@
             width: 32px; height: 32px; animation: bounce 1s infinite; z-index: 10;
             display: flex; flex-direction: column-reverse; align-items: center;
         }
-        .crown-icon { margin-bottom: -18px; filter: drop-shadow(0 0 2px rgba(0,0,0,0.5)); width: 100%; height: 100%; }
         
         .aura {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -196,7 +194,7 @@
             <div id="game-screen">
                 <div class="grid-bg"></div>
                 <div class="finish-line"></div>
-                <div class="hud">MODE:RACE // RATIO:1:35 // STATUS:LIVE</div>
+                <div class="hud">NOWHERE RUNRUN</div>
                 <div id="layer-grass"></div>
                 <div id="layer-pony"></div>
                 <div id="layer-fx"></div>
@@ -224,6 +222,7 @@
             <div id="pc-grid" class="editor-grid"></div>
             <div style="display: flex; gap: 20px; width: 100%;">
                 <button class="btn btn-outline btn-flex" onclick="document.getElementById('modal-editor').style.display='none'">CANCEL</button>
+                <button class="btn btn-outline btn-flex" style="border-color:#ffb300; color:#ffb300;" onclick="clearDesktop()">CLEAR</button>
                 <button class="btn btn-flex" onclick="savePCPony()">SPAWN</button>
             </div>
         </div>
@@ -321,10 +320,15 @@
 
         function spawnPony(name, pixels, color) {
             const id = Math.random().toString(36).substr(2, 9);
-            // 重置所有人回起点
-            ponies.forEach(p => { p.x = 20; p.state = 'racing'; p.finishedWalking = false; });
+            // 问题1修复：重置所有人回起点时，务必清除皇冠和爆气状态
+            ponies.forEach(p => { 
+                p.x = 20; 
+                p.state = 'racing'; 
+                p.finishedWalking = false;
+                p.hasCrown = false; // 清除皇冠
+                p.isStreak = false; // 清除爆气
+            });
             
-            // 安全 Y (10 ~ H-50-10)
             const safeY = 10 + Math.random() * (GAME_H - PONY_SIZE - 20);
 
             ponies.push({
@@ -365,7 +369,6 @@
                 });
             }
 
-            // 补草
             const maxGrass = 5 + ponies.length * 2;
             const growthRate = 0.02 + ponies.length * 0.005;
             if (active.length === 0 && Math.random() < growthRate && grass.length < maxGrass) {
@@ -380,7 +383,7 @@
                 p.frame++;
                 if (p.state === 'racing') {
                     p.x += p.speed * (0.9 + Math.random() * 0.2); 
-                    p.facing = 1; // 向右
+                    p.facing = 1; 
                     
                     if (p.x >= FINISH_X) {
                         p.state = 'finished';
@@ -393,11 +396,8 @@
                     }
                 }
                 else if (p.state === 'finished') {
-                    // 终点后继续慢跑，直到墙边
                     if (p.x < GAME_W - PONY_SIZE - 20) { p.x += 0.8; p.finishedWalking = true; }
                     else p.finishedWalking = false;
-                    
-                    // 只在终点区散步
                     if (!p.finishedWalking) aiBehavior(p, true);
                 }
                 else if (p.state === 'roaming' || p.state === 'eating') {
@@ -405,7 +405,6 @@
                     aiBehavior(p, false);
                 }
                 
-                // === 绝对防出界 ===
                 p.x = Math.max(0, Math.min(GAME_W - PONY_SIZE, p.x));
                 p.y = Math.max(2, Math.min(GAME_H - PONY_SIZE - 2, p.y));
             });
@@ -417,7 +416,7 @@
 
             if (p.state === 'roaming' || p.state === 'finished') {
                 let target = null, minD = 500;
-                if (!restrictFinish) { // 终点不吃草
+                if (!restrictFinish) { 
                     grass.forEach(g => {
                         let d = Math.abs(g.x - p.x);
                         if (d < minD) { minD = d; target = g; }
@@ -511,7 +510,6 @@
                 el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none';
                 el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
 
-                // 像素渲染
                 const isMoving = p.state !== 'idle' && p.state !== 'eating';
                 const frameStep = isMoving ? Math.floor(p.frame / 10) % 2 : 0;
                 let html = '';
@@ -546,7 +544,27 @@
             conn.send({ name: document.getElementById('m-name').value.toUpperCase() || 'MOBILE', pixels: mobileGrid, color: selectedColor });
             alert("Sent!");
         }
-        function clearMobile() { mobileGrid = Array(8).fill(0).map(()=>Array(8).fill(0)); renderGrid('m-grid', mobileGrid, selectedColor); }
+
+        // 问题3修复核心：通用清空数据函数 (原地修改数组，不改变引用)
+        function clearGridData(gridData) {
+            for(let r=0; r<8; r++) {
+                for(let c=0; c<8; c++) {
+                    gridData[r][c] = 0;
+                }
+            }
+        }
+
+        // 移动端 Clear
+        function clearMobile() {
+            clearGridData(mobileGrid);
+            renderGrid('m-grid', mobileGrid, selectedColor);
+        }
+
+        // 桌面端 Clear
+        function clearDesktop() {
+            clearGridData(pcGrid);
+            renderGrid('pc-grid', pcGrid, selectedColor);
+        }
 
         function initEditor(gridId, colorId, dataGrid) {
             const gridEl = document.getElementById(gridId);
@@ -575,6 +593,7 @@
                 if(el && el.dataset.r) {
                     const r = parseInt(el.dataset.r), c = parseInt(el.dataset.c);
                     if(e.type === 'mousedown' || e.type === 'touchstart') eraseMode = dataGrid[r][c] === 1;
+                    // 问题3修复的关键：监听器修改的是外部传入的 dataGrid 引用，Clear 时必须修改这个引用指向的内容
                     if(dataGrid[r][c] !== (eraseMode?0:1)) { dataGrid[r][c] = eraseMode?0:1; renderGrid(gridId, dataGrid, selectedColor); }
                 }
             };
