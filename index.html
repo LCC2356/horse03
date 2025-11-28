@@ -39,17 +39,19 @@
         /* 通用样式类 */
         .hidden { display: none !important; }
         .vfd-glow { text-shadow: 0 0 5px rgba(64, 224, 208, 0.6), 0 0 10px rgba(64, 224, 208, 0.4); }
+        
         .btn {
             background: #00251a;
             border: 2px solid var(--color-primary);
             color: var(--color-primary);
-            padding: 10px 20px;
+            padding: 10px 30px;
             font-family: 'VT323', monospace;
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             cursor: pointer;
             text-transform: uppercase;
             box-shadow: 0 0 15px rgba(64, 224, 208, 0.2);
             transition: all 0.2s;
+            margin-top: 20px;
         }
         .btn:hover { background: var(--color-primary); color: #00251a; }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -216,10 +218,10 @@
             height: 4px;
         }
 
-        /* SVG 皇冠容器 */
+        /* SVG 皇冠容器 - 【修改点】位置上移 */
         .crown-container {
             position: absolute;
-            top: -20px; /* 调整 SVG 皇冠的高度 */
+            top: -38px; /* 从 -20px 改为 -38px，移到名字上方 */
             left: 50%;
             transform: translateX(-50%);
             width: 24px;
@@ -363,9 +365,7 @@
                     </div>
                 </div>
                 
-                <div style="margin-top: 20px;">
-                    <button class="btn" onclick="openEditor()">+ NEW RUNNER</button>
-                </div>
+                <button class="btn" onclick="openEditor()">+ NEW RUNNER</button>
             </div>
 
             <div id="qr-section">
