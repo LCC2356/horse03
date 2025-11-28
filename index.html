@@ -241,22 +241,31 @@
         /* SVG 皇冠容器 */
         .crown-container {
             position: absolute;
-            /* 关键修改：起始位置更高，避免遮挡名字 (-16px) */
-            top: -45px; 
+            top: -45px; /* 保持在名字上方 */
             left: 50%;
             transform: translateX(-50%);
             width: 24px;
             height: 24px;
             animation: bounce 1s infinite;
             z-index: 10;
-            display: flex;
-            flex-direction: column-reverse; /* 新皇冠堆在上面 */
-            align-items: center;
         }
-        
-        .crown-icon {
-            margin-bottom: -14px; /* 皇冠重叠 */
-            filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
+
+        /* 连胜爆气光环 */
+        .aura {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 140%; height: 140%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(250,204,21,0.3) 0%, transparent 70%);
+            box-shadow: 0 0 15px #facc15;
+            z-index: -1;
+            animation: pulse-aura 0.8s infinite alternate;
+            display: none; /* 默认隐藏 */
+        }
+        @keyframes pulse-aura {
+            from { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
         }
 
         .name-tag {
@@ -606,7 +615,6 @@
                 });
             }
 
-            // 草生成
             if (!isRaceOngoing && ponies.length > 0 && ponies.every(p=>p.state !== 'racing') && grass.length < 8 && Math.random() < 0.01) {
                 grass.push({
                     id: Math.random(),
@@ -631,12 +639,21 @@
                         // 判定冠军：这一轮还没有人到达终点
                         if (finishedPonies === 0 && !winnerFoundThisFrame) {
                             winnerFoundThisFrame = true;
-                            // 【逻辑修改】连胜叠加，否则清零
-                            p.crownCount++;
-                            // 其他所有马皇冠清零
+                            // 【连胜逻辑】
+                            if (p.hasCrown) {
+                                // 已经有皇冠，触发连胜
+                                p.isStreak = true; 
+                            } else {
+                                // 第一次夺冠
+                                p.hasCrown = true;
+                                p.isStreak = false;
+                            }
+                            
+                            // 其他所有马重置状态
                             ponies.forEach(other => {
                                 if (other.id !== p.id) {
-                                    other.crownCount = 0;
+                                    other.hasCrown = false;
+                                    other.isStreak = false;
                                 }
                             });
                         }
@@ -705,7 +722,6 @@
         }
 
         function handleRoamingMovement(p) {
-            // 散步范围限制
             if (p.x < 10 || p.x > SCREEN_WIDTH - 40 || p.y < 5 || p.y > SCREEN_HEIGHT - 40) {
                 const dx = (SCREEN_WIDTH/2) - p.x;
                 const dy = (SCREEN_HEIGHT/2) - p.y;
@@ -825,28 +841,25 @@
                     pixelContainer.style.transform = 'scaleX(1)';
                 }
 
-                // 皇冠渲染 (叠加)
+                // 皇冠渲染
                 const crownContainer = el.querySelector('.crown-container');
-                crownContainer.innerHTML = ''; 
-                if (p.crownCount > 0) {
+                if (p.hasCrown) {
                     crownContainer.classList.remove('hidden');
-                    for(let i=0; i<p.crownCount; i++) {
-                        const crownSvg = `
-                            <svg class="crown-icon" width="24" height="24" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path>
-                            </svg>
-                        `;
-                        crownContainer.innerHTML += crownSvg;
-                    }
-                    // 动态高度调整，基于 -40px 往上叠加
-                    crownContainer.style.top = (-40 - (p.crownCount * 10)) + 'px';
                 } else {
                     crownContainer.classList.add('hidden');
                 }
 
+                // 爆气光环渲染
+                const aura = el.querySelector('.aura');
+                if (p.isStreak) {
+                    aura.style.display = 'block';
+                } else {
+                    aura.style.display = 'none';
+                }
+
                 const nameEl = el.querySelector('.name-tag');
-                nameEl.style.color = p.crownCount > 0 ? COLORS.GOLD : p.color;
-                nameEl.style.opacity = p.crownCount > 0 ? 1 : 0.8;
+                nameEl.style.color = p.hasCrown ? COLORS.GOLD : p.color;
+                nameEl.style.opacity = p.hasCrown ? 1 : 0.8;
 
                 updatePonyAnimation(p, el);
             });
@@ -859,8 +872,20 @@
             div.style.width = PONY_WIDTH + 'px';
             div.style.height = PONY_HEIGHT + 'px';
 
+            // 爆气光环
+            const aura = document.createElement('div');
+            aura.className = 'aura';
+            div.appendChild(aura);
+
+            // SVG 皇冠
             const crownContainer = document.createElement('div');
             crownContainer.className = 'crown-container hidden';
+            crownContainer.innerHTML = `
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path>
+                </svg>
+            `;
+            crownContainer.style.filter = "drop-shadow(0 0 5px rgba(250, 204, 21, 0.8))";
             div.appendChild(crownContainer);
 
             const name = document.createElement('div');
@@ -945,13 +970,19 @@
         function createPony(name, pixels, color) {
             const id = 'p-' + Date.now() + '-' + Math.random();
             
-            // 重置现有小马到起点
+            if (ponies.length >= 10) {
+                const winnerIdx = ponies.findIndex(p => p.hasCrown);
+                const removeIdx = ponies.findIndex(p => !p.hasCrown);
+                if (removeIdx !== -1) ponies.splice(removeIdx, 1);
+                else ponies.shift();
+            }
+
             ponies.forEach(p => {
                 p.state = 'racing';
                 p.x = 20;
                 p.y = 20 + Math.random() * (SCREEN_HEIGHT - PONY_HEIGHT - 40);
                 p.speed = 1.5 + Math.random() * 2.0;
-                // 注意：这里不重置 crownCount
+                // 不重置 hasCrown 和 isStreak，保留连胜
                 p.targetX = null;
             });
 
@@ -963,7 +994,8 @@
                 facing: 'right',
                 state: 'racing',
                 speed: 1.5 + Math.random() * 2.0,
-                crownCount: 0, // 新马初始皇冠为0
+                hasCrown: false,
+                isStreak: false,
                 color: color || COLORS.TURQUOISE,
                 pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_FRAME_1)),
                 timer: 0
@@ -1127,10 +1159,14 @@
 
         function initMobile(hostId) {
             buildColorPicker('mobile-color-picker');
+            
+            // 修复：先创建容器，且重要：初始化独立的 mobileEditorGrid
+            mobileEditorGrid = JSON.parse(JSON.stringify(DEFAULT_FRAME_1));
+            
             const container = document.getElementById('mobile-editor-container');
             container.innerHTML = '<div id="mobile-editor-grid" class="editor-grid"></div>';
-            editorGrid = JSON.parse(JSON.stringify(DEFAULT_FRAME_1));
-            renderEditorGrid('mobile-editor-grid');
+            
+            buildEditorGrid('mobile-editor-grid', mobileEditorGrid);
 
             peer = new Peer();
             peer.on('open', () => {
@@ -1151,7 +1187,7 @@
             const name = document.getElementById('mobile-name-input').value || "MOBILE";
             conn.send({
                 name: name,
-                pixels: JSON.parse(JSON.stringify(editorGrid)), 
+                pixels: JSON.parse(JSON.stringify(mobileEditorGrid)), 
                 color: selectedColor
             });
             alert("Sent!");
