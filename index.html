@@ -39,17 +39,19 @@
         /* 通用样式类 */
         .hidden { display: none !important; }
         .vfd-glow { text-shadow: 0 0 5px rgba(64, 224, 208, 0.6), 0 0 10px rgba(64, 224, 208, 0.4); }
+        
         .btn {
             background: #00251a;
             border: 2px solid var(--color-primary);
             color: var(--color-primary);
-            padding: 10px 20px;
+            padding: 10px 30px;
             font-family: 'VT323', monospace;
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             cursor: pointer;
             text-transform: uppercase;
             box-shadow: 0 0 15px rgba(64, 224, 208, 0.2);
             transition: all 0.2s;
+            margin-top: 20px; /* 按钮顶部的间距 */
         }
         .btn:hover { background: var(--color-primary); color: #00251a; }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -69,7 +71,8 @@
         /* --- 布局容器 --- */
         #main-layout {
             display: flex;
-            align-items: center;
+            /* 【关键修改】顶部对齐，解决二维码下沉问题 */
+            align-items: flex-start; 
             justify-content: center;
             gap: 20px;
             transform-origin: center;
@@ -144,7 +147,7 @@
 
         /* --- 二维码区域 (右侧) --- */
         #qr-section {
-            height: 120px;
+            height: 120px; /* 与跑道同高 */
             display: flex;
             flex-direction: row; 
             align-items: center;
@@ -162,13 +165,14 @@
             flex-direction: column;
             align-items: flex-start;
             justify-content: center;
+            min-width: 80px;
         }
 
         #qrcode {
             background: white;
             padding: 5px;
-            width: 100px;
-            height: 100px;
+            width: 90px;
+            height: 90px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -185,7 +189,7 @@
         .qr-text {
             font-size: 1.2rem;
             color: var(--color-primary);
-            line-height: 1.2;
+            line-height: 1.1;
             letter-spacing: 1px;
             margin-bottom: 4px;
         }
@@ -193,7 +197,7 @@
         .qr-sub-text {
             font-size: 0.8rem;
             color: var(--color-primary);
-            opacity: 0.7;
+            opacity: 0.6;
             letter-spacing: 1px;
         }
 
@@ -218,7 +222,7 @@
         /* 像素皇冠容器 */
         .crown-container {
             position: absolute;
-            top: -12px; /* 贴近头顶 */
+            top: -12px; /* 完美贴合头顶 */
             left: 50%;
             transform: translateX(-50%);
             width: 32px;
@@ -362,9 +366,7 @@
                     </div>
                 </div>
                 
-                <div style="margin-top: 20px;">
-                    <button class="btn" onclick="openEditor()">+ NEW RUNNER</button>
-                </div>
+                <button class="btn" onclick="openEditor()">+ NEW RUNNER</button>
             </div>
 
             <div id="qr-section">
@@ -432,7 +434,7 @@
             GOLD: '#facc15' 
         };
 
-        // 默认像素画 (8x8) - 优化后更像动物
+        // 默认像素画 (8x8) - 像小动物
         const DEFAULT_FRAME_1 = [
             [0,0,0,0,0,0,1,0], // 耳朵
             [0,0,0,0,0,1,1,1], // 头
