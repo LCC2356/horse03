@@ -241,8 +241,8 @@
         /* SVG 皇冠容器 */
         .crown-container {
             position: absolute;
-            /* 基础高度 -12px，多个皇冠会用 JS 动态向上叠加 */
-            top: -12px; 
+            /* 关键修改：起始位置更高，避免遮挡名字 (-16px) */
+            top: -45px; 
             left: 50%;
             transform: translateX(-50%);
             width: 24px;
@@ -250,7 +250,7 @@
             animation: bounce 1s infinite;
             z-index: 10;
             display: flex;
-            flex-direction: column-reverse; /* 让新皇冠堆在上面 */
+            flex-direction: column-reverse; /* 新皇冠堆在上面 */
             align-items: center;
         }
         
@@ -579,9 +579,6 @@
             const finishedPonies = ponies.filter(p => p.state === 'finished').length;
             const isRaceOngoing = ponies.some(p => p.state === 'racing');
             
-            // 判定：是否触发“全员到达”或“末位淘汰”
-            // 如果总数<=10，所有人都到终点才触发
-            // 如果总数>10，前10名到终点就触发（第11名及以后爆炸）
             let raceOverTrigger = false;
             
             if (totalPonies <= 10) {
@@ -592,18 +589,14 @@
 
             // 1. 比赛结束处理逻辑
             if (raceOverTrigger) {
-                // 如果是 >10 的情况，淘汰还在跑的
                 if (totalPonies > 10) {
-                    // 找到所有还在 racing 的（失败者）
                     const losers = ponies.filter(p => p.state === 'racing');
                     losers.forEach(loser => {
                         explodePony(loser);
                     });
-                    // 只保留已完成的（前10名）
                     ponies = ponies.filter(p => p.state === 'finished');
                 }
 
-                // 让剩下的所有马（在终点的）开始散步
                 ponies.forEach(p => {
                     if (p.state === 'finished') {
                         p.state = 'roaming';
@@ -613,7 +606,7 @@
                 });
             }
 
-            // 草生成逻辑
+            // 草生成
             if (!isRaceOngoing && ponies.length > 0 && ponies.every(p=>p.state !== 'racing') && grass.length < 8 && Math.random() < 0.01) {
                 grass.push({
                     id: Math.random(),
@@ -623,9 +616,6 @@
             }
 
             let winnerFoundThisFrame = false;
-            // 检查这一局是否已经有人拿过皇冠了（防止平局重复加）
-            // 注意：这里需要更精细的逻辑。我们假设每场比赛只有一个冠军增加皇冠数。
-            // 实际上 racing 状态下谁先过线谁加。
             
             ponies.forEach(p => {
                 // 2. 比赛逻辑
@@ -640,17 +630,22 @@
                         
                         // 判定冠军：这一轮还没有人到达终点
                         if (finishedPonies === 0 && !winnerFoundThisFrame) {
-                            p.crownCount++; // 皇冠+1
                             winnerFoundThisFrame = true;
+                            // 【逻辑修改】连胜叠加，否则清零
+                            p.crownCount++;
+                            // 其他所有马皇冠清零
+                            ponies.forEach(other => {
+                                if (other.id !== p.id) {
+                                    other.crownCount = 0;
+                                }
+                            });
                         }
                     }
                 } 
                 // 3. 终点等待逻辑
                 else if (p.state === 'finished') {
-                    // 即使到了终点，只要没撞墙，继续慢慢走，防止重叠
                     if (p.x < SCREEN_WIDTH - PONY_WIDTH - 5) {
                         p.x += 0.5; 
-                        // 关键：保持 walking 动画
                         p.isWalkingAtFinish = true; 
                     } else {
                         p.isWalkingAtFinish = false;
@@ -677,7 +672,6 @@
                         handleRoamingMovement(p);
                     }
                 }
-                // ... 其他状态保持不变
                 else if (p.state === 'walking_to_food') {
                     let closest = null; 
                     let d = 9999;
@@ -752,7 +746,6 @@
         }
 
         function explodePony(p) {
-            // 生成粒子特效
             const fxLayer = document.getElementById('fx-layer');
             const particleCount = 20;
             for(let i=0; i<particleCount; i++) {
@@ -762,7 +755,6 @@
                 particle.style.top = (p.y + PONY_HEIGHT/2) + 'px';
                 particle.style.backgroundColor = p.color;
                 
-                // 随机飞溅方向
                 const angle = Math.random() * Math.PI * 2;
                 const velocity = 2 + Math.random() * 4;
                 const vx = Math.cos(angle) * velocity;
@@ -770,7 +762,6 @@
                 
                 fxLayer.appendChild(particle);
                 
-                // 动画
                 let life = 30;
                 const anim = () => {
                     if (life <= 0) {
@@ -788,7 +779,6 @@
                 requestAnimationFrame(anim);
             }
 
-            // 生成3坨草
             for(let i=0; i<3; i++) {
                 grass.push({
                     id: Math.random(),
@@ -837,10 +827,9 @@
 
                 // 皇冠渲染 (叠加)
                 const crownContainer = el.querySelector('.crown-container');
-                crownContainer.innerHTML = ''; // 清空重绘
+                crownContainer.innerHTML = ''; 
                 if (p.crownCount > 0) {
                     crownContainer.classList.remove('hidden');
-                    // 循环生成皇冠
                     for(let i=0; i<p.crownCount; i++) {
                         const crownSvg = `
                             <svg class="crown-icon" width="24" height="24" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -849,8 +838,8 @@
                         `;
                         crownContainer.innerHTML += crownSvg;
                     }
-                    // 调整容器高度位置，防止堆太高挡住名字
-                    crownContainer.style.top = (-20 - (p.crownCount * 8)) + 'px';
+                    // 动态高度调整，基于 -40px 往上叠加
+                    crownContainer.style.top = (-40 - (p.crownCount * 10)) + 'px';
                 } else {
                     crownContainer.classList.add('hidden');
                 }
@@ -895,7 +884,6 @@
             if (!p.frameTimer) p.frameTimer = 0;
             if (!p.currentFrame) p.currentFrame = 0;
 
-            // 动画条件：在比赛、散步、找食，或者虽然finished但还在终点区移动
             const isMoving = p.state === 'racing' || 
                              p.state === 'roaming' || 
                              p.state === 'walking_to_food' ||
@@ -957,13 +945,13 @@
         function createPony(name, pixels, color) {
             const id = 'p-' + Date.now() + '-' + Math.random();
             
-            // 重置现有小马到起点 (状态设为 racing)
+            // 重置现有小马到起点
             ponies.forEach(p => {
                 p.state = 'racing';
                 p.x = 20;
                 p.y = 20 + Math.random() * (SCREEN_HEIGHT - PONY_HEIGHT - 40);
                 p.speed = 1.5 + Math.random() * 2.0;
-                // 注意：这里不重置 crownCount，保留冠军荣誉
+                // 注意：这里不重置 crownCount
                 p.targetX = null;
             });
 
@@ -975,7 +963,7 @@
                 facing: 'right',
                 state: 'racing',
                 speed: 1.5 + Math.random() * 2.0,
-                crownCount: 0, // 新马皇冠为0
+                crownCount: 0, // 新马初始皇冠为0
                 color: color || COLORS.TURQUOISE,
                 pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_FRAME_1)),
                 timer: 0
@@ -1163,7 +1151,7 @@
             const name = document.getElementById('mobile-name-input').value || "MOBILE";
             conn.send({
                 name: name,
-                pixels: JSON.parse(JSON.stringify(mobileEditorGrid)), 
+                pixels: JSON.parse(JSON.stringify(editorGrid)), 
                 color: selectedColor
             });
             alert("Sent!");
