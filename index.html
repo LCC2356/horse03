@@ -144,12 +144,11 @@
             border-left: 2px dashed rgba(64, 224, 208, 0.3);
         }
 
-        /* 终点线 (新增) */
+        /* 终点线 */
         .finish-line {
             position: absolute;
-            top: 0; bottom: 0; right: 100px; /* 距离右侧 100px */
+            top: 0; bottom: 0; right: 100px; 
             width: 4px;
-            /* 黑白格纹效果 */
             background-image: linear-gradient(45deg, #40e0d0 25%, transparent 25%, transparent 50%, #40e0d0 50%, #40e0d0 75%, transparent 75%, transparent);
             background-size: 10px 10px;
             opacity: 0.5;
@@ -221,7 +220,7 @@
             letter-spacing: 1px;
         }
 
-        /* --- 实体 (小马/草) --- */
+        /* --- 实体 (小马/草/特效) --- */
         .entity {
             position: absolute;
             will-change: transform;
@@ -239,16 +238,25 @@
             height: 4px;
         }
 
-        /* 像素皇冠容器 */
+        /* SVG 皇冠容器 */
         .crown-container {
             position: absolute;
-            top: -38px;
+            /* 基础高度 -12px，多个皇冠会用 JS 动态向上叠加 */
+            top: -12px; 
             left: 50%;
             transform: translateX(-50%);
             width: 24px;
             height: 24px;
             animation: bounce 1s infinite;
             z-index: 10;
+            display: flex;
+            flex-direction: column-reverse; /* 让新皇冠堆在上面 */
+            align-items: center;
+        }
+        
+        .crown-icon {
+            margin-bottom: -14px; /* 皇冠重叠 */
+            filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
         }
 
         .name-tag {
@@ -268,6 +276,16 @@
             height: 4px;
             background-color: #69f0ae;
             box-shadow: 0 0 4px #69f0ae;
+        }
+        
+        /* 爆炸粒子 */
+        .explosion-particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background-color: #ff5252;
+            box-shadow: 0 0 4px #ff5252;
+            pointer-events: none;
         }
 
         @keyframes bounce {
@@ -417,7 +435,7 @@
                             
                             <div id="grass-layer"></div>
                             <div id="pony-layer"></div>
-                        </div>
+                            <div id="fx-layer"></div> </div>
                     </div>
                 </div>
                 
@@ -436,6 +454,7 @@
     </div>
 
     <div id="mobile-view" class="hidden">
+        
         <div class="mobile-header">
             <span style="font-size: 1.2rem;" class="vfd-glow">REMOTE LINK</span>
             <span id="mobile-status" style="background: #004d40; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">CONNECTING</span>
@@ -482,7 +501,6 @@
         const PONY_SCALE = 4;
         const PONY_WIDTH = 8 * PONY_SCALE; 
         const PONY_HEIGHT = 8 * PONY_SCALE;
-        // 终点线 X 坐标
         const FINISH_LINE_X = 800;
         
         const COLORS = {
@@ -495,7 +513,6 @@
             GOLD: '#facc15' 
         };
 
-        // 默认像素画 (8x8)
         const DEFAULT_FRAME_1 = [
             [0,0,0,0,0,0,1,0],
             [0,0,0,0,0,1,1,1],
@@ -516,10 +533,8 @@
         
         let editorGrid = JSON.parse(JSON.stringify(DEFAULT_FRAME_1)); 
         let mobileEditorGrid = JSON.parse(JSON.stringify(DEFAULT_FRAME_1));
-        
         let selectedColor = COLORS.TURQUOISE;
 
-        // --- 初始化 ---
         function init() {
             const params = new URLSearchParams(window.location.search);
             const connectTo = params.get('connectTo');
@@ -533,7 +548,6 @@
             }
         }
 
-        // --- 桌面端逻辑 ---
         function initDesktop() {
             initPeerHost();
             buildColorPicker('desktop-color-picker');
@@ -554,7 +568,6 @@
             });
         }
 
-        // --- 游戏循环 ---
         function gameLoop() {
             updatePhysics();
             render();
@@ -566,11 +579,42 @@
             const finishedPonies = ponies.filter(p => p.state === 'finished').length;
             const isRaceOngoing = ponies.some(p => p.state === 'racing');
             
-            // 如果至少有一匹马且所有马都跑完了，全员散步
-            let allFinishedTrigger = (totalPonies > 0 && finishedPonies === totalPonies);
+            // 判定：是否触发“全员到达”或“末位淘汰”
+            // 如果总数<=10，所有人都到终点才触发
+            // 如果总数>10，前10名到终点就触发（第11名及以后爆炸）
+            let raceOverTrigger = false;
+            
+            if (totalPonies <= 10) {
+                if (totalPonies > 0 && finishedPonies === totalPonies) raceOverTrigger = true;
+            } else {
+                if (finishedPonies >= 10) raceOverTrigger = true;
+            }
 
-            if (!isRaceOngoing && totalPonies > 0 && grass.length < 8 && Math.random() < 0.01) {
-                // 草主要长在中间区域，吸引大家回来
+            // 1. 比赛结束处理逻辑
+            if (raceOverTrigger) {
+                // 如果是 >10 的情况，淘汰还在跑的
+                if (totalPonies > 10) {
+                    // 找到所有还在 racing 的（失败者）
+                    const losers = ponies.filter(p => p.state === 'racing');
+                    losers.forEach(loser => {
+                        explodePony(loser);
+                    });
+                    // 只保留已完成的（前10名）
+                    ponies = ponies.filter(p => p.state === 'finished');
+                }
+
+                // 让剩下的所有马（在终点的）开始散步
+                ponies.forEach(p => {
+                    if (p.state === 'finished') {
+                        p.state = 'roaming';
+                        p.timer = 0;
+                        p.targetX = null;
+                    }
+                });
+            }
+
+            // 草生成逻辑
+            if (!isRaceOngoing && ponies.length > 0 && ponies.every(p=>p.state !== 'racing') && grass.length < 8 && Math.random() < 0.01) {
                 grass.push({
                     id: Math.random(),
                     x: 100 + Math.random() * (SCREEN_WIDTH - 200),
@@ -579,18 +623,12 @@
             }
 
             let winnerFoundThisFrame = false;
-            const existingWinner = ponies.some(p => p.hasCrown);
-
+            // 检查这一局是否已经有人拿过皇冠了（防止平局重复加）
+            // 注意：这里需要更精细的逻辑。我们假设每场比赛只有一个冠军增加皇冠数。
+            // 实际上 racing 状态下谁先过线谁加。
+            
             ponies.forEach(p => {
-                // 1. 如果全员到达，切换到散步模式
-                if (allFinishedTrigger && p.state === 'finished') {
-                    p.state = 'roaming';
-                    p.timer = 0;
-                    p.targetX = null;
-                    // 【关键修改】不再瞬移重置，而是直接从当前位置开始散步
-                }
-
-                // 2. 比赛中逻辑
+                // 2. 比赛逻辑
                 if (p.state === 'racing') {
                     let variance = 0.5 + Math.random() * 1.5;
                     p.x += p.speed * variance;
@@ -599,21 +637,28 @@
                     // 冲过终点线
                     if (p.x > FINISH_LINE_X) {
                         p.state = 'finished';
-                        if (!existingWinner && !winnerFoundThisFrame) {
-                            p.hasCrown = true;
+                        
+                        // 判定冠军：这一轮还没有人到达终点
+                        if (finishedPonies === 0 && !winnerFoundThisFrame) {
+                            p.crownCount++; // 皇冠+1
                             winnerFoundThisFrame = true;
                         }
                     }
                 } 
-                // 3. 到达终点但其他人还没到：在终点区减速/闲逛
+                // 3. 终点等待逻辑
                 else if (p.state === 'finished') {
-                    // 只要没撞墙，就慢慢走一点，防止堆叠
+                    // 即使到了终点，只要没撞墙，继续慢慢走，防止重叠
                     if (p.x < SCREEN_WIDTH - PONY_WIDTH - 5) {
-                        p.x += 0.5; // 慢速向前
+                        p.x += 0.5; 
+                        // 关键：保持 walking 动画
+                        p.isWalkingAtFinish = true; 
+                    } else {
+                        p.isWalkingAtFinish = false;
                     }
                 }
-                // 4. 散步模式
+                // 4. 散步逻辑
                 else if (p.state === 'roaming') {
+                    p.isWalkingAtFinish = false;
                     let targetGrass = null;
                     let minDist = 200;
                     grass.forEach(g => {
@@ -632,7 +677,7 @@
                         handleRoamingMovement(p);
                     }
                 }
-                // 5. 找食模式
+                // ... 其他状态保持不变
                 else if (p.state === 'walking_to_food') {
                     let closest = null; 
                     let d = 9999;
@@ -658,26 +703,16 @@
                         }
                     }
                 }
-                // 6. 吃东西
                 else if (p.state === 'eating') {
                     if (p.timer > 0) p.timer--;
                     else p.state = 'roaming';
                 }
             });
-
-            // 数量限制清理
-            if (!isRaceOngoing && ponies.length > 10) {
-                const winner = ponies.find(p => p.hasCrown);
-                const others = ponies.filter(p => !p.hasCrown);
-                const keepCount = winner ? 9 : 10;
-                const keptOthers = others.slice(-keepCount);
-                ponies = winner ? [...keptOthers, winner] : keptOthers;
-            }
         }
 
         function handleRoamingMovement(p) {
-            // 越界弹回
-            if (p.x < -20 || p.x > SCREEN_WIDTH || p.y < -50 || p.y > SCREEN_HEIGHT) {
+            // 散步范围限制
+            if (p.x < 10 || p.x > SCREEN_WIDTH - 40 || p.y < 5 || p.y > SCREEN_HEIGHT - 40) {
                 const dx = (SCREEN_WIDTH/2) - p.x;
                 const dy = (SCREEN_HEIGHT/2) - p.y;
                 const len = Math.sqrt(dx*dx + dy*dy);
@@ -691,7 +726,6 @@
                 p.timer--;
             } else {
                 if (Math.random() > 0.3) {
-                    // 倾向于往左边（跑道起点方向）走，因为大家都在终点
                     p.targetX = Math.random() * SCREEN_WIDTH; 
                     p.timer = 60 + Math.random() * 100;
                 } else {
@@ -712,8 +746,55 @@
 
             if (Math.random() < 0.05) {
                 p.y += (Math.random() - 0.5) * 2;
-                if (p.y < 35) p.y = 35;
+                if (p.y < 5) p.y = 5;
                 if (p.y > SCREEN_HEIGHT - 40) p.y = SCREEN_HEIGHT - 40;
+            }
+        }
+
+        function explodePony(p) {
+            // 生成粒子特效
+            const fxLayer = document.getElementById('fx-layer');
+            const particleCount = 20;
+            for(let i=0; i<particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'explosion-particle';
+                particle.style.left = (p.x + PONY_WIDTH/2) + 'px';
+                particle.style.top = (p.y + PONY_HEIGHT/2) + 'px';
+                particle.style.backgroundColor = p.color;
+                
+                // 随机飞溅方向
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = 2 + Math.random() * 4;
+                const vx = Math.cos(angle) * velocity;
+                const vy = Math.sin(angle) * velocity;
+                
+                fxLayer.appendChild(particle);
+                
+                // 动画
+                let life = 30;
+                const anim = () => {
+                    if (life <= 0) {
+                        particle.remove();
+                        return;
+                    }
+                    const currentLeft = parseFloat(particle.style.left);
+                    const currentTop = parseFloat(particle.style.top);
+                    particle.style.left = (currentLeft + vx) + 'px';
+                    particle.style.top = (currentTop + vy) + 'px';
+                    particle.style.opacity = life / 30;
+                    life--;
+                    requestAnimationFrame(anim);
+                };
+                requestAnimationFrame(anim);
+            }
+
+            // 生成3坨草
+            for(let i=0; i<3; i++) {
+                grass.push({
+                    id: Math.random(),
+                    x: p.x + (Math.random() - 0.5) * 40,
+                    y: p.y + (Math.random() - 0.5) * 40
+                });
             }
         }
 
@@ -754,16 +835,29 @@
                     pixelContainer.style.transform = 'scaleX(1)';
                 }
 
+                // 皇冠渲染 (叠加)
                 const crownContainer = el.querySelector('.crown-container');
-                if (p.hasCrown) {
+                crownContainer.innerHTML = ''; // 清空重绘
+                if (p.crownCount > 0) {
                     crownContainer.classList.remove('hidden');
+                    // 循环生成皇冠
+                    for(let i=0; i<p.crownCount; i++) {
+                        const crownSvg = `
+                            <svg class="crown-icon" width="24" height="24" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path>
+                            </svg>
+                        `;
+                        crownContainer.innerHTML += crownSvg;
+                    }
+                    // 调整容器高度位置，防止堆太高挡住名字
+                    crownContainer.style.top = (-20 - (p.crownCount * 8)) + 'px';
                 } else {
                     crownContainer.classList.add('hidden');
                 }
 
                 const nameEl = el.querySelector('.name-tag');
-                nameEl.style.color = p.hasCrown ? COLORS.GOLD : p.color;
-                nameEl.style.opacity = p.hasCrown ? 1 : 0.8;
+                nameEl.style.color = p.crownCount > 0 ? COLORS.GOLD : p.color;
+                nameEl.style.opacity = p.crownCount > 0 ? 1 : 0.8;
 
                 updatePonyAnimation(p, el);
             });
@@ -776,15 +870,8 @@
             div.style.width = PONY_WIDTH + 'px';
             div.style.height = PONY_HEIGHT + 'px';
 
-            // SVG 皇冠
             const crownContainer = document.createElement('div');
             crownContainer.className = 'crown-container hidden';
-            crownContainer.innerHTML = `
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path>
-                </svg>
-            `;
-            crownContainer.style.filter = "drop-shadow(0 0 5px rgba(250, 204, 21, 0.8))";
             div.appendChild(crownContainer);
 
             const name = document.createElement('div');
@@ -808,7 +895,11 @@
             if (!p.frameTimer) p.frameTimer = 0;
             if (!p.currentFrame) p.currentFrame = 0;
 
-            const isMoving = p.state !== 'idle' && p.state !== 'finished';
+            // 动画条件：在比赛、散步、找食，或者虽然finished但还在终点区移动
+            const isMoving = p.state === 'racing' || 
+                             p.state === 'roaming' || 
+                             p.state === 'walking_to_food' ||
+                             (p.state === 'finished' && p.isWalkingAtFinish);
             
             if (isMoving) {
                 p.frameTimer++;
@@ -866,19 +957,13 @@
         function createPony(name, pixels, color) {
             const id = 'p-' + Date.now() + '-' + Math.random();
             
-            if (ponies.length >= 10) {
-                const winnerIdx = ponies.findIndex(p => p.hasCrown);
-                const removeIdx = ponies.findIndex(p => !p.hasCrown);
-                if (removeIdx !== -1) ponies.splice(removeIdx, 1);
-                else ponies.shift();
-            }
-
+            // 重置现有小马到起点 (状态设为 racing)
             ponies.forEach(p => {
                 p.state = 'racing';
                 p.x = 20;
                 p.y = 20 + Math.random() * (SCREEN_HEIGHT - PONY_HEIGHT - 40);
                 p.speed = 1.5 + Math.random() * 2.0;
-                p.hasCrown = false;
+                // 注意：这里不重置 crownCount，保留冠军荣誉
                 p.targetX = null;
             });
 
@@ -890,7 +975,7 @@
                 facing: 'right',
                 state: 'racing',
                 speed: 1.5 + Math.random() * 2.0,
-                hasCrown: false,
+                crownCount: 0, // 新马皇冠为0
                 color: color || COLORS.TURQUOISE,
                 pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_FRAME_1)),
                 timer: 0
@@ -941,7 +1026,6 @@
                     selectedColor = c;
                     document.querySelectorAll('.color-dot').forEach(el => el.classList.remove('selected'));
                     div.classList.add('selected');
-                    // 更新所有选择器状态
                     document.querySelectorAll('.color-dot').forEach(el => {
                         if (el.style.backgroundColor === c) el.classList.add('selected');
                     });
@@ -1057,8 +1141,8 @@
             buildColorPicker('mobile-color-picker');
             const container = document.getElementById('mobile-editor-container');
             container.innerHTML = '<div id="mobile-editor-grid" class="editor-grid"></div>';
-            
-            buildEditorGrid('mobile-editor-grid', mobileEditorGrid);
+            editorGrid = JSON.parse(JSON.stringify(DEFAULT_FRAME_1));
+            renderEditorGrid('mobile-editor-grid');
 
             peer = new Peer();
             peer.on('open', () => {
