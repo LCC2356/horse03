@@ -85,7 +85,7 @@
         }
 
         .screen-frame {
-            width: 900px; /* 稍微缩小一点给二维码腾地儿 */
+            width: 900px; 
             height: 120px;
             background: var(--color-panel);
             border-top: 1px solid var(--color-border);
@@ -146,12 +146,14 @@
         /* --- 二维码区域 (右侧) --- */
         #qr-section {
             width: 160px;
+            height: 120px; /* 【修改点2】高度与跑道一致 */
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center; /* 垂直居中 */
             border: 2px solid var(--color-border);
             background: rgba(0, 37, 26, 0.8);
-            padding: 15px;
+            padding: 10px;
             border-radius: 4px;
             box-shadow: 0 0 20px rgba(64, 224, 208, 0.1);
         }
@@ -159,13 +161,20 @@
         #qrcode {
             background: white;
             padding: 5px;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             /* 确保二维码不会超出容器 */
-            max-width: 100%; 
+            max-width: 100%;
+            /* 限制二维码最大高度，防止撑破容器 */
+            max-height: 85px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         
         #qrcode img {
-            display: block; /* 消除图片底部的间隙 */
+            display: block; 
+            max-width: 100%;
+            height: auto;
         }
 
         .qr-text {
@@ -202,6 +211,7 @@
             color: #facc15; /* Yellow */
             font-size: 20px;
             animation: bounce 1s infinite;
+            z-index: 10;
         }
 
         .name-tag {
@@ -319,11 +329,6 @@
     <div class="bg-grid"></div>
 
     <div id="desktop-view">
-        <div style="position: absolute; top: 40px; width: 100%; text-align: center;">
-            <h1 class="vfd-glow" style="font-size: 3rem; margin: 0;">HORSE RUNRUN</h1>
-            <p style="color: var(--color-border); letter-spacing: 2px;">ADD RUNNER TO START RACE</p>
-        </div>
-
         <div id="main-layout">
             
             <div id="game-section">
@@ -694,9 +699,14 @@
                     pixelContainer.style.transform = 'scaleX(1)';
                 }
 
-                // 皇冠显示
+                // 【修改点3】 修复皇冠显示逻辑
                 const crownEl = el.querySelector('.crown');
-                crownEl.style.display = p.hasCrown ? 'block' : 'none';
+                // 使用 classList 来切换 hidden 类，而不是直接修改 style.display
+                if (p.hasCrown) {
+                    crownEl.classList.remove('hidden');
+                } else {
+                    crownEl.classList.add('hidden');
+                }
 
                 // 名字颜色
                 const nameEl = el.querySelector('.name-tag');
@@ -717,7 +727,7 @@
 
             // 皇冠
             const crown = document.createElement('div');
-            crown.className = 'crown hidden';
+            crown.className = 'crown hidden'; // 默认带有 hidden 类
             crown.innerText = '👑';
             div.appendChild(crown);
 
