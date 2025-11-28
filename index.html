@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - FINAL POLISH</title>
+    <title>HORSE RUNRUN - FINAL</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -14,7 +14,6 @@
             --primary: #40e0d0;
             --panel: #004d40;
             --border: #00695c;
-            /* 逻辑分辨率 3500x100 */
             --game-w: 3500px; 
             --game-h: 100px;
         }
@@ -33,6 +32,8 @@
             gap: 20px;
         }
 
+        .hidden { display: none !important; }
+
         /* === 桌面布局 === */
         #desktop-view {
             display: flex; flex-direction: column;
@@ -41,48 +42,55 @@
             padding-top: 20px;
         }
 
+        #qr-card {
+            background: rgba(0, 77, 64, 0.9);
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 15px 30px;
+            display: flex; align-items: center; gap: 20px;
+            box-shadow: 0 0 40px rgba(64,224,208,0.15);
+            margin-bottom: 20px;
+        }
+        .qr-info h2 { margin: 0; font-size: 2rem; text-shadow: 0 0 10px var(--primary); line-height: 1; }
+        .qr-info p { margin: 5px 0 0 0; font-size: 1.2rem; opacity: 0.7; }
+        #qrcode { background: white; padding: 8px; width: 140px; height: 140px; display: flex; justify-content: center; align-items: center; border-radius: 4px; }
+        #qrcode img { display: block; width: 100%; height: 100%; }
+
         #game-scaler {
-            width: 98vw; height: 150px; 
+            width: 98vw; height: 120px; 
             display: flex; justify-content: center; align-items: center;
-            overflow: visible;
         }
 
         #game-screen {
-            width: var(--game-w); 
-            height: var(--game-h);
-            /* 关键：禁止挤压 */
-            flex-shrink: 0; 
-            background: #000; 
-            position: relative;
+            width: var(--game-w); height: var(--game-h);
+            background: #000; position: relative;
             border: 4px solid var(--primary); 
             box-shadow: 0 0 30px rgba(64, 224, 208, 0.3);
-            overflow: hidden; 
-            transform-origin: center center;
+            overflow: hidden; transform-origin: center center;
+            flex-shrink: 0; /* 核心：防止挤压 */
         }
 
-        /* 跑道元素 */
         .grid-bg {
             position: absolute; inset: 0; opacity: 0.2;
             background-image: linear-gradient(rgba(64, 224, 208, 0.3) 1px, transparent 1px),
                               linear-gradient(90deg, rgba(64, 224, 208, 0.3) 1px, transparent 1px);
             background-size: 50px 50px;
-            pointer-events: none;
         }
         .finish-line {
             position: absolute; top: 0; bottom: 0; right: 400px; width: 12px;
             background-image: linear-gradient(45deg, #40e0d0 25%, transparent 25%, transparent 50%, #40e0d0 50%, #40e0d0 75%, transparent 75%, transparent);
             background-size: 12px 12px; opacity: 0.8; z-index: 0;
         }
-        /* 问题4修复：文案修改 */
         .hud { position: absolute; bottom: 4px; right: 10px; font-size: 32px; opacity: 0.5; letter-spacing: 2px; }
 
-        /* 实体 */
         .entity { position: absolute; width: 50px; height: 50px; will-change: transform; }
         .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; }
         
+        /* 皇冠容器 */
         .crown-container {
-            position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
+            position: absolute; top: -45px; left: 50%; transform: translateX(-50%);
             width: 32px; height: 32px; animation: bounce 1s infinite; z-index: 10;
+            /* 即使 flex 也要能被 hidden 隐藏 */
             display: flex; flex-direction: column-reverse; align-items: center;
         }
         
@@ -103,48 +111,39 @@
         .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
         @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
 
-        /* 控制区域 */
-        #bottom-controls {
-            display: flex; align-items: center; gap: 40px;
-            padding: 20px 30px;
-            background: rgba(0, 37, 26, 0.8);
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            box-shadow: 0 0 25px rgba(64, 224, 208, 0.15);
-        }
-        #qr-card { display: flex; align-items: center; gap: 20px; }
-        #qrcode {
-            background: white; padding: 6px;
-            width: 110px; height: 110px;
-            display: flex; justify-content: center; align-items: center;
-            border-radius: 4px;
-        }
-        #qrcode img { display: block; width: 100%; height: 100%; }
-        .qr-info h2 { margin: 0; font-size: 1.8rem; line-height: 1; }
-        .qr-info p { margin: 5px 0 0 0; font-size: 1rem; opacity: 0.7; }
-
-        /* 按钮 */
+        .desktop-btn-container { margin-top: 30px; z-index: 100; }
         .btn {
             background: #00251a; border: 2px solid var(--primary); color: var(--primary);
             padding: 15px 40px; font-family: 'VT323', monospace; font-size: 1.5rem;
             cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(64, 224, 208, 0.2);
-            transition: all 0.2s;
+            transition: all 0.2s; user-select: none;
         }
         .btn:hover { background: var(--primary); color: #000; }
         .btn:active { transform: translateY(2px); }
+        .btn-outline { background: transparent; border-color: #ff5252; color: #ff5252; }
 
-        /* === 弹窗编辑器 === */
+        /* === 弹窗 === */
         #modal-editor {
             position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000;
             display: none; justify-content: center; align-items: center;
         }
         .modal-content {
-            background: #1a1c20; border: 2px solid var(--primary);
-            padding: 30px; border-radius: 8px;
+            background: #1a1c20; border: 2px solid var(--primary); padding: 30px;
             display: flex; flex-direction: column; align-items: center; gap: 20px;
         }
+        .editor-grid {
+            display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr);
+            gap: 2px; background: #333; border: 2px solid #555; touch-action: none;
+        }
+        .editor-cell { width: 38px; height: 38px; background: #000; }
+        
+        .color-picker { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+        .c-dot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #333; }
+        .c-dot.active { border-color: white; transform: scale(1.1); }
 
-        /* === 移动端样式 === */
+        .btn-flex { flex: 1; display: flex; justify-content: center; align-items: center; }
+
+        /* === 移动端 === */
         #mobile-view {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #111; display: flex; flex-direction: column; z-index: 20000;
@@ -153,63 +152,43 @@
         .m-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; flex-shrink: 0; }
         .m-title { font-size: 1.5rem; color: #fff; }
         .m-status { background: #004d40; padding: 4px 8px; border-radius: 4px; font-size: 1rem; color: #40e0d0; }
-        
         .m-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; flex-shrink: 0; }
         input[type="text"] {
             background: #222; border: 1px solid #444; color: white; padding: 12px;
             font-family: inherit; text-align: center; font-size: 1.5rem; width: 100%; border-radius: 4px;
         }
-        
         .m-canvas-container {
             flex: 1; display: flex; justify-content: center; align-items: center;
             background: #1a1a1a; border-radius: 8px; margin-bottom: 20px;
             overflow: hidden; 
         }
-        
-        /* 网格 */
-        .editor-grid {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr); 
-            grid-template-rows: repeat(8, 1fr);
-            gap: 2px;
-            background: #333; border: 2px solid #555;
-            touch-action: none;
-        }
-        .editor-cell { width: 38px; height: 38px; background: #000; }
-        
-        .color-picker { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
-        .c-dot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #333; }
-        .c-dot.active { border-color: white; transform: scale(1.1); }
-        
         .m-footer { display: flex; gap: 15px; height: 60px; flex-shrink: 0; width: 100%; }
-        .btn-outline { background: transparent; border-color: #ff5252; color: #ff5252; width: 100px; }
-        .btn-flex { flex: 1; display: flex; justify-content: center; align-items: center; }
-
     </style>
 </head>
 <body>
 
     <div id="desktop-view">
+        <div id="qr-card">
+            <div class="qr-info">
+                <h2>JOIN RACE</h2>
+                <p>SCAN TO CUSTOMIZE</p>
+            </div>
+            <div id="qrcode"></div>
+        </div>
+
         <div id="game-scaler">
             <div id="game-screen">
                 <div class="grid-bg"></div>
                 <div class="finish-line"></div>
-                <div class="hud">NOWHERE RUNRUN</div>
+                <div class="hud">NOWHERE RUNRUN</div> 
+                
                 <div id="layer-grass"></div>
                 <div id="layer-pony"></div>
                 <div id="layer-fx"></div>
             </div>
         </div>
 
-        <div id="bottom-controls">
-            <div id="qr-card">
-                <div id="qrcode"></div>
-                <div class="qr-info">
-                    <h2 class="vfd-glow">JOIN RACE</h2>
-                    <p>SCAN TO PLAY</p>
-                </div>
-            </div>
-
+        <div class="desktop-btn-container">
             <button class="btn" onclick="openDesktopEditor()">+ ADD PONY</button>
         </div>
     </div>
@@ -247,14 +226,11 @@
     </div>
 
     <script>
-        // === 核心逻辑参数 (3500x100) ===
         const GAME_W = 3500;
         const GAME_H = 100;
         const PONY_SIZE = 50;
-        const FINISH_X = GAME_W - 400; // 终点线位置
-
+        const FINISH_X = GAME_W - 400;
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#fff' };
-        
         const DEFAULT_PIXELS = [
             [0,0,0,0,0,0,1,0], [0,0,0,0,0,1,1,1], [0,0,0,0,0,1,1,0], [0,0,1,1,1,1,1,0],
             [0,1,1,1,1,1,1,0], [1,1,1,1,1,1,1,0], [0,1,0,0,0,1,0,0], [0,1,0,0,0,1,0,0]
@@ -263,6 +239,7 @@
         let ponies = [];
         let grass = [];
         let peer = null, conn = null;
+        // 使用深拷贝初始化
         let pcGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
         let mobileGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
         let selectedColor = COLORS.CYAN;
@@ -296,7 +273,7 @@
                 peer.on('open', id => {
                     const url = `${location.href}?host=${id}`;
                     new QRCode(document.getElementById("qrcode"), {
-                        text: url, width: 110, height: 110,
+                        text: url, width: 140, height: 140,
                         colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L
                     });
                 });
@@ -306,10 +283,25 @@
             } catch(e) { console.error(e); }
         }
 
+        // === 修复：原地清空数组数据，保持引用不变 ===
+        function clearGridData(grid) {
+            for(let r=0; r<8; r++) {
+                for(let c=0; c<8; c++) {
+                    grid[r][c] = 0;
+                }
+            }
+        }
+
         function openDesktopEditor() {
-            pcGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
+            // 重置数据而不是替换引用
+            for(let r=0; r<8; r++) for(let c=0; c<8; c++) pcGrid[r][c] = DEFAULT_PIXELS[r][c];
             renderGrid('pc-grid', pcGrid, selectedColor);
             document.getElementById('modal-editor').style.display = 'flex';
+        }
+        
+        function clearDesktop() {
+            clearGridData(pcGrid);
+            renderGrid('pc-grid', pcGrid, selectedColor);
         }
 
         function savePCPony() {
@@ -320,13 +312,15 @@
 
         function spawnPony(name, pixels, color) {
             const id = Math.random().toString(36).substr(2, 9);
-            // 问题1修复：重置所有人回起点时，务必清除皇冠和爆气状态
+            
+            // 重置旧马位置和皇冠
             ponies.forEach(p => { 
                 p.x = 20; 
                 p.state = 'racing'; 
                 p.finishedWalking = false;
-                p.hasCrown = false; // 清除皇冠
-                p.isStreak = false; // 清除爆气
+                // 【修复】新比赛开始，旧马不能有皇冠
+                p.hasCrown = false;
+                p.isStreak = false;
             });
             
             const safeY = 10 + Math.random() * (GAME_H - PONY_SIZE - 20);
@@ -338,7 +332,8 @@
                 x: 20, y: safeY, 
                 speed: 3.5 + Math.random() * 3,
                 state: 'racing',
-                hasCrown: false, isStreak: false,
+                // 【修复】新马确保没皇冠
+                hasCrown: false, isStreak: false, crownCount: 0,
                 timer: 0, frame: 0
             });
             grass = []; 
@@ -383,14 +378,13 @@
                 p.frame++;
                 if (p.state === 'racing') {
                     p.x += p.speed * (0.9 + Math.random() * 0.2); 
-                    p.facing = 1; 
-                    
                     if (p.x >= FINISH_X) {
                         p.state = 'finished';
                         if (finished.length === 0 && !winnerFound) {
                             winnerFound = true;
                             if (p.hasCrown) p.isStreak = true;
                             else { p.hasCrown = true; p.isStreak = false; }
+                            
                             ponies.forEach(o => { if(o !== p) { o.hasCrown = false; o.isStreak = false; }});
                         }
                     }
@@ -525,7 +519,6 @@
             });
         }
 
-        // === 移动端 & 编辑器 ===
         function initMobile() {
             initEditor('m-grid', 'm-colors', mobileGrid);
             try {
@@ -539,31 +532,16 @@
                 });
             } catch(e) { console.error(e); }
         }
+
         function sendMobile() {
             if(!conn) return alert("Not Connected!");
             conn.send({ name: document.getElementById('m-name').value.toUpperCase() || 'MOBILE', pixels: mobileGrid, color: selectedColor });
             alert("Sent!");
         }
 
-        // 问题3修复核心：通用清空数据函数 (原地修改数组，不改变引用)
-        function clearGridData(gridData) {
-            for(let r=0; r<8; r++) {
-                for(let c=0; c<8; c++) {
-                    gridData[r][c] = 0;
-                }
-            }
-        }
-
-        // 移动端 Clear
         function clearMobile() {
             clearGridData(mobileGrid);
             renderGrid('m-grid', mobileGrid, selectedColor);
-        }
-
-        // 桌面端 Clear
-        function clearDesktop() {
-            clearGridData(pcGrid);
-            renderGrid('pc-grid', pcGrid, selectedColor);
         }
 
         function initEditor(gridId, colorId, dataGrid) {
@@ -593,7 +571,6 @@
                 if(el && el.dataset.r) {
                     const r = parseInt(el.dataset.r), c = parseInt(el.dataset.c);
                     if(e.type === 'mousedown' || e.type === 'touchstart') eraseMode = dataGrid[r][c] === 1;
-                    // 问题3修复的关键：监听器修改的是外部传入的 dataGrid 引用，Clear 时必须修改这个引用指向的内容
                     if(dataGrid[r][c] !== (eraseMode?0:1)) { dataGrid[r][c] = eraseMode?0:1; renderGrid(gridId, dataGrid, selectedColor); }
                 }
             };
