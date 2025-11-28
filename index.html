@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - FINAL</title>
+    <title>HORSE RUNRUN - FIXED LAYOUT & BOUNDS</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --bg: #111;
-            --primary: #40e0d0;
-            --panel: #004d40;
-            --border: #00695c;
+            --color-bg: #111;
+            --color-primary: #40e0d0;
+            --color-panel: #004d40;
+            --color-border: #00695c;
+            /* 核心修改：严格 1:35 比例 */
             --game-w: 3500px; 
             --game-h: 100px;
         }
@@ -22,52 +23,54 @@
         
         body {
             margin: 0; padding: 0;
-            background-color: #0a0a0a; 
+            background-color: var(--color-bg);
             font-family: 'VT323', monospace;
-            color: var(--primary);
+            color: var(--color-primary);
             height: 100vh; width: 100vw;
             overflow: hidden;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
         }
 
-        /* === 桌面布局 === */
+        /* 通用类 */
+        .hidden { display: none !important; }
+        .vfd-glow { text-shadow: 0 0 5px rgba(64, 224, 208, 0.6); }
+        
+        /* 按钮样式 */
+        .btn {
+            background: #00251a; border: 2px solid var(--color-primary); color: var(--color-primary);
+            padding: 12px 36px; font-family: 'VT323', monospace; font-size: 1.5rem;
+            cursor: pointer; text-transform: uppercase; box-shadow: 0 0 15px rgba(64, 224, 208, 0.2);
+            transition: all 0.2s;
+        }
+        .btn:hover { background: var(--color-primary); color: #00251a; }
+        .btn:active { transform: translateY(2px); }
+
+        /* === 桌面端布局 (上下结构) === */
         #desktop-view {
             display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
             width: 100%; height: 100%;
-            gap: 40px;
+            align-items: center; justify-content: center;
+            gap: 40px; /* 上下间距 */
         }
 
-        /* 二维码 */
-        #qr-card {
-            background: rgba(0, 77, 64, 0.9);
-            border: 2px solid var(--primary);
-            border-radius: 12px;
-            padding: 15px 30px;
-            display: flex; align-items: center; gap: 20px;
-            box-shadow: 0 0 40px rgba(64,224,208,0.15);
-        }
-        .qr-info h2 { margin: 0; font-size: 2rem; text-shadow: 0 0 10px var(--primary); line-height: 1; }
-        .qr-info p { margin: 5px 0 0 0; font-size: 1.2rem; opacity: 0.7; }
-        #qrcode { background: white; padding: 8px; width: 140px; height: 140px; display: flex; justify-content: center; align-items: center; border-radius: 4px; }
-        #qrcode img { display: block; width: 100%; height: 100%; }
-
-        /* 跑道视口 */
+        /* 1. 上部分：跑道视口 */
         #game-scaler {
-            width: 98vw; height: 120px; 
+            width: 98vw; height: 140px; /* 视觉高度，留出空间给皇冠 */
             display: flex; justify-content: center; align-items: center;
         }
 
         #game-screen {
+            /* 逻辑尺寸 3500x100 */
             width: var(--game-w); height: var(--game-h);
             background: #000; position: relative;
-            border: 4px solid var(--primary); 
+            border: 3px solid var(--color-primary);
             box-shadow: 0 0 30px rgba(64, 224, 208, 0.3);
-            overflow: hidden; transform-origin: center center;
+            overflow: visible; /* 允许皇冠超出 */
+            transform-origin: center center;
         }
 
-        /* 跑道元素 */
+        /* 跑道背景 */
         .grid-bg {
             position: absolute; inset: 0; opacity: 0.2;
             background-image: linear-gradient(rgba(64, 224, 208, 0.3) 1px, transparent 1px),
@@ -75,184 +78,156 @@
             background-size: 50px 50px;
         }
         .finish-line {
-            position: absolute; top: 0; bottom: 0; right: 400px; width: 12px;
+            position: absolute; top: 0; bottom: 0; right: 400px; width: 10px;
             background-image: linear-gradient(45deg, #40e0d0 25%, transparent 25%, transparent 50%, #40e0d0 50%, #40e0d0 75%, transparent 75%, transparent);
-            background-size: 12px 12px; opacity: 0.8; z-index: 0;
+            background-size: 10px 10px; opacity: 0.6; z-index: 0;
         }
-        .hud { position: absolute; bottom: 4px; right: 10px; font-size: 32px; opacity: 0.5; letter-spacing: 2px; }
+        .hud { position: absolute; bottom: 4px; right: 10px; font-size: 24px; opacity: 0.5; letter-spacing: 2px; }
 
-        /* 实体 */
+        /* 2. 下部分：操作区 (二维码 + 按钮) */
+        #bottom-controls {
+            display: flex; align-items: center; gap: 40px;
+            padding: 20px 30px;
+            background: rgba(0, 37, 26, 0.8);
+            border: 2px solid var(--color-border);
+            border-radius: 8px;
+            box-shadow: 0 0 25px rgba(64, 224, 208, 0.15);
+        }
+        
+        #qr-card { display: flex; align-items: center; gap: 20px; }
+        #qrcode {
+            background: white; padding: 6px;
+            width: 110px; height: 110px;
+            display: flex; justify-content: center; align-items: center;
+            border-radius: 4px;
+        }
+        #qrcode img { display: block; width: 100%; height: 100%; }
+        .qr-info h2 { margin: 0; font-size: 1.8rem; line-height: 1; }
+        .qr-info p { margin: 5px 0 0 0; font-size: 1rem; opacity: 0.7; }
+
+        /* === 实体 (小马) === */
         .entity { position: absolute; width: 50px; height: 50px; will-change: transform; }
+        /* 像素容器，用于翻转 */
+        .pixel-grid-container { width: 100%; height: 100%; transition: transform 0.1s; }
         .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; }
         
         .crown-container {
-            position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
-            width: 32px; height: 32px; animation: bounce 1s infinite; z-index: 10;
+            position: absolute; top: -35px; left: 50%; transform: translateX(-50%);
+            width: 30px; height: 30px; animation: bounce 1s infinite; z-index: 10;
         }
-        .aura {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 160%; height: 160%; border-radius: 50%;
-            background: radial-gradient(circle, rgba(250,204,21,0.4) 0%, transparent 70%);
-            box-shadow: 0 0 15px #facc15; z-index: -1;
-            animation: pulse 0.5s infinite alternate; display: none;
-        }
-        @keyframes pulse { from { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } }
-        
         .name-tag {
-            position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
-            font-size: 18px; white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000;
+            position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+            font-size: 16px; white-space: nowrap; color: var(--color-primary); text-shadow: 1px 1px 0 #000;
         }
-        .grass { position: absolute; width: 6px; height: 6px; background: #69f0ae; box-shadow: 0 0 4px #69f0ae; }
-        .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
-        @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
+        @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -5px); } }
 
-        /* 按钮 */
-        .btn {
-            background: #00251a; border: 2px solid var(--primary); color: var(--primary);
-            padding: 15px 40px; font-family: 'VT323', monospace; font-size: 1.5rem;
-            cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(64, 224, 208, 0.2);
-            transition: all 0.2s; user-select: none;
-        }
-        .btn:hover { background: var(--primary); color: #000; }
-        .btn:active { transform: translateY(2px); }
-        .btn-outline { background: transparent; border-color: #ff5252; color: #ff5252; }
-
-        /* === 弹窗编辑器 (桌面) === */
+        /* === 弹窗编辑器 === */
         #modal-editor {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000;
-            display: none; justify-content: center; align-items: center;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(4px); z-index: 100;
+            display: flex; justify-content: center; align-items: center;
         }
         .modal-content {
-            background: #111; border: 2px solid var(--primary); padding: 30px;
+            background: #1a1c20; border: 2px solid var(--color-primary);
+            padding: 30px; border-radius: 8px;
             display: flex; flex-direction: column; align-items: center; gap: 20px;
         }
 
-        /* === 移动端样式 === */
+        /* === 移动端视图 === */
         #mobile-view {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #111; display: flex; flex-direction: column; z-index: 20000;
+            background: #111; display: flex; flex-direction: column; z-index: 200;
             padding: 20px;
         }
-        .m-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; flex-shrink: 0; }
-        .m-title { font-size: 1.5rem; color: #fff; }
-        .m-status { background: #004d40; padding: 4px 8px; border-radius: 4px; font-size: 1rem; color: #40e0d0; }
-        
-        .m-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; flex-shrink: 0; }
-        input[type="text"] {
-            background: #222; border: 1px solid #444; color: white; padding: 12px;
-            font-family: inherit; text-align: center; font-size: 1.5rem; width: 100%; border-radius: 4px;
-        }
+        .m-header { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
+        .m-status { background: #004d40; padding: 4px 8px; border-radius: 4px; font-size: 1rem; }
         
         .m-canvas-container {
             flex: 1; display: flex; justify-content: center; align-items: center;
             background: #1a1a1a; border-radius: 8px; margin-bottom: 20px;
-            overflow: hidden; 
         }
-        
-        /* 通用网格样式 */
         .editor-grid {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr); 
-            grid-template-rows: repeat(8, 1fr);
-            gap: 2px;
-            background: #333; border: 2px solid #555;
-            touch-action: none;
+            display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr);
+            gap: 2px; background: #333; border: 2px solid #555; touch-action: none;
         }
         .editor-cell { width: 38px; height: 38px; background: #000; }
         
-        .color-picker { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
-        .c-dot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #333; }
-        .c-dot.active { border-color: white; transform: scale(1.1); }
-        
-        .m-footer { display: flex; gap: 15px; height: 60px; flex-shrink: 0; width: 100%; }
-        .btn-flex { flex: 1; display: flex; justify-content: center; align-items: center; }
+        .color-picker { display: flex; justify-content: center; gap: 15px; }
+        .c-dot { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #333; }
+        .c-dot.active { border-color: white; transform: scale(1.2); }
 
     </style>
 </head>
 <body>
 
     <div id="desktop-view">
-        <div id="qr-card">
-            <div class="qr-info">
-                <h2>JOIN RACE</h2>
-                <p>SCAN TO CUSTOMIZE</p>
-            </div>
-            <div id="qrcode"></div>
-        </div>
-
         <div id="game-scaler">
             <div id="game-screen">
                 <div class="grid-bg"></div>
                 <div class="finish-line"></div>
                 <div class="hud">MODE:RACE // RATIO:1:35 // STATUS:LIVE</div>
-                <div id="layer-grass"></div>
                 <div id="layer-pony"></div>
-                <div id="layer-fx"></div>
             </div>
         </div>
 
-        <div style="margin-top: 30px;">
-            <button class="btn" onclick="openDesktopEditor()">+ ADD PONY</button>
+        <div id="bottom-controls">
+            <div id="qr-card">
+                <div class="qr-info">
+                    <h2 class="vfd-glow">JOIN RACE</h2>
+                    <p>SCAN TO PLAY</p>
+                </div>
+                <div id="qrcode"></div>
+            </div>
+            <button class="btn" onclick="openDesktopEditor()">+ NEW RUNNER</button>
         </div>
     </div>
 
-    <div id="modal-editor">
+    <div id="modal-editor" class="hidden">
         <div class="modal-content">
-            <h2 style="margin:0; color:#fff;">DESIGN YOUR RUNNER</h2>
-            <input type="text" id="pc-name" placeholder="ENTER NAME" maxlength="8" value="PLAYER">
+            <h2 class="vfd-glow" style="margin:0;">DESIGN RUNNER</h2>
+            <input type="text" id="pc-name" placeholder="NAME" maxlength="8" value="PLAYER" style="background:#222; border:1px solid #444; color:white; padding:10px; text-align:center; font-size:1.5rem; border-radius:4px;">
             <div class="color-picker" id="pc-colors"></div>
             <div id="pc-grid" class="editor-grid"></div>
             <div style="display: flex; gap: 20px; width: 100%;">
-                <button class="btn btn-outline btn-flex" onclick="document.getElementById('modal-editor').style.display='none'">CANCEL</button>
-                <button class="btn btn-flex" onclick="savePCPony()">SPAWN</button>
+                <button class="btn" style="flex:1; border-color:#ff5252; color:#ff5252;" onclick="document.getElementById('modal-editor').classList.add('hidden')">CANCEL</button>
+                <button class="btn" style="flex:1;" onclick="savePCPony()">CREATE</button>
             </div>
         </div>
     </div>
 
-    <div id="mobile-view" style="display: none;">
+    <div id="mobile-view" class="hidden">
         <div class="m-header">
-            <span class="m-title">PIXEL MAKER</span>
-            <span id="m-status" class="m-status">Wait...</span>
+            <span class="vfd-glow" style="font-size: 1.5rem;">PIXEL MAKER</span>
+            <span id="m-status" class="m-status">CONNECTING...</span>
         </div>
-        <div class="m-controls">
-            <input type="text" id="m-name" placeholder="ENTER NAME" maxlength="8">
+        <div style="margin-bottom:20px;">
+            <input type="text" id="m-name" placeholder="ENTER NAME" maxlength="8" style="background:#222; border:1px solid #444; color:white; padding:12px; text-align:center; font-size:1.5rem; width:100%; border-radius:4px; margin-bottom:15px;">
             <div class="color-picker" id="m-colors"></div>
         </div>
         <div class="m-canvas-container">
             <div id="m-grid" class="editor-grid"></div>
         </div>
-        <div class="m-footer">
-            <button class="btn btn-outline btn-flex" onclick="clearMobile()">CLEAR</button>
-            <button class="btn btn-flex" onclick="sendMobile()">CAST TO SCREEN</button>
+        <div style="display: flex; gap: 15px; height: 60px;">
+            <button class="btn" style="border-color:#ff5252; color:#ff5252; width:100px;" onclick="clearMobile()">CLEAR</button>
+            <button class="btn" style="flex:1;" onclick="sendMobile()">CAST TO SCREEN</button>
         </div>
     </div>
 
     <script>
-        // === 配置 ===
-        const GAME_W = 3500;
-        const GAME_H = 100;
-        const FINISH_X = GAME_W - 400; // 终点线位置
-        const PONY_SIZE = 50;
-        
+        // === 核心配置 ===
+        const SCREEN_WIDTH = 3500; // 严格 1:35 宽度
+        const SCREEN_HEIGHT = 100; // 严格 1:35 高度
+        const PONY_SIZE = 50;      // 小马尺寸
+        const FINISH_X = SCREEN_WIDTH - 400; // 终点线
+
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#fff' };
-        
         const DEFAULT_PIXELS = [
-            [0,0,0,0,0,0,1,0],
-            [0,0,0,0,0,1,1,1],
-            [0,0,0,0,0,1,1,0],
-            [0,0,1,1,1,1,1,0],
-            [0,1,1,1,1,1,1,0],
-            [1,1,1,1,1,1,1,0],
-            [0,1,0,0,0,1,0,0],
-            [0,1,0,0,0,1,0,0]
+            [0,0,0,0,0,0,1,0], [0,0,0,0,0,1,1,1], [0,0,0,0,0,1,1,0], [0,0,1,1,1,1,1,0],
+            [0,1,1,1,1,1,1,0], [1,1,1,1,1,1,1,0], [0,1,0,0,0,1,0,0], [0,1,0,0,0,1,0,0]
         ];
 
         let ponies = [];
-        let grass = [];
-        let peer = null;
-        let conn = null;
-        
-        // 编辑器状态
+        let peer = null, conn = null;
         let pcGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
         let mobileGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
         let selectedColor = COLORS.CYAN;
@@ -264,8 +239,8 @@
 
             const isMobile = new URLSearchParams(window.location.search).has('host');
             if(isMobile) {
-                document.getElementById('desktop-view').style.display = 'none';
-                document.getElementById('mobile-view').style.display = 'flex';
+                document.getElementById('desktop-view').classList.add('hidden');
+                document.getElementById('mobile-view').classList.remove('hidden');
                 initMobile();
             } else {
                 initDesktop();
@@ -275,22 +250,19 @@
         function fitScreen() {
             const el = document.getElementById('game-screen');
             const availableW = window.innerWidth * 0.95;
-            const scale = Math.min(availableW / GAME_W, 1);
+            const scale = Math.min(availableW / SCREEN_WIDTH, 1); // 按宽度缩放
             el.style.transform = `scale(${scale})`;
         }
 
         function initDesktop() {
-            // 初始化PC编辑器
             initEditor('pc-grid', 'pc-colors', pcGrid);
-            
             try {
                 peer = new Peer();
                 peer.on('open', id => {
                     const url = `${location.href}?host=${id}`;
                     new QRCode(document.getElementById("qrcode"), {
-                        text: url, width: 140, height: 140,
-                        colorDark : "#000000", colorLight : "#ffffff",
-                        correctLevel: QRCode.CorrectLevel.L
+                        text: url, width: 110, height: 110,
+                        colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L
                     });
                 });
                 peer.on('connection', c => {
@@ -299,174 +271,87 @@
             } catch(e) { console.error(e); }
         }
 
-        // === 桌面编辑器逻辑 ===
         function openDesktopEditor() {
-            // 重置网格
             pcGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
             renderGrid('pc-grid', pcGrid, selectedColor);
-            document.getElementById('modal-editor').style.display = 'flex';
+            document.getElementById('modal-editor').classList.remove('hidden');
         }
 
         function savePCPony() {
             const name = document.getElementById('pc-name').value.toUpperCase();
             spawnPony(name, pcGrid, selectedColor);
-            document.getElementById('modal-editor').style.display = 'none';
+            document.getElementById('modal-editor').classList.add('hidden');
         }
 
-        // === 小马生成逻辑 ===
         function spawnPony(name, pixels, color) {
             const id = Math.random().toString(36).substr(2, 9);
-            
-            // 重置所有马回起点
-            ponies.forEach(p => { 
-                p.x = 20; 
-                p.state = 'racing'; 
-                p.finishedWalking = false; 
-            });
-            
-            const safeY = 10 + Math.random() * (GAME_H - PONY_SIZE - 20);
-
+            ponies.forEach(p => { p.x = 20; p.state = 'racing'; }); // 重置
             ponies.push({
                 id, name: name || 'PONY',
                 pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_PIXELS)),
                 color: color || COLORS.CYAN,
-                x: 20, y: safeY, 
-                speed: 3.5 + Math.random() * 3,
-                state: 'racing',
-                hasCrown: false, isStreak: false,
-                timer: 0, frame: 0
+                x: 20, y: 10 + Math.random() * (SCREEN_HEIGHT - PONY_SIZE - 20), 
+                speed: 4 + Math.random() * 3, facing: 1, // 1=右, -1=左
+                state: 'racing', hasCrown: false, timer: 0, frame: 0
             });
-            grass = []; 
         }
 
         function gameLoop() {
-            update();
-            draw();
+            update(); draw();
             requestAnimationFrame(gameLoop);
         }
 
         function update() {
-            const active = ponies.filter(p => p.state === 'racing');
             const finished = ponies.filter(p => p.state === 'finished');
-            
-            let raceOver = false;
-            if (ponies.length > 10) { if (finished.length >= 10) raceOver = true; }
-            else { if (ponies.length > 0 && finished.length === ponies.length) raceOver = true; }
-
-            if (raceOver) {
-                if (ponies.length > 10) {
-                    const losers = ponies.filter(p => p.state === 'racing');
-                    losers.forEach(p => explode(p));
-                    ponies = ponies.filter(p => p.state === 'finished');
-                }
-                ponies.forEach(p => { 
-                    if(p.state === 'finished') { p.state = 'roaming'; p.timer = 0; }
-                });
-            }
-
-            // 补草
-            const maxGrass = 5 + ponies.length * 2;
-            const growthRate = 0.02 + ponies.length * 0.005;
-            if (active.length === 0 && Math.random() < growthRate && grass.length < maxGrass) {
-                grass.push({ 
-                    x: Math.random() * GAME_W, 
-                    y: 10 + Math.random() * (GAME_H - 20) 
-                });
+            if (ponies.length > 0 && finished.length === ponies.length) {
+                ponies.forEach(p => { p.state = 'roaming'; p.timer = 0; });
             }
 
             let winnerFound = false;
             ponies.forEach(p => {
                 p.frame++;
                 if (p.state === 'racing') {
-                    p.x += p.speed * (0.9 + Math.random() * 0.2); 
-                    
-                    // 边界限制
-                    p.x = Math.min(p.x, GAME_W - PONY_SIZE);
-
+                    p.x += p.speed * (0.9 + Math.random() * 0.2);
+                    p.facing = 1; // 跑步时向右
                     if (p.x >= FINISH_X) {
                         p.state = 'finished';
                         if (finished.length === 0 && !winnerFound) {
                             winnerFound = true;
-                            if (p.hasCrown) p.isStreak = true;
-                            else { p.hasCrown = true; p.isStreak = false; }
-                            ponies.forEach(o => { if(o !== p) { o.hasCrown = false; o.isStreak = false; }});
+                            p.hasCrown = true;
+                            ponies.forEach(o => { if(o !== p) o.hasCrown = false; });
                         }
                     }
+                } else if (p.state === 'finished') {
+                    p.x += 1; p.facing = 1; // 冲过终点后继续慢跑
+                } else if (p.state === 'roaming') {
+                    aiRoaming(p);
                 }
-                else if (p.state === 'finished') {
-                    // 终点漫步：只在 Finish Line 后漫步
-                    p.finishedWalking = true;
-                    aiBehavior(p, true); // true = restricted to finish zone
-                }
-                else if (p.state === 'roaming' || p.state === 'eating') {
-                    p.finishedWalking = false;
-                    aiBehavior(p, false);
-                }
+                
+                // --- 核心修复：边界限制 ---
+                p.x = Math.max(0, Math.min(SCREEN_WIDTH - PONY_SIZE, p.x));
+                p.y = Math.max(5, Math.min(SCREEN_HEIGHT - PONY_SIZE - 5, p.y));
             });
         }
 
-        function aiBehavior(p, restrictZone) {
-            // 漫步时的边界限制
-            const minX = restrictZone ? FINISH_X : 0;
-            const maxX = GAME_W - PONY_SIZE;
-
-            if (p.state === 'roaming' || p.state === 'finished') {
-                // 如果在终点模式，没有草时随机走
-                if (p.timer-- <= 0) { 
-                    p.timer = 60 + Math.random() * 100; 
-                    // 目标点限制在区域内
-                    p.targetX = minX + Math.random() * (maxX - minX);
-                }
-                
-                if (p.targetX) {
-                    let dist = p.targetX - p.x;
-                    if (Math.abs(dist) > 2) {
-                        p.x += Math.sign(dist) * 0.5;
-                        p.facing = Math.sign(dist);
-                    }
-                }
-                
-                // 限制 X 坐标
-                p.x = Math.max(minX, Math.min(maxX, p.x));
-            } 
-            // ... (吃草逻辑略，终点模式不吃草)
-            
-            if (Math.random() < 0.05) p.y += (Math.random() - 0.5) * 2;
-            p.y = Math.max(5, Math.min(GAME_H - PONY_SIZE - 5, p.y));
-        }
-
-        function explode(p) {
-            const fx = document.getElementById('layer-fx');
-            for(let i=0; i<20; i++) {
-                const el = document.createElement('div');
-                el.className = 'explosion';
-                el.style.left = (p.x + 20) + 'px';
-                el.style.top = (p.y + 20) + 'px';
-                el.style.background = p.color;
-                fx.appendChild(el);
-                const angle = Math.random() * 6.28;
-                const spd = 3 + Math.random() * 5;
-                let vx = Math.cos(angle) * spd, vy = Math.sin(angle) * spd;
-                let life = 40;
-                const tick = () => {
-                    if (life-- <= 0) return el.remove();
-                    el.style.left = (parseFloat(el.style.left) + vx) + 'px';
-                    el.style.top = (parseFloat(el.style.top) + vy) + 'px';
-                    el.style.opacity = life/40;
-                    requestAnimationFrame(tick);
-                };
-                tick();
+        function aiRoaming(p) {
+            if (p.timer-- <= 0) {
+                p.timer = 60 + Math.random() * 100;
+                p.targetX = Math.random() * SCREEN_WIDTH;
             }
+            if (p.targetX) {
+                let dist = p.targetX - p.x;
+                if (Math.abs(dist) > 2) {
+                    let dir = Math.sign(dist);
+                    p.x += dir * 0.8;
+                    p.facing = dir; // --- 核心修复：根据移动方向翻转 ---
+                }
+            }
+            if (Math.random() < 0.05) p.y += (Math.random() - 0.5) * 2;
         }
 
         function draw() {
-            const grassL = document.getElementById('layer-grass');
-            grassL.innerHTML = grass.map(g => `<div class="grass" style="left:${g.x}px; top:${g.y}px"></div>`).join('');
-
             const ponyL = document.getElementById('layer-pony');
-            const nodes = Array.from(ponyL.children);
-            const ids = new Set(ponies.map(p => p.id));
-            nodes.forEach(n => { if(!ids.has(n.id)) n.remove(); });
+            Array.from(ponyL.children).forEach(n => { if(!ponies.find(p => p.id === n.id)) n.remove(); });
 
             ponies.forEach(p => {
                 let el = document.getElementById(p.id);
@@ -474,51 +359,44 @@
                     el = document.createElement('div');
                     el.id = p.id; el.className = 'entity';
                     el.innerHTML = `
-                        <div class="aura"></div>
                         <div class="crown-container hidden">
-                            <svg width="100%" height="100%" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path></svg>
+                            <svg width="100%" height="100%" viewBox="0 0 24 24" fill="#facc15"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path></svg>
                         </div>
                         <div class="name-tag">${p.name}</div>
-                        <div class="p-grid" style="display:grid; grid-template-columns:repeat(8,1fr); width:100%; height:100%;"></div>
+                        <div class="pixel-grid-container"><div class="pixel-grid"></div></div>
                     `;
                     ponyL.appendChild(el);
                 }
 
                 el.style.transform = `translate(${p.x}px, ${p.y}px)`;
                 el.style.zIndex = Math.floor(p.y);
-                el.querySelector('.p-grid').style.transform = `scaleX(${p.facing || 1})`;
+                // --- 核心修复：应用翻转 ---
+                el.querySelector('.pixel-grid-container').style.transform = `scaleX(${p.facing})`;
 
-                const crownC = el.querySelector('.crown-container');
-                if (p.hasCrown) crownC.classList.remove('hidden');
-                else crownC.classList.add('hidden');
-
-                el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none';
+                el.querySelector('.crown-container').classList.toggle('hidden', !p.hasCrown);
                 el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
 
-                const isMoving = p.state !== 'idle' && p.state !== 'eating';
+                const isMoving = p.state !== 'idle';
                 const frameStep = isMoving ? Math.floor(p.frame / 10) % 2 : 0;
                 let html = '';
                 for(let y=0; y<8; y++) {
                     let row = p.pixels[y];
                     if (frameStep === 1 && y > 5) row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[0]]; 
-                    if (p.state === 'eating') { if(y===1) row = [0,0,0,0,0,0,0,0]; if(y===3) row = p.pixels[1]; }
                     for(let x=0; x<8; x++) {
                         if (row[x]) html += `<div style="background:${p.color}; width:100%; height:100%; grid-column:${x+1}; grid-row:${y+1}"></div>`;
                     }
                 }
-                el.querySelector('.p-grid').innerHTML = html;
+                el.querySelector('.pixel-grid').innerHTML = html;
             });
         }
 
-        // === 移动端逻辑 ===
+        // === 移动端 & 编辑器通用 ===
         function initMobile() {
-            const host = new URLSearchParams(window.location.search).get('host');
             initEditor('m-grid', 'm-colors', mobileGrid);
-            
             try {
                 peer = new Peer();
                 peer.on('open', () => {
-                    conn = peer.connect(host);
+                    conn = peer.connect(new URLSearchParams(window.location.search).get('host'));
                     conn.on('open', () => {
                         document.getElementById('m-status').innerText = "CONNECTED";
                         document.getElementById('m-status').style.color = "#69f0ae";
@@ -526,29 +404,15 @@
                 });
             } catch(e) { console.error(e); }
         }
-
         function sendMobile() {
             if(!conn) return alert("Not Connected!");
-            conn.send({
-                name: document.getElementById('m-name').value.toUpperCase() || 'MOBILE',
-                pixels: mobileGrid,
-                color: selectedColor
-            });
-            const btn = document.querySelector('.m-footer .btn:last-child');
-            btn.innerText = "SENT!";
-            setTimeout(() => btn.innerText = "CAST TO SCREEN", 1000);
+            conn.send({ name: document.getElementById('m-name').value.toUpperCase() || 'MOBILE', pixels: mobileGrid, color: selectedColor });
+            alert("Sent!");
         }
-
-        function clearMobile() {
-            mobileGrid = Array(8).fill(0).map(()=>Array(8).fill(0));
-            renderGrid('m-grid', mobileGrid, selectedColor);
-        }
+        function clearMobile() { mobileGrid = Array(8).fill(0).map(()=>Array(8).fill(0)); renderGrid('m-grid', mobileGrid, selectedColor); }
 
         function initEditor(gridId, colorId, dataGrid) {
-            const gridEl = document.getElementById(gridId);
             const colorEl = document.getElementById(colorId);
-            
-            // 颜色选择器
             colorEl.innerHTML = '';
             Object.values(COLORS).forEach(c => {
                 if(c === COLORS.WHITE) return;
@@ -556,77 +420,38 @@
                 dot.className = `c-dot ${c === selectedColor ? 'active' : ''}`;
                 dot.style.background = c;
                 dot.onclick = () => {
-                    selectedColor = c;
-                    renderGrid(gridId, dataGrid, selectedColor);
-                    Array.from(colorEl.children).forEach(d => d.classList.remove('active'));
-                    dot.classList.add('active');
+                    selectedColor = c; renderGrid(gridId, dataGrid, selectedColor);
+                    Array.from(colorEl.children).forEach(d => d.classList.remove('active')); dot.classList.add('active');
                 };
                 colorEl.appendChild(dot);
             });
-
             renderGrid(gridId, dataGrid, selectedColor);
 
+            const gridEl = document.getElementById(gridId);
             let drawing = false, eraseMode = false;
-            
-            const updateCell = (r, c) => {
-                const newVal = eraseMode ? 0 : 1;
-                if (dataGrid[r][c] !== newVal) {
-                    dataGrid[r][c] = newVal;
-                    renderGrid(gridId, dataGrid, selectedColor);
-                }
-            };
-            
-            const start = (e) => {
+            const update = (e) => {
                 if(e.cancelable) e.preventDefault();
                 const t = e.touches ? e.touches[0] : e;
                 const el = document.elementFromPoint(t.clientX, t.clientY);
                 if(el && el.dataset.r) {
-                    drawing = true;
                     const r = parseInt(el.dataset.r), c = parseInt(el.dataset.c);
-                    eraseMode = dataGrid[r][c] === 1;
-                    updateCell(r, c);
+                    if(e.type === 'mousedown' || e.type === 'touchstart') eraseMode = dataGrid[r][c] === 1;
+                    if(dataGrid[r][c] !== (eraseMode?0:1)) { dataGrid[r][c] = eraseMode?0:1; renderGrid(gridId, dataGrid, selectedColor); }
                 }
             };
-            const move = (e) => {
-                if(!drawing) return;
-                if(e.cancelable) e.preventDefault();
-                const t = e.touches ? e.touches[0] : e;
-                const el = document.elementFromPoint(t.clientX, t.clientY);
-                if(el && el.dataset.r) {
-                    updateCell(parseInt(el.dataset.r), parseInt(el.dataset.c));
-                }
-            };
-            const end = () => { drawing = false; };
-
-            gridEl.addEventListener('mousedown', start);
-            gridEl.addEventListener('touchstart', start, {passive: false});
-            window.addEventListener('mousemove', move);
-            window.addEventListener('touchmove', move, {passive: false});
-            window.addEventListener('mouseup', end);
-            window.addEventListener('touchend', end);
+            gridEl.onmousedown = gridEl.ontouchstart = (e) => { drawing = true; update(e); };
+            window.onmousemove = window.ontouchmove = (e) => { if(drawing) update(e); };
+            window.onmouseup = window.ontouchend = () => { drawing = false; };
         }
 
         function renderGrid(id, data, color) {
-            const el = document.getElementById(id);
-            el.innerHTML = '';
-            data.forEach((row, r) => {
-                row.forEach((val, c) => {
-                    let style = val ? `background:${color}; box-shadow:0 0 5px ${color}` : `background:#000`;
-                    // 注意：这里用了 innerHTML += 会导致性能问题，改为 appendChild
-                    const cell = document.createElement('div');
-                    cell.className = 'editor-cell';
-                    cell.style = style;
-                    cell.dataset.r = r;
-                    cell.dataset.c = c;
-                    if(val) {
-                        cell.style.backgroundColor = color;
-                        cell.style.boxShadow = `0 0 5px ${color}`;
-                    } else {
-                        cell.style.background = '#000';
-                    }
-                    el.appendChild(cell);
-                });
-            });
+            const el = document.getElementById(id); el.innerHTML = '';
+            data.forEach((row, r) => row.forEach((val, c) => {
+                const cell = document.createElement('div');
+                cell.className = 'editor-cell'; cell.dataset.r = r; cell.dataset.c = c;
+                if(val) { cell.style.background = color; cell.style.boxShadow = `0 0 5px ${color}`; }
+                el.appendChild(cell);
+            }));
         }
     </script>
 </body>
