@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - NOWHERE TO RUN v6.7</title>
+    <title>HORSE RUNRUN - FAIR RACE v6.8</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -322,7 +322,6 @@
             const yInput = document.getElementById('y-input');
             yInput.addEventListener('input', (e) => {
                 const val = parseFloat(e.target.value);
-                // 允许输入 0 或负数
                 if(!isNaN(val)) {
                     layout.y = val;
                     applyLayout(false); 
@@ -331,7 +330,6 @@
 
             // 键盘控制
             window.addEventListener('keydown', (e) => {
-                // 如果焦点在输入框，禁止按键移动画面
                 if (e.target.tagName === 'INPUT') return;
 
                 const step = 20 / layout.scale; 
@@ -376,7 +374,6 @@
             el.style.transform = `scale(${layout.scale}) translate(${layout.x}px, ${layout.y}px)`;
             
             if(updateInput) {
-                // 更新输入框数值
                 document.getElementById('zoom-input').value = Math.round(layout.scale * 100);
                 document.getElementById('y-input').value = Math.round(layout.y);
             }
@@ -407,7 +404,7 @@
                 color: color || COLORS.CYAN,
                 x: 20, 
                 y: 30 + Math.random() * (GAME_H - PONY_SIZE - 20),
-                speed: 3.5 + Math.random() * 3,
+                speed: 3.5, // 初始占位速度，真正的速度在 startRace 时生成
                 state: 'racing',
                 hasCrown: false, isStreak: false, crownCount: 0,
                 timer: 0, frame: 0, finishedWalking: false,
@@ -437,6 +434,8 @@
             ponies.forEach(p => {
                 p.x = 20;
                 p.y = 30 + Math.random() * (GAME_H - PONY_SIZE - 30);
+                // === 关键修改：每次比赛开始时重新随机速度 ===
+                p.speed = 3.5 + Math.random() * 3; 
                 p.state = 'racing';
                 p.finishedWalking = false;
                 p.targetX = null; p.targetY = null;
@@ -480,7 +479,7 @@
                 checkRaceEnd();
             }
             else if (gameState === 'ROAMING') {
-                hud.innerText = "NOWHERE TO RUN"; // 这里更新了
+                hud.innerText = "NOWHERE TO RUN";
                 alert.style.display = 'none';
                 updatePoniesMovement();
                 if (ponyQueue.length > 0) startCooldown(); 
