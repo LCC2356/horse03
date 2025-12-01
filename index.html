@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - CROWN ADJUSTED v5.6</title>
+    <title>HORSE RUNRUN - CUSTOM LAYOUT v6.0</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
             --primary: #40e0d0;
             --panel: #004d40;
             --border: #00695c;
-            /* 1:35 */
+            /* 1:35 比例 */
             --game-w: 3500px; 
             --game-h: 100px;
         }
@@ -29,28 +29,26 @@
             height: 100vh; width: 100vw;
             overflow: hidden;
             display: flex; flex-direction: column;
-            align-items: center; 
-            /* 导演模式：顶部对齐 */
-            justify-content: flex-start; 
-            gap: 20px;
+            /* 移除所有强制对齐，完全交给 transform 控制 */
+            position: relative;
         }
 
         .hidden { display: none !important; }
 
         /* === 桌面布局 === */
         #desktop-view {
-            display: flex; flex-direction: column;
-            align-items: center; 
-            justify-content: flex-start;
+            position: absolute; inset: 0;
             width: 100%; height: 100%;
-            padding-top: 50px; 
-            transition: padding-top 0.1s linear;
+            overflow: hidden;
+            background: #000; /* 填充黑底 */
         }
 
-        #game-scaler {
-            width: 98vw; height: 150px; 
+        /* 游戏画面的容器，用于应用变换 */
+        #game-container {
+            position: absolute;
+            left: 50%; top: 50%; /* 初始定位在屏幕中心 */
+            width: 0; height: 0; /* 只是一个定位锚点 */
             display: flex; justify-content: center; align-items: center;
-            overflow: visible;
         }
 
         #game-screen {
@@ -58,7 +56,8 @@
             background: #000; position: relative;
             border: 4px solid var(--primary); 
             box-shadow: 0 0 30px rgba(64, 224, 208, 0.3);
-            overflow: hidden; transform-origin: center center;
+            overflow: hidden; 
+            /* 重点：移除 transform-origin，逻辑在 JS 中处理 */
             flex-shrink: 0; 
         }
 
@@ -86,7 +85,7 @@
         .entity { position: absolute; width: 38px; height: 38px; will-change: transform; }
         .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; }
         
-        /* 皇冠容器: 修改为 -33px */
+        /* 皇冠容器: -33px */
         .crown-container {
             position: absolute; top: -33px; left: 50%; transform: translateX(-50%);
             width: 24px; height: 24px; animation: bounce 1s infinite; z-index: 10;
@@ -110,30 +109,39 @@
         .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
         @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
 
-        /* 控制区域 */
+        /* 控制区域 - 浮动在左下角 */
         #bottom-controls {
-            display: flex; align-items: center; gap: 40px;
-            padding: 20px 30px;
-            background: rgba(0, 37, 26, 0.8);
-            border: 2px solid var(--border);
+            position: fixed; bottom: 20px; left: 20px;
+            display: flex; align-items: center; gap: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--border);
             border-radius: 8px;
-            box-shadow: 0 0 25px rgba(64, 224, 208, 0.15);
+            z-index: 1000;
         }
-        #qr-card { display: flex; align-items: center; gap: 20px; }
+        #qr-card { display: flex; align-items: center; gap: 15px; }
         #qrcode {
-            background: white; padding: 6px;
-            width: 120px; height: 120px;
+            background: white; padding: 4px;
+            width: 80px; height: 80px;
             display: flex; justify-content: center; align-items: center;
             border-radius: 4px;
         }
         #qrcode img { display: block; width: 100%; height: 100%; }
-        .qr-info h2 { margin: 0; font-size: 2rem; text-shadow: 0 0 10px var(--primary); line-height: 1; }
-        .qr-info p { margin: 5px 0 0 0; font-size: 1.2rem; opacity: 0.7; }
+        .qr-info h2 { margin: 0; font-size: 1.5rem; text-shadow: 0 0 10px var(--primary); line-height: 1; }
+        .qr-info p { margin: 3px 0 0 0; font-size: 1rem; opacity: 0.7; }
+        
+        /* 提示层 */
+        .control-hint {
+            position: fixed; top: 20px; left: 20px;
+            color: rgba(255, 255, 255, 0.3); font-size: 14px;
+            pointer-events: none; z-index: 2000;
+            background: rgba(0,0,0,0.5); padding: 10px; border-radius: 4px;
+        }
 
         /* 按钮 */
         .btn {
             background: #00251a; border: 2px solid var(--primary); color: var(--primary);
-            padding: 15px 40px; font-family: 'VT323', monospace; font-size: 1.5rem;
+            padding: 10px 20px; font-family: 'VT323', monospace; font-size: 1.2rem;
             cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(64, 224, 208, 0.2);
             transition: all 0.2s;
         }
@@ -185,8 +193,14 @@
 </head>
 <body>
 
+    <div class="control-hint">
+        ARROWS: Move<br>
+        +/- : Zoom<br>
+        0 : Reset
+    </div>
+
     <div id="desktop-view">
-        <div id="game-scaler">
+        <div id="game-container">
             <div id="game-screen">
                 <div class="grid-bg"></div>
                 <div class="finish-line"></div>
@@ -203,13 +217,10 @@
             <div id="qr-card">
                 <div id="qrcode"></div>
                 <div class="qr-info">
-                    <h2>JOIN RACE</h2>
-                    <p>SCAN TO PLAY</p>
-                    <p style="font-size:0.8rem; margin-top:5px; color:#ffb300;">USE [↑][↓] TO MOVE SCREEN</p>
+                    <h2>JOIN</h2>
                 </div>
             </div>
-
-            <button class="btn" onclick="openDesktopEditor()">+ ADD PONY</button>
+            <button class="btn" onclick="openDesktopEditor()">+ PONY</button>
         </div>
     </div>
 
@@ -268,24 +279,34 @@
         let mobileGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
         let selectedColor = COLORS.CYAN;
 
-        // 垂直偏移控制变量
-        let verticalOffset = 50; 
+        // === 布局控制变量 ===
+        let layout = {
+            scale: 1.0,
+            x: 0,
+            y: 0
+        };
 
         window.onload = function() {
             requestAnimationFrame(gameLoop);
-            window.addEventListener('resize', fitScreen);
+            
+            // 自动计算初始适配
             fitScreen();
 
-            // 键盘控制屏幕位置
+            // === 键盘自由控制逻辑 ===
             window.addEventListener('keydown', (e) => {
-                const view = document.getElementById('desktop-view');
-                if (e.key === 'ArrowUp') {
-                    verticalOffset = Math.max(0, verticalOffset - 20); 
-                    view.style.paddingTop = verticalOffset + 'px';
-                } else if (e.key === 'ArrowDown') {
-                    verticalOffset += 20; 
-                    view.style.paddingTop = verticalOffset + 'px';
+                const step = 20 / layout.scale; // 移动速度随缩放自适应
+                const zoomStep = 0.05;
+
+                switch(e.key) {
+                    case 'ArrowUp': layout.y -= step; break;
+                    case 'ArrowDown': layout.y += step; break;
+                    case 'ArrowLeft': layout.x -= step; break;
+                    case 'ArrowRight': layout.x += step; break;
+                    case '=': case '+': layout.scale += zoomStep; break;
+                    case '-': case '_': layout.scale = Math.max(0.1, layout.scale - zoomStep); break;
+                    case '0': fitScreen(); return; // 重置
                 }
+                applyLayout();
             });
 
             const isMobile = new URLSearchParams(window.location.search).has('host');
@@ -299,10 +320,18 @@
         };
 
         function fitScreen() {
-            const el = document.getElementById('game-screen');
+            // 初始计算，尝试填满屏幕宽度
             const availableW = window.innerWidth * 0.95;
-            const scale = Math.min(availableW / GAME_W, 1);
-            el.style.transform = `scale(${scale})`;
+            layout.scale = Math.min(availableW / GAME_W, 1);
+            layout.x = 0;
+            layout.y = 0;
+            applyLayout();
+        }
+
+        function applyLayout() {
+            const el = document.getElementById('game-screen');
+            // 使用 translate 和 scale 组合，保持比例
+            el.style.transform = `scale(${layout.scale}) translate(${layout.x}px, ${layout.y}px)`;
         }
 
         function initDesktop() {
@@ -312,7 +341,7 @@
                 peer.on('open', id => {
                     const url = `${location.href}?host=${id}`;
                     new QRCode(document.getElementById("qrcode"), {
-                        text: url, width: 110, height: 110,
+                        text: url, width: 72, height: 72,
                         colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L
                     });
                 });
@@ -483,7 +512,7 @@
             });
         }
 
-        // === AI 行为逻辑 (保持 v5.3 的 2D 漫游 + 随缘吃草) ===
+        // === AI 行为逻辑 ===
         function aiBehavior(p, restrictFinish) {
             const minX = restrictFinish ? FINISH_X : 0;
             const maxX = GAME_W - 38;
@@ -603,7 +632,6 @@
                 el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none';
                 el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
 
-                // 修复：添加了 p.state === 'racing' || p.finishedWalking 的判断
                 const isMoving = p.state === 'racing' || p.finishedWalking || (p.targetX !== null);
                 const frameStep = isMoving ? Math.floor(p.frame / 10) % 2 : 0;
                 let html = '';
