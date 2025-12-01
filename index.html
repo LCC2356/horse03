@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - DUAL INPUT v6.6</title>
+    <title>HORSE RUNRUN - NOWHERE TO RUN v6.7</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -204,7 +204,7 @@
             <div id="game-screen">
                 <div class="grid-bg"></div>
                 <div class="finish-line"></div>
-                <div id="hud" class="hud">NOWHERE RUNRUN</div>
+                <div id="hud" class="hud">NOWHERE TO RUN</div>
                 <div id="queue-text" class="queue-alert"></div>
                 
                 <div id="layer-grass"></div>
@@ -318,7 +318,7 @@
                 }
             });
 
-            // 监听 Y-OFFSET 输入 (新增)
+            // 监听 Y-OFFSET 输入
             const yInput = document.getElementById('y-input');
             yInput.addEventListener('input', (e) => {
                 const val = parseFloat(e.target.value);
@@ -480,7 +480,7 @@
                 checkRaceEnd();
             }
             else if (gameState === 'ROAMING') {
-                hud.innerText = "NOWHERE RUNRUN";
+                hud.innerText = "NOWHERE TO RUN"; // 这里更新了
                 alert.style.display = 'none';
                 updatePoniesMovement();
                 if (ponyQueue.length > 0) startCooldown(); 
