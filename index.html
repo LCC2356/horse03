@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - PRECISE CONTROL v6.1</title>
+    <title>HORSE RUNRUN - CROWN TWEAK v6.3</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -82,9 +82,9 @@
         .entity { position: absolute; width: 38px; height: 38px; will-change: transform; }
         .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; }
         
-        /* 皇冠容器: -33px */
+        /* 皇冠容器: 修改为 -37px */
         .crown-container {
-            position: absolute; top: -33px; left: 50%; transform: translateX(-50%);
+            position: absolute; top: -37px; left: 50%; transform: translateX(-50%);
             width: 24px; height: 24px; animation: bounce 1s infinite; z-index: 10;
             display: flex; flex-direction: column-reverse; align-items: center;
         }
@@ -127,7 +127,7 @@
         #qrcode img { display: block; width: 100%; height: 100%; }
         .qr-info h2 { margin: 0; font-size: 1.5rem; text-shadow: 0 0 10px var(--primary); line-height: 1; }
 
-        /* 新增：缩放控制组 */
+        /* 缩放控制组 */
         .zoom-control {
             display: flex; flex-direction: column; 
             gap: 5px; border-left: 1px solid #333; padding-left: 20px;
@@ -140,16 +140,8 @@
             font-size: 1.5rem; width: 70px; text-align: center;
             padding: 5px; border-radius: 4px;
         }
-        /* 去掉数字输入框的小箭头 */
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         
-        .control-hint {
-            position: fixed; top: 20px; left: 20px;
-            color: rgba(255, 255, 255, 0.3); font-size: 14px;
-            pointer-events: none; z-index: 2000;
-            background: rgba(0,0,0,0.5); padding: 10px; border-radius: 4px;
-        }
-
         /* 按钮 */
         .btn {
             background: #00251a; border: 2px solid var(--primary); color: var(--primary);
@@ -204,12 +196,6 @@
     </style>
 </head>
 <body>
-
-    <div class="control-hint">
-        ARROWS: Move<br>
-        +/- : Zoom<br>
-        0 : Reset
-    </div>
 
     <div id="desktop-view">
         <div id="game-container">
