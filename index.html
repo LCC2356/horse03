@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - CUSTOM LAYOUT v6.0</title>
+    <title>HORSE RUNRUN - PRECISE CONTROL v6.1</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -29,7 +29,6 @@
             height: 100vh; width: 100vw;
             overflow: hidden;
             display: flex; flex-direction: column;
-            /* 移除所有强制对齐，完全交给 transform 控制 */
             position: relative;
         }
 
@@ -40,14 +39,13 @@
             position: absolute; inset: 0;
             width: 100%; height: 100%;
             overflow: hidden;
-            background: #000; /* 填充黑底 */
+            background: #000;
         }
 
-        /* 游戏画面的容器，用于应用变换 */
         #game-container {
             position: absolute;
-            left: 50%; top: 50%; /* 初始定位在屏幕中心 */
-            width: 0; height: 0; /* 只是一个定位锚点 */
+            left: 50%; top: 50%;
+            width: 0; height: 0;
             display: flex; justify-content: center; align-items: center;
         }
 
@@ -57,7 +55,6 @@
             border: 4px solid var(--primary); 
             box-shadow: 0 0 30px rgba(64, 224, 208, 0.3);
             overflow: hidden; 
-            /* 重点：移除 transform-origin，逻辑在 JS 中处理 */
             flex-shrink: 0; 
         }
 
@@ -109,28 +106,43 @@
         .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
         @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
 
-        /* 控制区域 - 浮动在左下角 */
+        /* 控制区域 */
         #bottom-controls {
             position: fixed; bottom: 20px; left: 20px;
             display: flex; align-items: center; gap: 20px;
             padding: 15px;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.85);
             border: 1px solid var(--border);
             border-radius: 8px;
             z-index: 1000;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
         }
         #qr-card { display: flex; align-items: center; gap: 15px; }
         #qrcode {
             background: white; padding: 4px;
-            width: 80px; height: 80px;
+            width: 70px; height: 70px;
             display: flex; justify-content: center; align-items: center;
             border-radius: 4px;
         }
         #qrcode img { display: block; width: 100%; height: 100%; }
         .qr-info h2 { margin: 0; font-size: 1.5rem; text-shadow: 0 0 10px var(--primary); line-height: 1; }
-        .qr-info p { margin: 3px 0 0 0; font-size: 1rem; opacity: 0.7; }
+
+        /* 新增：缩放控制组 */
+        .zoom-control {
+            display: flex; flex-direction: column; 
+            gap: 5px; border-left: 1px solid #333; padding-left: 20px;
+        }
+        .zoom-label { font-size: 0.9rem; color: #aaa; }
+        .zoom-input-wrapper { display: flex; align-items: center; gap: 5px; }
+        #zoom-input {
+            background: #00251a; border: 1px solid var(--border);
+            color: var(--primary); font-family: 'VT323', monospace;
+            font-size: 1.5rem; width: 70px; text-align: center;
+            padding: 5px; border-radius: 4px;
+        }
+        /* 去掉数字输入框的小箭头 */
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         
-        /* 提示层 */
         .control-hint {
             position: fixed; top: 20px; left: 20px;
             color: rgba(255, 255, 255, 0.3); font-size: 14px;
@@ -143,7 +155,7 @@
             background: #00251a; border: 2px solid var(--primary); color: var(--primary);
             padding: 10px 20px; font-family: 'VT323', monospace; font-size: 1.2rem;
             cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(64, 224, 208, 0.2);
-            transition: all 0.2s;
+            transition: all 0.2s; margin-left: 10px;
         }
         .btn:hover { background: var(--primary); color: #000; }
         .btn:active { transform: translateY(2px); }
@@ -220,6 +232,15 @@
                     <h2>JOIN</h2>
                 </div>
             </div>
+
+            <div class="zoom-control">
+                <span class="zoom-label">ZOOM SCALE</span>
+                <div class="zoom-input-wrapper">
+                    <input type="number" id="zoom-input" value="100" min="1" max="500">
+                    <span>%</span>
+                </div>
+            </div>
+
             <button class="btn" onclick="openDesktopEditor()">+ PONY</button>
         </div>
     </div>
@@ -289,24 +310,40 @@
         window.onload = function() {
             requestAnimationFrame(gameLoop);
             
-            // 自动计算初始适配
             fitScreen();
 
-            // === 键盘自由控制逻辑 ===
+            // 监听输入框变化
+            const zoomInput = document.getElementById('zoom-input');
+            zoomInput.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                if(val && val > 0) {
+                    layout.scale = val / 100;
+                    applyLayout(false); // false = 不反向更新输入框，避免打字冲突
+                }
+            });
+
+            // 键盘控制
             window.addEventListener('keydown', (e) => {
-                const step = 20 / layout.scale; // 移动速度随缩放自适应
+                // 如果焦点在输入框，禁止按键移动画面
+                if (e.target.tagName === 'INPUT') return;
+
+                const step = 20 / layout.scale; 
                 const zoomStep = 0.05;
+                let changed = false;
 
                 switch(e.key) {
-                    case 'ArrowUp': layout.y -= step; break;
-                    case 'ArrowDown': layout.y += step; break;
-                    case 'ArrowLeft': layout.x -= step; break;
-                    case 'ArrowRight': layout.x += step; break;
-                    case '=': case '+': layout.scale += zoomStep; break;
-                    case '-': case '_': layout.scale = Math.max(0.1, layout.scale - zoomStep); break;
-                    case '0': fitScreen(); return; // 重置
+                    case 'ArrowUp': layout.y -= step; changed = true; break;
+                    case 'ArrowDown': layout.y += step; changed = true; break;
+                    case 'ArrowLeft': layout.x -= step; changed = true; break;
+                    case 'ArrowRight': layout.x += step; changed = true; break;
+                    case '=': case '+': layout.scale += zoomStep; changed = true; break;
+                    case '-': case '_': layout.scale = Math.max(0.1, layout.scale - zoomStep); changed = true; break;
+                    case '0': fitScreen(); return; 
                 }
-                applyLayout();
+                
+                if(changed) {
+                    applyLayout(true); // true = 更新输入框数值
+                }
             });
 
             const isMobile = new URLSearchParams(window.location.search).has('host');
@@ -320,18 +357,21 @@
         };
 
         function fitScreen() {
-            // 初始计算，尝试填满屏幕宽度
             const availableW = window.innerWidth * 0.95;
             layout.scale = Math.min(availableW / GAME_W, 1);
             layout.x = 0;
             layout.y = 0;
-            applyLayout();
+            applyLayout(true);
         }
 
-        function applyLayout() {
+        function applyLayout(updateInput = true) {
             const el = document.getElementById('game-screen');
-            // 使用 translate 和 scale 组合，保持比例
             el.style.transform = `scale(${layout.scale}) translate(${layout.x}px, ${layout.y}px)`;
+            
+            if(updateInput) {
+                // 更新输入框数值，保留整数
+                document.getElementById('zoom-input').value = Math.round(layout.scale * 100);
+            }
         }
 
         function initDesktop() {
@@ -341,7 +381,7 @@
                 peer.on('open', id => {
                     const url = `${location.href}?host=${id}`;
                     new QRCode(document.getElementById("qrcode"), {
-                        text: url, width: 72, height: 72,
+                        text: url, width: 70, height: 70,
                         colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L
                     });
                 });
