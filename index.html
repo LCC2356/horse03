@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - FINAL POLISH v5</title>
+    <title>HORSE RUNRUN - BIGGER PONY v5.1</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -78,13 +78,13 @@
             display: none; z-index: 20;
         }
 
-        /* 实体 */
-        .entity { position: absolute; width: 32px; height: 32px; will-change: transform; }
+        /* 实体 - 修改: 尺寸改为 38px */
+        .entity { position: absolute; width: 38px; height: 38px; will-change: transform; }
         .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; }
         
-        /* 皇冠容器 - 保持 -27px */
+        /* 皇冠容器 - 修改: 顶部位置调整为 -32px */
         .crown-container {
-            position: absolute; top: -27px; left: 50%; transform: translateX(-50%);
+            position: absolute; top: -32px; left: 50%; transform: translateX(-50%);
             width: 24px; height: 24px; animation: bounce 1s infinite; z-index: 10;
             display: flex; flex-direction: column-reverse; align-items: center;
         }
@@ -97,8 +97,9 @@
         }
         @keyframes pulse { from { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } }
         
+        /* 名字标签 - 修改: 顶部位置调整为 -17px */
         .name-tag {
-            position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+            position: absolute; top: -17px; left: 50%; transform: translateX(-50%);
             font-size: 16px; white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000;
         }
         .grass { position: absolute; width: 6px; height: 6px; background: #69f0ae; box-shadow: 0 0 4px #69f0ae; }
@@ -243,7 +244,8 @@
     <script>
         const GAME_W = 3500;
         const GAME_H = 100;
-        const PONY_SIZE = 42; 
+        // 修改: 增大生成安全区域
+        const PONY_SIZE = 50; 
         const FINISH_X = GAME_W - 400;
 
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#ffffff', BLUE:'#2979ff' };
@@ -458,16 +460,17 @@
                     aiBehavior(p, false);
                 }
                 
-                // 底部界限修正：-4px -> -6px
-                p.x = Math.max(0, Math.min(GAME_W - 32, p.x));
-                p.y = Math.max(20, Math.min(GAME_H - 32 - 6, p.y));
+                // 底部界限修正：改为 38px
+                p.x = Math.max(0, Math.min(GAME_W - 38, p.x));
+                p.y = Math.max(20, Math.min(GAME_H - 38 - 6, p.y));
             });
         }
 
         // 随机散步 AI 升级
         function aiBehavior(p, restrictFinish) {
             const minX = restrictFinish ? FINISH_X : 0;
-            const maxX = GAME_W - 32;
+            // 修改: 边界识别改为 38px
+            const maxX = GAME_W - 38;
 
             if (p.state === 'roaming' || p.state === 'finished') {
                 let target = null, minD = 500;
@@ -522,8 +525,9 @@
             for(let i=0; i<20; i++) {
                 const el = document.createElement('div');
                 el.className = 'explosion';
-                el.style.left = (p.x + 16) + 'px';
-                el.style.top = (p.y + 16) + 'px';
+                // 修改: 爆炸中心点偏移量改为 19px
+                el.style.left = (p.x + 19) + 'px';
+                el.style.top = (p.y + 19) + 'px';
                 el.style.background = p.color;
                 fx.appendChild(el);
                 const angle = Math.random() * 6.28, spd = 3 + Math.random() * 5;
