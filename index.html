@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - CROWN FIX v6.5</title>
+    <title>HORSE RUNRUN - DUAL INPUT v6.6</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -109,7 +109,7 @@
         /* 控制区域 */
         #bottom-controls {
             position: fixed; bottom: 20px; left: 20px;
-            display: flex; align-items: center; gap: 20px;
+            display: flex; align-items: center; gap: 15px;
             padding: 15px;
             background: rgba(0, 0, 0, 0.85);
             border: 1px solid var(--border);
@@ -127,19 +127,21 @@
         #qrcode img { display: block; width: 100%; height: 100%; }
         .qr-info h2 { margin: 0; font-size: 1.5rem; text-shadow: 0 0 10px var(--primary); line-height: 1; }
 
-        /* 缩放控制组 */
-        .zoom-control {
+        /* 缩放/位置控制组 */
+        .control-group {
             display: flex; flex-direction: column; 
-            gap: 5px; border-left: 1px solid #333; padding-left: 20px;
+            gap: 2px; border-left: 1px solid #333; padding-left: 15px;
         }
-        .zoom-label { font-size: 0.9rem; color: #aaa; }
-        .zoom-input-wrapper { display: flex; align-items: center; gap: 5px; }
-        #zoom-input {
+        .control-label { font-size: 0.8rem; color: #888; letter-spacing: 1px; }
+        .input-wrapper { display: flex; align-items: center; gap: 5px; }
+        
+        input[type="number"] {
             background: #00251a; border: 1px solid var(--border);
             color: var(--primary); font-family: 'VT323', monospace;
-            font-size: 1.5rem; width: 70px; text-align: center;
-            padding: 5px; border-radius: 4px;
+            font-size: 1.4rem; width: 80px; text-align: center;
+            padding: 4px; border-radius: 4px;
         }
+        .unit-label { font-size: 1.2rem; color: #555; }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         
         /* 按钮 */
@@ -147,7 +149,7 @@
             background: #00251a; border: 2px solid var(--primary); color: var(--primary);
             padding: 10px 20px; font-family: 'VT323', monospace; font-size: 1.2rem;
             cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(64, 224, 208, 0.2);
-            transition: all 0.2s; margin-left: 10px;
+            transition: all 0.2s; margin-left: 5px;
         }
         .btn:hover { background: var(--primary); color: #000; }
         .btn:active { transform: translateY(2px); }
@@ -219,11 +221,19 @@
                 </div>
             </div>
 
-            <div class="zoom-control">
-                <span class="zoom-label">ZOOM SCALE</span>
-                <div class="zoom-input-wrapper">
+            <div class="control-group">
+                <span class="control-label">ZOOM</span>
+                <div class="input-wrapper">
                     <input type="number" id="zoom-input" value="100" min="1" max="500">
-                    <span>%</span>
+                    <span class="unit-label">%</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <span class="control-label">Y OFFSET</span>
+                <div class="input-wrapper">
+                    <input type="number" id="y-input" value="0" step="10">
+                    <span class="unit-label">PX</span>
                 </div>
             </div>
 
@@ -298,13 +308,24 @@
             
             fitScreen();
 
-            // 监听输入框变化
+            // 监听 ZOOM 输入
             const zoomInput = document.getElementById('zoom-input');
             zoomInput.addEventListener('input', (e) => {
                 const val = parseFloat(e.target.value);
                 if(val && val > 0) {
                     layout.scale = val / 100;
-                    applyLayout(false); // false = 不反向更新输入框，避免打字冲突
+                    applyLayout(false); 
+                }
+            });
+
+            // 监听 Y-OFFSET 输入 (新增)
+            const yInput = document.getElementById('y-input');
+            yInput.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                // 允许输入 0 或负数
+                if(!isNaN(val)) {
+                    layout.y = val;
+                    applyLayout(false); 
                 }
             });
 
@@ -328,7 +349,7 @@
                 }
                 
                 if(changed) {
-                    applyLayout(true); // true = 更新输入框数值
+                    applyLayout(true); 
                 }
             });
 
@@ -355,8 +376,9 @@
             el.style.transform = `scale(${layout.scale}) translate(${layout.x}px, ${layout.y}px)`;
             
             if(updateInput) {
-                // 更新输入框数值，保留整数
+                // 更新输入框数值
                 document.getElementById('zoom-input').value = Math.round(layout.scale * 100);
+                document.getElementById('y-input').value = Math.round(layout.y);
             }
         }
 
