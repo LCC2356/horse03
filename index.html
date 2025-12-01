@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - SOCIAL DISTANCE v5.2</title>
+    <title>HORSE RUNRUN - DIRECTOR MODE v5.4</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -29,7 +29,9 @@
             height: 100vh; width: 100vw;
             overflow: hidden;
             display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
+            align-items: center; 
+            /* 修改: 不再垂直强制居中，允许自定义位置 */
+            justify-content: flex-start; 
             gap: 20px;
         }
 
@@ -38,9 +40,13 @@
         /* === 桌面布局 === */
         #desktop-view {
             display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
+            align-items: center; 
+            /* 修改: 默认靠上对齐，通过 JS padding-top 控制高度 */
+            justify-content: flex-start;
             width: 100%; height: 100%;
-            padding-top: 20px;
+            /* 默认给一点顶部距离，防止贴边 */
+            padding-top: 50px; 
+            transition: padding-top 0.1s linear; /* 平滑移动 */
         }
 
         #game-scaler {
@@ -201,6 +207,7 @@
                 <div class="qr-info">
                     <h2>JOIN RACE</h2>
                     <p>SCAN TO PLAY</p>
+                    <p style="font-size:0.8rem; margin-top:5px; color:#ffb300;">USE [↑][↓] TO MOVE SCREEN</p>
                 </div>
             </div>
 
@@ -263,10 +270,25 @@
         let mobileGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
         let selectedColor = COLORS.CYAN;
 
+        // 垂直偏移控制变量
+        let verticalOffset = 50; // 默认距离顶部 50px
+
         window.onload = function() {
             requestAnimationFrame(gameLoop);
             window.addEventListener('resize', fitScreen);
             fitScreen();
+
+            // 新增：键盘控制屏幕位置
+            window.addEventListener('keydown', (e) => {
+                const view = document.getElementById('desktop-view');
+                if (e.key === 'ArrowUp') {
+                    verticalOffset = Math.max(0, verticalOffset - 20); // 向上移 (padding变小)
+                    view.style.paddingTop = verticalOffset + 'px';
+                } else if (e.key === 'ArrowDown') {
+                    verticalOffset += 20; // 向下移 (padding变大)
+                    view.style.paddingTop = verticalOffset + 'px';
+                }
+            });
 
             const isMobile = new URLSearchParams(window.location.search).has('host');
             if(isMobile) {
@@ -313,7 +335,8 @@
                 speed: 3.5 + Math.random() * 3,
                 state: 'racing',
                 hasCrown: false, isStreak: false, crownCount: 0,
-                timer: 0, frame: 0, finishedWalking: false
+                timer: 0, frame: 0, finishedWalking: false,
+                targetX: null, targetY: null 
             };
 
             if (gameState === 'RACING' || gameState === 'COOLDOWN') {
@@ -341,6 +364,7 @@
                 p.y = 30 + Math.random() * (GAME_H - PONY_SIZE - 30);
                 p.state = 'racing';
                 p.finishedWalking = false;
+                p.targetX = null; p.targetY = null;
             });
 
             grass = [];
@@ -416,6 +440,7 @@
                     p.state = 'roaming'; 
                     p.timer = 0; 
                     p.targetX = null; 
+                    p.targetY = null;
                 });
 
                 gameState = 'ROAMING';
@@ -430,7 +455,6 @@
             let winnerFoundThisFrame = false;
             const finishedCount = ponies.filter(p => p.state === 'finished').length;
 
-            // 1. 常规移动逻辑
             ponies.forEach(p => {
                 p.frame++;
                 if (p.state === 'racing') {
@@ -455,86 +479,65 @@
                     p.finishedWalking = false;
                     aiBehavior(p, false);
                 }
-            });
-
-            // 2. 新增：社交距离排斥逻辑 (防止重叠)
-            // 如果不是在比赛中(racing)，或者已经结束(finished/roaming)，则执行排斥
-            const MIN_DIST = 60; // 设定最小距离 (小马宽38，留一点空隙)
-            for(let i=0; i<ponies.length; i++) {
-                for(let j=i+1; j<ponies.length; j++) {
-                    const p1 = ponies[i];
-                    const p2 = ponies[j];
-                    // 只有当两者都不在全力冲刺时才排斥 (允许比赛中有些许重叠)
-                    if (p1.state === 'racing' && p2.state === 'racing') continue;
-
-                    const dx = p1.x - p2.x;
-                    const dy = p1.y - p2.y;
-                    const dist = Math.sqrt(dx*dx + dy*dy);
-
-                    if (dist < MIN_DIST && dist > 0) {
-                        // 计算推力力度 (距离越近推力越大)
-                        const force = (MIN_DIST - dist) / dist; 
-                        const pushX = dx * force * 0.05; // 0.05 是平滑系数
-                        const pushY = dy * force * 0.05;
-
-                        // 互相推开
-                        p1.x += pushX; p1.y += pushY;
-                        p2.x -= pushX; p2.y -= pushY;
-                    }
-                }
-            }
-
-            // 3. 最后的边界限制
-            ponies.forEach(p => {
+                
                 p.x = Math.max(0, Math.min(GAME_W - 38, p.x));
                 p.y = Math.max(20, Math.min(GAME_H - 38 - 6, p.y));
             });
         }
 
-        // 随机散步 AI
+        // === AI 行为逻辑 (保持 v5.3 的 2D 漫游 + 随缘吃草) ===
         function aiBehavior(p, restrictFinish) {
             const minX = restrictFinish ? FINISH_X : 0;
             const maxX = GAME_W - 38;
+            const minY = 20;
+            const maxY = GAME_H - 44;
 
             if (p.state === 'roaming' || p.state === 'finished') {
-                let target = null, minD = 500;
-                if (!restrictFinish) {
-                    grass.forEach(g => {
-                        let d = Math.abs(g.x - p.x);
-                        if (d < minD) { minD = d; target = g; }
-                    });
+                for(let i=0; i<grass.length; i++) {
+                    const g = grass[i];
+                    if (Math.abs(g.x - p.x) < 20 && Math.abs(g.y - p.y) < 20) {
+                        p.state = 'eating'; 
+                        p.timer = 100; 
+                        grass.splice(i, 1); 
+                        p.targetX = null; p.targetY = null; 
+                        return; 
+                    }
+                }
+
+                if (p.timer-- <= 0) { 
+                    const action = Math.random();
+                    if (action > 0.4) {
+                        p.timer = 60 + Math.random() * 80; 
+                        p.targetX = minX + Math.random() * (maxX - minX);
+                        p.targetY = minY + Math.random() * (maxY - minY);
+                    } else {
+                        p.timer = 40 + Math.random() * 60; 
+                        p.targetX = null;
+                        p.targetY = null;
+                    }
                 }
                 
-                if (target && Math.abs(target.x - p.x) < 20 && Math.abs(target.y - p.y) < 20) {
-                    p.state = 'eating'; p.timer = 100; 
-                    grass = grass.filter(g => g !== target);
-                } else {
-                    if (p.timer-- <= 0) { 
-                        if (Math.random() > 0.3) {
-                             p.timer = 40 + Math.random() * 60; 
-                             p.targetX = minX + Math.random() * (maxX - minX);
-                        } else {
-                             p.timer = 30 + Math.random() * 40; 
-                             p.targetX = null;
-                        }
-                    }
-                    
-                    if (p.targetX) {
-                        let dist = p.targetX - p.x;
-                        if (Math.abs(dist) > 2) {
-                            let dir = Math.sign(dist);
-                            let speed = 0.3 + Math.random() * 0.5;
-                            p.x += dir * speed;
-                            p.facing = dir;
-                        } else {
-                            p.targetX = null;
-                        }
+                if (p.targetX !== null && p.targetY !== null) {
+                    const dx = p.targetX - p.x;
+                    const dy = p.targetY - p.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+
+                    if (dist > 2) {
+                        const speed = 0.5 + Math.random() * 0.3; 
+                        const vx = (dx / dist) * speed;
+                        const vy = (dy / dist) * speed;
+                        p.x += vx;
+                        p.y += vy;
+                        p.facing = Math.sign(dx) || 1; 
+                    } else {
+                        p.targetX = null;
+                        p.targetY = null;
                     }
                 }
+
             } else if (p.state === 'eating') {
                 if (p.timer-- <= 0) p.state = 'roaming';
             }
-            if (Math.random() < 0.03) p.y += (Math.random() - 0.5) * 1.5;
         }
 
         function explode(p) {
@@ -602,7 +605,7 @@
                 el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none';
                 el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
 
-                const isMoving = p.state !== 'idle' && p.state !== 'eating';
+                const isMoving = p.state !== 'idle' && p.state !== 'eating' && p.targetX !== null;
                 const frameStep = isMoving ? Math.floor(p.frame / 10) % 2 : 0;
                 let html = '';
                 for(let y=0; y<8; y++) {
