@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - DIRECTOR MODE v5.4</title>
+    <title>HORSE RUNRUN - FIX ANIMATION v5.5</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -30,7 +30,7 @@
             overflow: hidden;
             display: flex; flex-direction: column;
             align-items: center; 
-            /* 修改: 不再垂直强制居中，允许自定义位置 */
+            /* 导演模式：顶部对齐 */
             justify-content: flex-start; 
             gap: 20px;
         }
@@ -41,12 +41,10 @@
         #desktop-view {
             display: flex; flex-direction: column;
             align-items: center; 
-            /* 修改: 默认靠上对齐，通过 JS padding-top 控制高度 */
             justify-content: flex-start;
             width: 100%; height: 100%;
-            /* 默认给一点顶部距离，防止贴边 */
             padding-top: 50px; 
-            transition: padding-top 0.1s linear; /* 平滑移动 */
+            transition: padding-top 0.1s linear;
         }
 
         #game-scaler {
@@ -271,21 +269,21 @@
         let selectedColor = COLORS.CYAN;
 
         // 垂直偏移控制变量
-        let verticalOffset = 50; // 默认距离顶部 50px
+        let verticalOffset = 50; 
 
         window.onload = function() {
             requestAnimationFrame(gameLoop);
             window.addEventListener('resize', fitScreen);
             fitScreen();
 
-            // 新增：键盘控制屏幕位置
+            // 键盘控制屏幕位置
             window.addEventListener('keydown', (e) => {
                 const view = document.getElementById('desktop-view');
                 if (e.key === 'ArrowUp') {
-                    verticalOffset = Math.max(0, verticalOffset - 20); // 向上移 (padding变小)
+                    verticalOffset = Math.max(0, verticalOffset - 20); 
                     view.style.paddingTop = verticalOffset + 'px';
                 } else if (e.key === 'ArrowDown') {
-                    verticalOffset += 20; // 向下移 (padding变大)
+                    verticalOffset += 20; 
                     view.style.paddingTop = verticalOffset + 'px';
                 }
             });
@@ -605,7 +603,8 @@
                 el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none';
                 el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
 
-                const isMoving = p.state !== 'idle' && p.state !== 'eating' && p.targetX !== null;
+                // 修复：添加了 p.state === 'racing' || p.finishedWalking 的判断
+                const isMoving = p.state === 'racing' || p.finishedWalking || (p.targetX !== null);
                 const frameStep = isMoving ? Math.floor(p.frame / 10) % 2 : 0;
                 let html = '';
                 for(let y=0; y<8; y++) {
