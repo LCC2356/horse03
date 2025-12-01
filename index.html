@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - FAIR RACE v6.8</title>
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <title>HORSE RUNRUN - NET FIX v6.9</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 
@@ -303,6 +303,18 @@
             y: 0
         };
 
+        // 修改 2: 配置 PeerJS 使用 Google 的免费 STUN 服务器
+        const PEER_CONFIG = {
+            debug: 2,
+            config: {
+                'iceServers': [
+                    { url: 'stun:stun.l.google.com:19302' },
+                    { url: 'stun:stun1.l.google.com:19302' },
+                    { url: 'stun:stun2.l.google.com:19302' }
+                ]
+            }
+        };
+
         window.onload = function() {
             requestAnimationFrame(gameLoop);
             
@@ -382,7 +394,9 @@
         function initDesktop() {
             initEditor('pc-grid', 'pc-colors', pcGrid);
             try {
-                peer = new Peer();
+                // 修改 3: 使用配置初始化 Peer
+                peer = new Peer(null, PEER_CONFIG);
+                
                 peer.on('open', id => {
                     const url = `${location.href}?host=${id}`;
                     new QRCode(document.getElementById("qrcode"), {
@@ -390,9 +404,16 @@
                         colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L
                     });
                 });
+                
                 peer.on('connection', c => {
                     c.on('data', data => requestSpawnPony(data.name, data.pixels, data.color));
                 });
+
+                peer.on('error', (err) => {
+                    console.error("PeerJS Error:", err);
+                    alert("Network Error: " + err.type + "\nTry refreshing.");
+                });
+
             } catch(e) { console.error(e); }
         }
 
@@ -404,7 +425,7 @@
                 color: color || COLORS.CYAN,
                 x: 20, 
                 y: 30 + Math.random() * (GAME_H - PONY_SIZE - 20),
-                speed: 3.5, // 初始占位速度，真正的速度在 startRace 时生成
+                speed: 3.5, 
                 state: 'racing',
                 hasCrown: false, isStreak: false, crownCount: 0,
                 timer: 0, frame: 0, finishedWalking: false,
@@ -434,7 +455,6 @@
             ponies.forEach(p => {
                 p.x = 20;
                 p.y = 30 + Math.random() * (GAME_H - PONY_SIZE - 30);
-                // === 关键修改：每次比赛开始时重新随机速度 ===
                 p.speed = 3.5 + Math.random() * 3; 
                 p.state = 'racing';
                 p.finishedWalking = false;
@@ -694,17 +714,31 @@
             });
         }
 
+        // 修改 4: 移动端也使用相同的 PEER_CONFIG (非常重要，否则手机连不上电脑)
         function initMobile() {
             initEditor('m-grid', 'm-colors', mobileGrid);
             try {
-                peer = new Peer();
+                // 使用配置
+                peer = new Peer(null, PEER_CONFIG);
+                
                 peer.on('open', () => {
-                    conn = peer.connect(new URLSearchParams(window.location.search).get('host'));
-                    conn.on('open', () => {
-                        document.getElementById('m-status').innerText = "CONNECTED";
-                        document.getElementById('m-status').style.color = "#69f0ae";
-                    });
+                    const hostId = new URLSearchParams(window.location.search).get('host');
+                    if(hostId) {
+                        conn = peer.connect(hostId);
+                        conn.on('open', () => {
+                            document.getElementById('m-status').innerText = "CONNECTED";
+                            document.getElementById('m-status').style.color = "#69f0ae";
+                        });
+                        conn.on('error', (err) => alert("Connection Error: " + err));
+                    }
                 });
+                
+                peer.on('error', err => {
+                    console.error(err);
+                    document.getElementById('m-status').innerText = "ERROR";
+                    document.getElementById('m-status').style.color = "#ff5252";
+                });
+
             } catch(e) { console.error(e); }
         }
         function sendMobile() {
