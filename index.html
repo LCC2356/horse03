@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.25 FINAL</title>
+    <title>HORSE RUNRUN - v7.26 FINAL</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -118,7 +118,7 @@
             100% { transform: scale(1.0); opacity: 1; }
         }
 
-        /* 新增：简单的消失动画 */
+        /* 消失动画：非常快，0.05s内完成 */
         @keyframes text-vanish {
             0% { opacity: 1; }
             100% { opacity: 0; }
@@ -171,7 +171,7 @@
             100% { opacity: 0; transform: scale(0.8) translateX(30px); }
         }
 
-        /* 应用动画 (加快50%) */
+        /* 应用动画 */
         .vfd-active i {
             /* 动画时长 0.4s，非常短促 */
             animation: vfd-flash 0.4s ease-out forwards calc(var(--d) * 1s);
@@ -414,14 +414,12 @@
             }
         };
 
-        // 更新文字：横向重复排列 13次
         function updateBarText(text, color) {
             if (currentBarText === text) return;
             currentBarText = text;
 
             const container = document.getElementById('bar-text');
             let content = '';
-            // 重复 13 次
             for(let i=0; i<13; i++) {
                 content += `<span class="bar-text-item">${text}</span>`;
             }
@@ -452,13 +450,11 @@
         }
 
         window.onload = function() {
-            // 初始化 VFD 箭头
             const vfdOverlay = document.getElementById('vfd-overlay');
-            // 增加箭头数量到 80 个，保证覆盖 3500px 宽的跑道
             for (let i = 0; i < 80; i++) {
                 const arrow = document.createElement('i');
-                // 延迟参数 (speed up: 0.02 per step)
-                arrow.style.setProperty('--d', i * 0.02); 
+                // 加速箭头扫描：原来是 i * 0.02，现在改为 i * 0.01，速度翻倍
+                arrow.style.setProperty('--d', i * 0.01); 
                 vfdOverlay.appendChild(arrow);
             }
 
@@ -595,15 +591,12 @@
                 p.state = 'ready'; 
             });
 
-            // 隐藏右下角 HUD
             document.getElementById('hud').style.display = 'none';
-            // 显示准备文字
             setBarVisibility(true);
             updateBarText("READY", "#40e0d0");
-            triggerFlash();
+            // triggerFlash(); // <--- 已移除：READY 阶段不再闪屏
         }
 
-        // === 修改后的 StartRace 函数：文字与箭头同步 ===
         function startRace() {
             // 1. 设置文字为 RUN
             updateBarText("RUN", "#40e0d0");
@@ -619,24 +612,24 @@
             void vfdOverlay.offsetWidth; // 强制重绘
             vfdOverlay.classList.add('vfd-active');
 
-            // 3. 计算延迟，让文字随着箭头扫过而消失
+            // 3. 计算延迟，让文字随着箭头扫过而消失 (加速版)
             const textItems = document.querySelectorAll('.bar-text-item');
             
             textItems.forEach((item, index) => {
-                // 延迟计算：箭头横跨屏幕大约 1.6s
-                const delay = 0.05 + (index * 0.12);
+                // 箭头加速了一倍，这里延迟间隔也从 0.12 减小到 0.06，保持同步
+                const delay = 0.02 + (index * 0.06);
                 
-                // 动画时长设为 0.1s (非常快)，模拟瞬间被擦除
-                item.style.animation = `text-vanish 0.1s linear forwards ${delay}s`;
+                // 动画时长缩短到 0.05s，瞬间消失
+                item.style.animation = `text-vanish 0.05s linear forwards ${delay}s`;
             });
 
-            // 4. 清理工作 (2.5秒后)
+            // 4. 清理工作 (1.5秒后，因为动画变快了)
             setTimeout(() => {
                 if (gameState === 'RACING') {
                     setBarVisibility(false);
                     vfdOverlay.classList.remove('vfd-active');
                 }
-            }, 2500);
+            }, 1500);
 
             // --- 马匹逻辑 ---
             ponies.forEach(p => {
