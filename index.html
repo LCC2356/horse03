@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.22 PURE CSS SCAN</title>
+    <title>HORSE RUNRUN - v7.23 VFD SCAN</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -11,12 +11,12 @@
     <style>
         :root {
             --bg: #111;
-            --primary: #40e0d0;
-            --panel: #004d40;
+            /* 核心颜色定义：与边框保持一致 */
+            --primary: #40e0d0; /* 亮部霓虹色 */
+            --panel: #004d40;   /* 暗部背景色 */
             --border: #00695c;
             --game-w: 3500px; 
             --game-h: 100px;
-            --neon-blue: #007bff; /* 定义蓝色霓虹色 */
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
@@ -127,62 +127,64 @@
 
         #scan-line { display: none; }
 
-        /* === 关键修改：纯CSS箭头扫描动画 === */
+        /* === 关键修改：VFD横向扫描动画样式 === */
         
-        /* 扫描条容器：包含多个箭头 */
-        #css-scan-bar {
+        #vfd-overlay {
             position: absolute;
-            top: 0;
-            left: -250px; /* 起始位置在屏幕外左侧 */
-            width: 250px; /* 光柱宽度 */
-            height: 100%;
-            
+            inset: 0;
             display: flex;
-            flex-direction: column;
-            justify-content: center;
             align-items: center;
+            justify-content: flex-start; /* 从左开始 */
             overflow: hidden;
-
-            opacity: 0; 
+            opacity: 0;
             pointer-events: none;
-            z-index: 90;
+            z-index: 95;
+            padding-left: 20px; /* 左侧留点空隙 */
         }
 
-        /* 单个箭头的容器 */
-        .chevron {
-            position: relative;
-            width: 100%;
-            height: 60px; /* 控制箭头纵向间距 */
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            margin-bottom: -15px; /* 让箭头稍微重叠一点，更紧凑 */
+        /* 单个箭头元素 */
+        #vfd-overlay i {
+            display: inline-block;
+            /* 使用 CSS border 绘制向右的三角形 */
+            width: 0; 
+            height: 0; 
+            border-top: 40px solid transparent;
+            border-bottom: 40px solid transparent;
+            border-left: 60px solid var(--panel); /* 默认暗色 */
+            
+            margin-right: 15px; /* 箭头间距 */
+            flex-shrink: 0;
+            
+            /* 默认无光晕 */
+            filter: none;
+            transform: scale(0.8); /* 默认稍小 */
+            transition: all 0.1s;
         }
 
-        /* 使用伪元素绘制 V 形 */
-        .chevron::before {
-            content: '';
-            width: 80px;  /* 箭头大小 */
-            height: 80px; /* 箭头大小 */
-            border-right: 8px solid var(--neon-blue); /* 箭头线条粗细和颜色 */
-            border-bottom: 8px solid var(--neon-blue);
-            transform: rotate(45deg); /* 旋转形成 V */
-            /* 强烈的蓝色霓虹光晕 */
-            filter: drop-shadow(0 0 10px var(--neon-blue)) drop-shadow(0 0 20px var(--neon-blue));
+        /* 激活状态下的动画 */
+        .vfd-active { opacity: 1 !important; }
+        
+        /* 动画定义：点亮 -> 发光 -> 熄灭 */
+        @keyframes vfd-pulse {
+            0%, 100% {
+                border-left-color: var(--panel); /* 暗 */
+                filter: none;
+                transform: scale(0.8);
+            }
+            20%, 60% {
+                border-left-color: var(--primary); /* 亮 (与边框同色) */
+                /* 强烈的 VFD 霓虹光晕，贴合箭头形状 */
+                filter: drop-shadow(0 0 10px var(--primary)) drop-shadow(0 0 20px var(--primary));
+                transform: scale(1.1); /* 点亮时稍微放大 */
+            }
         }
 
-        /* 激活时的动画类 */
-        .arrow-scan-active {
-            opacity: 1 !important;
-            animation: arrow-scan-move 2s cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards;
+        /* 应用动画，使用 JS 设置的延迟变量 */
+        .vfd-active i {
+            /* 动画时长 1s，线性，只播放一次，延迟由 var(--d) 决定 */
+            animation: vfd-pulse 1s linear forwards calc(var(--d) * 1s);
         }
 
-        @keyframes arrow-scan-move {
-            0% { left: -250px; opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { left: 100%; opacity: 0; }
-        }
         /* ===================================================== */
 
         .entity { position: absolute; width: 38px; height: 38px; will-change: transform; }
@@ -313,16 +315,7 @@
 
                 <div id="queue-text" class="queue-alert"></div>
                 
-                <div id="css-scan-bar">
-                    <div class="chevron"></div>
-                    <div class="chevron"></div>
-                    <div class="chevron"></div>
-                    <div class="chevron"></div>
-                    <div class="chevron"></div>
-                    <div class="chevron"></div>
-                    <div class="chevron"></div>
-                    <div class="chevron"></div>
-                </div>
+                <div id="vfd-overlay"></div>
                 <div id="layer-grass"></div>
                 <div id="layer-pony"></div>
                 <div id="layer-fx"></div>
@@ -468,6 +461,17 @@
         }
 
         window.onload = function() {
+            // === 关键修改：初始化 VFD 箭头 ===
+            const vfdOverlay = document.getElementById('vfd-overlay');
+            // 生成约50个箭头以覆盖屏幕宽度
+            for (let i = 0; i < 50; i++) {
+                const arrow = document.createElement('i');
+                // 设置CSS变量 --d 用于动画延迟，实现波浪效果
+                arrow.style.setProperty('--d', i * 0.04); 
+                vfdOverlay.appendChild(arrow);
+            }
+            // =================================
+
             requestAnimationFrame(gameLoop);
             fitScreen();
             
@@ -610,17 +614,16 @@
         }
 
         function startRace() {
-            // === 关键修改：触发纯CSS箭头动画 ===
-            const arrowScanBar = document.getElementById('css-scan-bar');
-            // 移除类名并强制重绘，以支持重复触发动画
-            arrowScanBar.classList.remove('arrow-scan-active');
-            void arrowScanBar.offsetWidth; 
-            arrowScanBar.classList.add('arrow-scan-active');
+            // === 关键修改：触发 VFD 扫描动画 ===
+            const vfdOverlay = document.getElementById('vfd-overlay');
+            vfdOverlay.classList.remove('vfd-active');
+            void vfdOverlay.offsetWidth; // 强制重绘
+            vfdOverlay.classList.add('vfd-active');
             
-            // 动画结束后移除类名，避免遮挡
+            // 动画总时长大约 1s (动画本身) + 50*0.04s (最大延迟) = 3s左右
             setTimeout(() => {
-                arrowScanBar.classList.remove('arrow-scan-active');
-            }, 2050); // 略大于动画时间
+                vfdOverlay.classList.remove('vfd-active');
+            }, 3500); 
             // ================================
 
             ponies.forEach(p => {
