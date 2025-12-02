@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.20 BLUE ARROW SCAN</title>
+    <title>HORSE RUNRUN - v7.21 FIXED ARROW</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -124,38 +124,40 @@
             display: none; z-index: 20;
         }
 
-        /* === 关键修改：移除原白光扫描，替换为蓝色箭头动画 === */
-        #scan-line {
-            display: none; /* 移除旧元素 */
-        }
+        #scan-line { display: none; }
 
+        /* === 关键修改：修复后的箭头扫描样式 === */
         #arrow-overlay {
             position: absolute;
             top: 0;
-            left: 0;
-            width: 100%;
+            left: -250px; /* 起始位置在屏幕外左侧 */
+            width: 250px; /* 固定宽度的光柱 */
             height: 100%;
-            background-image: url('image_1.png'); /* 使用你提供的蓝色箭头图片 */
-            background-repeat: repeat-x;
-            background-size: auto 100%; /* 高度撑满，宽度自动 */
-            opacity: 0; /* 默认隐藏 */
+            
+            /* 修正：使用正确的箭头图片 image_0.png */
+            background-image: url('image_0.png'); 
+            background-repeat: repeat-y; /* 纵向重复 */
+            background-size: 100% auto; /* 宽度撑满光柱，高度自动 */
+            
+            opacity: 0; 
             pointer-events: none;
             z-index: 90;
+            /* 增加蓝色霓虹光晕，让效果更明显 */
+            filter: drop-shadow(0 0 15px #007bff) brightness(1.5);
         }
 
         .arrow-scan-active {
             opacity: 1 !important;
-            animation: arrow-scan 1.5s linear forwards;
+            /* 动画改为移动光柱本身的位置 */
+            animation: arrow-scan-move 2s linear forwards;
         }
 
-        @keyframes arrow-scan {
+        @keyframes arrow-scan-move {
             0% {
-                background-position: -100% 0;
-                opacity: 0.8;
+                left: -250px;
             }
             100% {
-                background-position: 100% 0;
-                opacity: 0;
+                left: 100%; /* 移动到屏幕最右侧外 */
             }
         }
         /* ===================================================== */
@@ -199,7 +201,7 @@
         #qrcode {
             background: white; padding: 4px;
             width: 70px; height: 70px;
-            display: flex; justify-content: center; align-items: center;
+            display: flex; justify-content center; align-items: center;
             border-radius: 4px;
         }
         #qrcode img { display: block; width: 100%; height: 100%; }
@@ -576,11 +578,17 @@
         }
 
         function startRace() {
-            // === 关键修改：触发箭头动画 ===
+            // === 关键修改：触发修复后的箭头动画 ===
             const arrowOverlay = document.getElementById('arrow-overlay');
+            // 移除类名并强制重绘，以支持重复触发动画
             arrowOverlay.classList.remove('arrow-scan-active');
-            void arrowOverlay.offsetWidth; // 强制浏览器重绘
+            void arrowOverlay.offsetWidth; 
             arrowOverlay.classList.add('arrow-scan-active');
+            
+            // 动画结束后移除类名，避免遮挡
+            setTimeout(() => {
+                arrowOverlay.classList.remove('arrow-scan-active');
+            }, 2000); // 2秒后移除，略大于动画时间
             // ================================
 
             ponies.forEach(p => {
