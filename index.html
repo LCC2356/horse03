@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.27 MOBILE FEEDBACK</title>
+    <title>HORSE RUNRUN - v7.28 BUG FIX</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -110,12 +110,40 @@
             flex-shrink: 0; 
             margin: 0; 
             
+            /* 默认进场动画 */
             animation: text-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
         
         @keyframes text-pop {
             0% { transform: scale(0.5); opacity: 0; }
             100% { transform: scale(1.0); opacity: 1; }
+        }
+
+        /* === RUN 文字消失特效 === */
+        .text-out {
+            animation: run-vanish 0.5s ease-in forwards !important;
+        }
+
+        @keyframes run-vanish {
+            0% { 
+                opacity: 1; 
+                transform: scale(1); 
+                filter: blur(0px);
+                color: #40e0d0;
+            }
+            20% { 
+                opacity: 1; 
+                transform: scale(1.2); 
+                color: #ffffff; 
+                text-shadow: 0 0 30px #ffffff;
+                filter: blur(2px);
+            }
+            100% { 
+                opacity: 0; 
+                transform: scale(0) rotate(10deg); 
+                filter: blur(10px);
+                color: #ffffff;
+            }
         }
 
         .queue-alert {
@@ -195,13 +223,7 @@
         }
         .btn:hover { background: var(--primary); color: #000; }
         .btn:active { transform: translateY(2px); }
-        /* 按钮禁用样式 */
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            background: #333;
-            border-color: #555;
-        }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; background: #333; border-color: #555; }
 
         #modal-editor {
             position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000;
@@ -223,7 +245,6 @@
         .btn-outline { background: transparent; border-color: #ff5252; color: #ff5252; }
         .btn-flex { flex: 1; display: flex; justify-content: center; align-items: center; }
 
-        /* === 移动端 === */
         #mobile-view {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #111; display: flex; flex-direction: column; z-index: 20000;
@@ -244,21 +265,14 @@
         }
         .m-footer { display: flex; gap: 15px; height: 60px; flex-shrink: 0; width: 100%; }
 
-        /* === 新增：手机端提示弹窗 === */
         #mobile-toast {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0, 30, 30, 0.95);
-            border: 2px solid var(--primary);
-            box-shadow: 0 0 20px var(--primary);
-            padding: 30px;
-            text-align: center;
-            z-index: 30000;
-            border-radius: 8px;
-            display: none; /* 默认隐藏 */
+            background: rgba(0, 30, 30, 0.95); border: 2px solid var(--primary);
+            box-shadow: 0 0 20px var(--primary); padding: 30px; text-align: center;
+            z-index: 30000; border-radius: 8px; display: none;
         }
         #mobile-toast h2 { margin: 0; font-size: 2.5rem; color: var(--primary); text-shadow: 0 0 10px var(--primary); }
         #mobile-toast p { margin: 10px 0 0 0; font-size: 1.2rem; color: #fff; }
-        
         .toast-show { animation: toast-in 0.3s forwards; }
         @keyframes toast-in { from { opacity: 0; transform: translate(-50%, -40%); } to { opacity: 1; transform: translate(-50%, -50%); } }
     </style>
@@ -283,7 +297,6 @@
                 </div>
 
                 <div id="queue-text" class="queue-alert"></div>
-                
                 <div id="layer-grass"></div>
                 <div id="layer-pony"></div>
                 <div id="layer-fx"></div>
@@ -567,11 +580,26 @@
         }
 
         function startRace() {
-            const scan = document.getElementById('scan-line');
-            scan.style.display = 'block';
-            scan.style.animation = 'none'; 
-            scan.offsetHeight; 
-            scan.style.animation = 'scan 1.5s linear forwards'; 
+            updateBarText("RUN", "#40e0d0");
+            const hud = document.getElementById('hud');
+            hud.style.display = 'block';
+            hud.innerText = "STATUS: RACING!!!";
+
+            // === 关键修改：RUN 消失特效 ===
+            setTimeout(() => {
+                if (gameState === 'RACING') {
+                    // 1. 给所有文字加上消失动画类
+                    const items = document.querySelectorAll('.bar-text-item');
+                    items.forEach(el => el.classList.add('text-out'));
+                    
+                    // 2. 等待动画播完(0.5s)后，彻底隐藏容器，并清除类
+                    setTimeout(() => {
+                        setBarVisibility(false);
+                        items.forEach(el => el.classList.remove('text-out'));
+                    }, 500); 
+                }
+            }, 1000); // 显示 RUN 1秒
+            // =============================
 
             ponies.forEach(p => {
                 p.speed = 3.5 + Math.random() * 3; 
@@ -581,18 +609,6 @@
 
             grass = [];
             gameState = 'RACING';
-            
-            const hud = document.getElementById('hud');
-            hud.style.display = 'block';
-            hud.innerText = "STATUS: RACING!!!";
-
-            updateBarText("RUN", "#40e0d0");
-            
-            setTimeout(() => {
-                if (gameState === 'RACING') {
-                    setBarVisibility(false);
-                }
-            }, 1000);
         }
 
         function gameLoop() {
@@ -609,6 +625,11 @@
             if (gameState === 'COOLDOWN') {
                 cooldownTimer--;
                 
+                if (cooldownTimer <= 0) {
+                    startRace();
+                    return; // 修复：倒计时结束后直接return，防止渲染"0"
+                }
+                
                 if (cooldownTimer > 180) {
                     updateBarText("READY", "#40e0d0");
                 } else {
@@ -622,10 +643,6 @@
                     if (cooldownTimer % 60 === 59) {
                         triggerFlash();
                     }
-                }
-                
-                if (cooldownTimer <= 0) {
-                    startRace();
                 }
                 updatePoniesMovement(); 
             }
@@ -881,17 +898,14 @@
             if(!conn) return alert("Not Connected!");
             conn.send({ name: document.getElementById('m-name').value.toUpperCase() || 'MOBILE', pixels: mobileGrid, color: selectedColor });
             
-            // 1. 显示成功弹窗
             const toast = document.getElementById('mobile-toast');
             toast.style.display = 'block';
             toast.classList.add('toast-show');
 
-            // 2. 禁用按钮，改变样式
             const btn = document.getElementById('mobile-run-btn');
             btn.disabled = true;
             btn.innerText = "SENDING...";
             
-            // 3. 1.5秒后恢复
             setTimeout(() => {
                 toast.style.display = 'none';
                 toast.classList.remove('toast-show');
