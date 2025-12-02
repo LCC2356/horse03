@@ -1,9 +1,41 @@
+这个修改非常细腻，能极大地提升视觉质感。
+
+我更新了代码至 **v7.24 - FINAL POLISH**。
+
+### 主要修改点：
+
+1.  **时序调整**：
+
+      * 现在 `startRace` 后，先显示 "RUN" 1秒。
+      * 1秒后，"RUN" 消失，**紧接着** 箭头扫描动画开始。
+      * 这就像是：“预备...跑！ -\> (文字消失) -\> (光速飞出去的视觉残留)”。
+
+2.  **箭头形态重塑 (更细长)**：
+
+      * 调整了 CSS 绘制三角形的参数。
+      * 高度减半（`border-top/bottom` 从 40px 减到 **15px**）。
+      * 长度增加（`border-left` 从 60px 增加到 **80px**）。
+      * 现在的箭头看起来像是一束束飞速穿梭的光梭，非常锋利。
+
+3.  **视觉聚焦 (只亮5个)**：
+
+      * 修改了动画逻辑。默认状态下箭头是 **完全透明 (`opacity: 0`)** 的，看不见。
+      * 只有当光波扫过时，它们才会瞬间点亮并迅速熄灭。
+      * 调整了动画曲线和时长，确保屏幕上同一时间大约只有 **5-6个** 箭头是亮着的，形成完美的“拖尾流星”效果。
+
+4.  **速度提升**：
+
+      * 整体扫描速度加快了 50%。现在的光波一闪而过，非常有速度感。
+
+### 完整代码 (请复制替换)
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.23 VFD SCAN</title>
+    <title>HORSE RUNRUN - v7.24 FINAL</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -11,9 +43,8 @@
     <style>
         :root {
             --bg: #111;
-            /* 核心颜色定义：与边框保持一致 */
-            --primary: #40e0d0; /* 亮部霓虹色 */
-            --panel: #004d40;   /* 暗部背景色 */
+            --primary: #40e0d0;
+            --panel: #004d40;
             --border: #00695c;
             --game-w: 3500px; 
             --game-h: 100px;
@@ -105,7 +136,7 @@
             text-shadow: 0 0 20px currentColor; 
             font-weight: bold;
             
-            width: 310px; 
+            width: 300px; 
             display: flex; 
             justify-content: center; 
             flex-shrink: 0; 
@@ -127,64 +158,50 @@
 
         #scan-line { display: none; }
 
-        /* === 关键修改：VFD横向扫描动画样式 === */
-        
+        /* === VFD 箭头动画样式 === */
         #vfd-overlay {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start; /* 从左开始 */
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: flex-start;
             overflow: hidden;
-            opacity: 0;
-            pointer-events: none;
-            z-index: 95;
-            padding-left: 20px; /* 左侧留点空隙 */
+            opacity: 0; /* 默认隐藏 */
+            pointer-events: none; z-index: 95;
+            padding-left: 0;
         }
 
-        /* 单个箭头元素 */
+        /* 单个箭头 (细长锐利风格) */
         #vfd-overlay i {
             display: inline-block;
-            /* 使用 CSS border 绘制向右的三角形 */
-            width: 0; 
-            height: 0; 
-            border-top: 40px solid transparent;
-            border-bottom: 40px solid transparent;
-            border-left: 60px solid var(--panel); /* 默认暗色 */
+            width: 0; height: 0; 
             
-            margin-right: 15px; /* 箭头间距 */
+            /* 调整形状：更扁平细长 */
+            border-top: 15px solid transparent;    /* 变窄 */
+            border-bottom: 15px solid transparent; /* 变窄 */
+            border-left: 80px solid var(--primary); /* 变长，且用亮色 */
+            
+            margin-right: 20px; /* 间距 */
             flex-shrink: 0;
             
-            /* 默认无光晕 */
-            filter: none;
-            transform: scale(0.8); /* 默认稍小 */
-            transition: all 0.1s;
+            opacity: 0; /* 默认是灭的 */
+            transform: scale(0.8) skewX(-20deg); /* 增加一点倾斜速度感 */
+            filter: drop-shadow(0 0 5px var(--primary));
         }
 
-        /* 激活状态下的动画 */
+        /* 容器激活 */
         .vfd-active { opacity: 1 !important; }
         
-        /* 动画定义：点亮 -> 发光 -> 熄灭 */
-        @keyframes vfd-pulse {
-            0%, 100% {
-                border-left-color: var(--panel); /* 暗 */
-                filter: none;
-                transform: scale(0.8);
-            }
-            20%, 60% {
-                border-left-color: var(--primary); /* 亮 (与边框同色) */
-                /* 强烈的 VFD 霓虹光晕，贴合箭头形状 */
-                filter: drop-shadow(0 0 10px var(--primary)) drop-shadow(0 0 20px var(--primary));
-                transform: scale(1.1); /* 点亮时稍微放大 */
-            }
+        /* 箭头动画：瞬间点亮 -> 迅速熄灭 */
+        @keyframes vfd-flash {
+            0% { opacity: 0; transform: scale(0.8) translateX(0); }
+            10% { opacity: 1; transform: scale(1.2) translateX(10px); filter: drop-shadow(0 0 15px var(--primary)) drop-shadow(0 0 30px #fff); }
+            40% { opacity: 0.3; transform: scale(1.0) translateX(20px); }
+            100% { opacity: 0; transform: scale(0.8) translateX(30px); }
         }
 
-        /* 应用动画，使用 JS 设置的延迟变量 */
+        /* 应用动画 (加快50%) */
         .vfd-active i {
-            /* 动画时长 1s，线性，只播放一次，延迟由 var(--d) 决定 */
-            animation: vfd-pulse 1s linear forwards calc(var(--d) * 1s);
+            /* 动画时长 0.4s，非常短促 */
+            animation: vfd-flash 0.4s ease-out forwards calc(var(--d) * 1s);
         }
-
         /* ===================================================== */
 
         .entity { position: absolute; width: 38px; height: 38px; will-change: transform; }
@@ -309,13 +326,13 @@
                 <div id="hud" class="hud">NOWHERE TO RUN</div>
 
                 <div id="track-display-bar">
-                    <div class="bar-container" id="bar-text">
-                        </div>
+                    <div class="bar-container" id="bar-text"></div>
                 </div>
 
                 <div id="queue-text" class="queue-alert"></div>
                 
                 <div id="vfd-overlay"></div>
+
                 <div id="layer-grass"></div>
                 <div id="layer-pony"></div>
                 <div id="layer-fx"></div>
@@ -461,16 +478,15 @@
         }
 
         window.onload = function() {
-            // === 关键修改：初始化 VFD 箭头 ===
+            // 初始化 VFD 箭头
             const vfdOverlay = document.getElementById('vfd-overlay');
-            // 生成约50个箭头以覆盖屏幕宽度
-            for (let i = 0; i < 50; i++) {
+            // 增加箭头数量到 80 个，保证覆盖 3500px 宽的跑道
+            for (let i = 0; i < 80; i++) {
                 const arrow = document.createElement('i');
-                // 设置CSS变量 --d 用于动画延迟，实现波浪效果
-                arrow.style.setProperty('--d', i * 0.04); 
+                // 延迟参数 (speed up: 0.02 per step)
+                arrow.style.setProperty('--d', i * 0.02); 
                 vfdOverlay.appendChild(arrow);
             }
-            // =================================
 
             requestAnimationFrame(gameLoop);
             fitScreen();
@@ -614,17 +630,31 @@
         }
 
         function startRace() {
-            // === 关键修改：触发 VFD 扫描动画 ===
-            const vfdOverlay = document.getElementById('vfd-overlay');
-            vfdOverlay.classList.remove('vfd-active');
-            void vfdOverlay.offsetWidth; // 强制重绘
-            vfdOverlay.classList.add('vfd-active');
+            // 更新文字为 RUN
+            updateBarText("RUN", "#40e0d0");
             
-            // 动画总时长大约 1s (动画本身) + 50*0.04s (最大延迟) = 3s左右
+            // 恢复右下角 HUD
+            const hud = document.getElementById('hud');
+            hud.style.display = 'block';
+            hud.innerText = "STATUS: RACING!!!";
+
+            // 1秒后：隐藏文字条，并触发箭头扫描
             setTimeout(() => {
-                vfdOverlay.classList.remove('vfd-active');
-            }, 3500); 
-            // ================================
+                if (gameState === 'RACING') {
+                    setBarVisibility(false);
+                    
+                    // 触发箭头动画
+                    const vfdOverlay = document.getElementById('vfd-overlay');
+                    vfdOverlay.classList.remove('vfd-active');
+                    void vfdOverlay.offsetWidth; 
+                    vfdOverlay.classList.add('vfd-active');
+                    
+                    // 2.5s 后移除动画类
+                    setTimeout(() => {
+                        vfdOverlay.classList.remove('vfd-active');
+                    }, 2500);
+                }
+            }, 1000);
 
             ponies.forEach(p => {
                 p.speed = 3.5 + Math.random() * 3; 
@@ -634,19 +664,6 @@
 
             grass = [];
             gameState = 'RACING';
-            
-            // 恢复右下角 HUD
-            const hud = document.getElementById('hud');
-            hud.style.display = 'block';
-            hud.innerText = "STATUS: RACING!!!";
-
-            updateBarText("RUN", "#40e0d0");
-            
-            setTimeout(() => {
-                if (gameState === 'RACING') {
-                    setBarVisibility(false);
-                }
-            }, 1000);
         }
 
         function gameLoop() {
@@ -991,3 +1008,4 @@
     </script>
 </body>
 </html>
+```
