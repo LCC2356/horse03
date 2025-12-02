@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.42 STABLE FIX</title>
+    <title>HORSE RUNRUN - v7.43 DELAYED START</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -50,7 +50,8 @@
         #game-screen {
             width: var(--game-w); height: var(--game-h);
             background: #000; position: relative;
-            border: 4px solid var(--primary); 
+            /* 修改点 1：边框改为 2px */
+            border: 2px solid var(--primary); 
             box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
             overflow: hidden; 
             flex-shrink: 0; 
@@ -291,6 +292,7 @@
         .push-btn:active { transform: scale(0.95); }
         .controller-info { font-size: 1.5rem; color: #888; margin-bottom: 30px; text-align: center; }
         
+        /* 按钮状态颜色 */
         .btn-wait { background: #1a1a1a !important; border-color: #333 !important; color: #555 !important; }
         .btn-mash { background: #fff !important; border-color: #ccc !important; color: #000 !important; box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; }
         .btn-start { background: #e65100 !important; border-color: #ffb300 !important; color: #fff !important; box-shadow: 0 0 50px rgba(255, 179, 0, 0.4) !important; }
@@ -732,7 +734,7 @@
                 const sec = Math.ceil(waitTimer / 60);
                 alert.innerText = `NEXT ROUND IN ${sec}`; 
                 
-                if (lastBroadcastText !== sec) {
+                if (sec > 0 && lastBroadcastText !== sec) {
                     broadcast({ type: 'sync_ui', label: `STARTING ${sec}`, mode: 'wait' });
                     lastBroadcastText = sec;
                 }
@@ -750,7 +752,6 @@
                     let color = '#ffffff';
                     if (sec === 3) color = '#ff5252';
                     else if (sec === 2) color = '#ffb300';
-                    
                     updateBarText(sec.toString(), color);
                     if (cooldownTimer % 60 === 59) triggerFlash();
                     
@@ -821,7 +822,13 @@
                     waitTimer = 180; 
                 } else {
                     gameState = 'ROAMING';
-                    broadcast({ type: 'sync_ui', label: 'START RACE', mode: 'start' });
+                    // 修改点 2：比赛结束，空队列时才广播 START RACE 按钮，且先发 wait 缓冲一下
+                    broadcast({ type: 'sync_ui', label: 'FINISHING...', mode: 'wait' });
+                    setTimeout(() => {
+                        if (gameState === 'ROAMING') {
+                            broadcast({ type: 'sync_ui', label: 'START RACE', mode: 'start' });
+                        }
+                    }, 3000);
                 }
             }
         }
