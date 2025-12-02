@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.41 CROWN FIX</title>
+    <title>HORSE RUNRUN - v7.42 STABLE FIX</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -291,7 +291,6 @@
         .push-btn:active { transform: scale(0.95); }
         .controller-info { font-size: 1.5rem; color: #888; margin-bottom: 30px; text-align: center; }
         
-        /* 按钮状态颜色 */
         .btn-wait { background: #1a1a1a !important; border-color: #333 !important; color: #555 !important; }
         .btn-mash { background: #fff !important; border-color: #ccc !important; color: #000 !important; box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; }
         .btn-start { background: #e65100 !important; border-color: #ffb300 !important; color: #fff !important; box-shadow: 0 0 50px rgba(255, 179, 0, 0.4) !important; }
@@ -416,9 +415,7 @@
         let selectedColor = COLORS.CYAN;
         let playerUUID = null;
 
-        // 手机端按钮状态: 'wait', 'mash', 'start'
         let mobileBtnState = 'wait';
-        // 音频相关
         let audioCtx = null;
         let lastTapTime = 0;
         let mySoundType = 'SAWTOOTH'; 
@@ -753,10 +750,11 @@
                     let color = '#ffffff';
                     if (sec === 3) color = '#ff5252';
                     else if (sec === 2) color = '#ffb300';
+                    
                     updateBarText(sec.toString(), color);
                     if (cooldownTimer % 60 === 59) triggerFlash();
                     
-                    if (lastBroadcastText !== sec) {
+                    if (sec > 0 && lastBroadcastText !== sec) {
                         broadcast({ type: 'sync_ui', label: sec.toString(), mode: 'wait' });
                         lastBroadcastText = sec;
                     }
@@ -874,7 +872,6 @@
                     aiBehavior(p, false);
                 }
                 
-                // === 修改点：Crown fix logic (最小Y 35) ===
                 p.x = Math.max(0, Math.min(GAME_W - 38, p.x));
                 p.y = Math.max(p.hasCrown ? 35 : 20, Math.min(GAME_H - 38 - 6, p.y));
             });
@@ -884,7 +881,6 @@
             const minX = restrictFinish ? FINISH_X : 0;
             const maxX = GAME_W - 38;
             const maxY = GAME_H - 44;
-            // === 修改点：Crown fix logic (最小Y 35) ===
             const minY = p.hasCrown ? 35 : 20;
 
             if (p.state === 'roaming' || p.state === 'finished') {
