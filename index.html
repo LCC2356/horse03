@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.12 COMPACT</title>
+    <title>HORSE RUNRUN - v7.11 ALIGNMENT</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -56,12 +56,11 @@
             flex-shrink: 0; 
         }
         
-        /* 跑道闪烁动画 */
         .flash-active {
             animation: track-flash 0.2s ease-out;
         }
         @keyframes track-flash {
-            0% { background-color: rgba(64, 224, 208, 0.6); box-shadow: inset 0 0 200px var(--primary); border-color: #fff; }
+            0% { background-color: rgba(64, 224, 208, 0.4); box-shadow: inset 0 0 150px var(--primary); border-color: #fff; }
             100% { background-color: #000; box-shadow: 0 0 30px rgba(64, 224, 208, 0.3); border-color: var(--primary); }
         }
 
@@ -96,23 +95,20 @@
             width: 100%; 
             display: flex; 
             align-items: center; 
-            justify-content: center; 
+            justify-content: center; /* 整体居中 */
         }
         
-        /* 修改点 1: 宽度调整 
-           - 之前 220px 太宽，导致间距大。
-           - 现在 150px，模拟了之前 v7.9 的紧凑间距。
-           - 依然保留 flex + justify-content: center，确保单字(321)和多字(READY)中心对齐。
-        */
+        /* 关键修改：固定宽度 300px 实现完美对齐 */
         .bar-text-item {
             font-size: 80px; 
             letter-spacing: 2px;
-            text-shadow: 0 0 25px currentColor; 
+            text-shadow: 0 0 20px currentColor; 
             font-weight: bold;
             
-            width: 150px; /* 紧凑宽度 */
+            width: 300px; /* 固定宽度，确保 READY 和 3 占据相同空间 */
             display: flex; 
-            justify-content: center;
+            justify-content: center; /* 文字在 300px 内居中 */
+            flex-shrink: 0; /* 禁止挤压 */
             margin: 0; 
             
             animation: text-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
@@ -373,14 +369,14 @@
             }
         };
 
-        // 更新文字：横向重复排列 13次 (因为间距小了，13个也足够)
+        // 更新文字：横向重复排列 13次
         function updateBarText(text, color) {
             if (currentBarText === text) return;
             currentBarText = text;
 
             const container = document.getElementById('bar-text');
             let content = '';
-            // 保持 13 个重复
+            // 重复 13 次
             for(let i=0; i<13; i++) {
                 content += `<span class="bar-text-item">${text}</span>`;
             }
@@ -401,14 +397,6 @@
                 bar.style.display = 'none';
                 currentBarText = ''; 
             }
-        }
-        
-        // 触发跑道闪烁
-        function triggerFlash() {
-            const screen = document.getElementById('game-screen');
-            screen.classList.remove('flash-active');
-            void screen.offsetWidth; // 触发重绘
-            screen.classList.add('flash-active');
         }
 
         window.onload = function() {
@@ -521,6 +509,7 @@
 
             if (gameState === 'RACING' || gameState === 'COOLDOWN') {
                 ponyQueue.push(newPony);
+                updateHUD();
             } else {
                 ponies.push(newPony);
                 startCooldown(); 
@@ -544,13 +533,11 @@
                 p.state = 'ready'; 
             });
 
+            // 隐藏右下角 HUD
             document.getElementById('hud').style.display = 'none';
-            
+            // 显示准备文字
             setBarVisibility(true);
             updateBarText("READY", "#40e0d0");
-            
-            // 修改点 2: READY 出现时也触发一次闪烁
-            triggerFlash();
         }
 
         function startRace() {
@@ -569,6 +556,7 @@
             grass = [];
             gameState = 'RACING';
             
+            // 恢复右下角 HUD
             const hud = document.getElementById('hud');
             hud.style.display = 'block';
             hud.innerText = "STATUS: RACING!!!";
@@ -590,6 +578,7 @@
 
         function updateGameLogic() {
             const alert = document.getElementById('queue-text');
+            const screen = document.getElementById('game-screen');
             const hud = document.getElementById('hud');
 
             if (gameState === 'COOLDOWN') {
@@ -606,7 +595,9 @@
                     updateBarText(sec.toString(), color);
 
                     if (cooldownTimer % 60 === 59) {
-                        triggerFlash();
+                        screen.classList.remove('flash-active');
+                        void screen.offsetWidth; 
+                        screen.classList.add('flash-active');
                     }
                 }
                 
