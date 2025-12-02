@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.34 MANUAL MODE</title>
+    <title>HORSE RUNRUN - v7.35 STABLE</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -170,7 +170,7 @@
         .entity { position: absolute; width: 38px; height: 38px; will-change: transform; }
         .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; }
         
-        /* === 皇冠位置调整: top: -31px === */
+        /* 皇冠 top: -31px */
         .crown-container {
             position: absolute; 
             top: -31px; 
@@ -284,7 +284,7 @@
         }
         .m-footer { display: flex; gap: 15px; height: 60px; flex-shrink: 0; width: 100%; }
 
-        /* 新增：手动控制器样式 */
+        /* 手动控制器 */
         #m-controller {
             position: fixed; inset: 0; background: #111; z-index: 22000;
             display: none; flex-direction: column; align-items: center; justify-content: center;
@@ -301,8 +301,7 @@
         .push-btn:active { transform: scale(0.9); background: #00695c; }
         .controller-info { font-size: 1.5rem; color: #888; margin-bottom: 30px; text-align: center; }
         
-        /* 成功/准备弹窗（复用） */
-        #m-success-modal { display: none; } /* 逻辑中我们直接切换到 controller，所以这个可以作为重新开始的过渡 */
+        #m-success-modal { display: none; } 
     </style>
 </head>
 <body>
@@ -393,8 +392,7 @@
         <div id="m-controller">
             <div class="controller-info">TAP TO RUN!</div>
             <div class="push-btn" ontouchstart="sendTap(event)" onmousedown="sendTap(event)">PUSH</div>
-            <button class="btn" style="margin-top: 50px;" onclick="resetMobile()">NEW PONY</button>
-        </div>
+            </div>
     </div>
 
     <script>
@@ -421,6 +419,7 @@
         let pcGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
         let mobileGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
         let selectedColor = COLORS.CYAN;
+        let playerUUID = null; // 手机端身份ID
 
         let layout = {
             scale: 1.0,
@@ -565,17 +564,29 @@
                         colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L
                     });
                 });
-                // PC端接收逻辑更新
+                
                 peer.on('connection', c => {
                     c.on('data', data => {
-                        // 兼容旧协议（直接发对象）和新协议（带type）
-                        if (data.type === 'spawn') {
-                            requestSpawnPony(data.payload.name, data.payload.pixels, data.payload.color, c.peer);
-                        } else if (data.type === 'tap') {
-                            handleTap(c.peer);
-                        } else if (data.name) {
-                            // 旧协议 fallback
-                            requestSpawnPony(data.name, data.pixels, data.color, c.peer);
+                        // === 处理不同类型的信号 ===
+                        if (data.type === 'check_reconnect') {
+                            const uuid = data.uuid;
+                            // 检查该 UUID 是否已经有马在场
+                            const exists = ponies.find(p => p.playerUUID === uuid) || ponyQueue.find(p => p.playerUUID === uuid);
+                            if (exists) {
+                                // 告诉手机：你已经有马了，切控制模式
+                                c.send({ type: 'reconnect_success' });
+                            }
+                        }
+                        else if (data.type === 'spawn') {
+                            const uuid = data.payload.uuid;
+                            // 防重复：如果该 UUID 已经在场，忽略 spawn 请求
+                            const exists = ponies.find(p => p.playerUUID === uuid) || ponyQueue.find(p => p.playerUUID === uuid);
+                            if (!exists) {
+                                requestSpawnPony(data.payload.name, data.payload.pixels, data.payload.color, uuid);
+                            }
+                        } 
+                        else if (data.type === 'tap') {
+                            handleTap(data.uuid);
                         }
                     });
                 });
@@ -586,24 +597,23 @@
             } catch(e) { console.error(e); }
         }
 
-        // 处理点击加速
-        function handleTap(ownerId) {
-            if (!ownerId) return;
-            // 找到属于该玩家的小马
-            const pony = ponies.find(p => p.ownerId === ownerId);
-            if (pony && pony.state === 'racing') {
-                // 加速：每次点击增加速度，但设定上限防止飞出
+        // 根据 UUID 处理加速
+        function handleTap(uuid) {
+            if (!uuid) return;
+            const pony = ponies.find(p => p.playerUUID === uuid);
+            if (pony && pony.state === 'racing' && pony.isManual) {
                 pony.manualSpeed = Math.min(pony.manualSpeed + 2.0, 15);
+                pony.lastTapTime = Date.now(); // 更新最后点击时间
             }
         }
 
-        // 增加 ownerId 参数
-        function requestSpawnPony(name, pixels, color, ownerId = null) {
+        function requestSpawnPony(name, pixels, color, uuid = null) {
             const newPony = {
                 id: Math.random().toString(36).substr(2, 9),
-                ownerId: ownerId, // 绑定玩家ID
-                isManual: !!ownerId, // 如果有ID，就是手动模式
-                manualSpeed: 0, // 手动模式初始速度
+                playerUUID: uuid, // 绑定 UUID
+                isManual: !!uuid, // 标记为手动
+                manualSpeed: 0,
+                lastTapTime: Date.now(), // 初始化时间
                 name: name || 'PONY',
                 pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_PIXELS)),
                 color: color || COLORS.CYAN,
@@ -642,7 +652,7 @@
                 p.targetX = null; p.targetY = null; 
                 p.facing = 1;
                 p.state = 'ready'; 
-                p.manualSpeed = 0; // 重置速度
+                p.manualSpeed = 0;
             });
 
             document.getElementById('hud').style.display = 'none';
@@ -682,6 +692,8 @@
                 p.speed = 3.5 + Math.random() * 3; 
                 p.state = 'racing';
                 p.finishedWalking = false;
+                // 比赛开始时，刷新手动玩家的活跃时间，防止起跑瞬间被判定为挂机
+                if(p.isManual) p.lastTapTime = Date.now();
             });
 
             grass = [];
@@ -799,15 +811,21 @@
                 }
 
                 if (p.state === 'racing') {
-                    // === 修改：手动模式 vs AI 模式 ===
                     if (p.isManual) {
-                        // 摩擦力：每一帧速度衰减 (0.96)
-                        p.manualSpeed *= 0.96; 
-                        // 最小移动速度 0.1 防止彻底停死
-                        if (p.manualSpeed < 0.1) p.manualSpeed = 0;
-                        p.x += p.manualSpeed;
-                    } else {
-                        // AI 自动跑
+                        // === 防挂机逻辑 ===
+                        if (Date.now() - p.lastTapTime > 3000) { // 3秒无操作
+                            p.isManual = false; // 切回 AI
+                            p.name += " (BOT)"; // 改名提示
+                        } else {
+                            p.manualSpeed *= 0.96; 
+                            if (p.manualSpeed < 0.1) p.manualSpeed = 0;
+                            p.x += p.manualSpeed;
+                        }
+                    }
+                    
+                    // 注意：这里用了 else if 不是 else，因为上一行可能把 isManual 变成了 false
+                    // 这样当这帧变成 BOT 时，下一帧才会开始 AI 移动，或者直接这里处理
+                    if (!p.isManual) {
                         p.x += p.speed * (0.9 + Math.random() * 0.2);
                     }
                     
@@ -972,6 +990,13 @@
         }
 
         function initMobile() {
+            // === 获取/生成 UUID ===
+            playerUUID = localStorage.getItem('horse_uuid');
+            if (!playerUUID) {
+                playerUUID = 'user_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('horse_uuid', playerUUID);
+            }
+
             initEditor('m-grid', 'm-colors', mobileGrid);
             try {
                 peer = new Peer(null, PEER_CONFIG);
@@ -980,6 +1005,17 @@
                     conn.on('open', () => {
                         document.getElementById('m-status').innerText = "CONNECTED";
                         document.getElementById('m-status').style.color = "#69f0ae";
+                        // 连上后立即检查是否需要重连
+                        conn.send({ type: 'check_reconnect', uuid: playerUUID });
+                    });
+                    
+                    // 监听电脑发回的消息
+                    conn.on('data', data => {
+                        if (data.type === 'reconnect_success') {
+                            // 电脑说我在场上，直接切控制模式
+                            document.getElementById('m-editor-ui').style.display = 'none';
+                            document.getElementById('m-controller').style.display = 'flex';
+                        }
                     });
                 });
             } catch(e) { console.error(e); }
@@ -1013,23 +1049,19 @@
                 return;
             }
 
-            // 发送 spawn 指令，带上类型
             conn.send({ 
                 type: 'spawn', 
-                payload: { name: name.toUpperCase(), pixels: mobileGrid, color: selectedColor } 
+                payload: { name: name.toUpperCase(), pixels: mobileGrid, color: selectedColor, uuid: playerUUID } 
             });
             
-            // 切换到控制器界面
             document.getElementById('m-editor-ui').style.display = 'none';
             document.getElementById('m-controller').style.display = 'flex';
         }
 
-        // 发送加速指令
         function sendTap(e) {
-            e.preventDefault(); // 防止双击缩放等
-            if(conn) conn.send({ type: 'tap' });
+            e.preventDefault(); 
+            if(conn) conn.send({ type: 'tap', uuid: playerUUID });
             
-            // 简单的点击反馈动画
             const btn = document.querySelector('.push-btn');
             btn.style.transform = 'scale(0.9)';
             btn.style.background = '#00695c';
@@ -1040,9 +1072,9 @@
         }
         
         function resetMobile() {
+            // 目前没有按钮调用这个了，但保留逻辑备用
             document.getElementById('m-controller').style.display = 'none';
             document.getElementById('m-editor-ui').style.display = 'block';
-            
             document.getElementById('m-name').value = '';
             restoreGridData(mobileGrid);
             renderGrid('m-grid', mobileGrid, selectedColor);
