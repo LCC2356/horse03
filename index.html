@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.9</title>
+    <title>HORSE RUNRUN - v7.10 TIGHTER</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -92,15 +92,18 @@
         }
         
         .bar-container {
-            width: 95%; /* 稍微加宽一点，容纳更多文字 */
+            width: 95%; 
             display: flex; 
             align-items: center; 
-            justify-content: space-between; 
+            justify-content: center; /* 居中排列 */
+            gap: 0; /* 使用 margin 控制间距 */
         }
         
         .bar-text-item {
             font-size: 80px; 
             letter-spacing: 2px;
+            /* 修改：间距缩小 (原 60px -> 45px) */
+            margin: 0 45px; 
             text-shadow: 0 0 20px currentColor; 
             font-weight: bold;
             animation: text-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
@@ -361,14 +364,15 @@
             }
         };
 
+        // 更新文字：横向重复排列 15次 (确保足够铺满)
         function updateBarText(text, color) {
             if (currentBarText === text) return;
             currentBarText = text;
 
             const container = document.getElementById('bar-text');
             let content = '';
-            // 重复 10 次以铺满屏幕
-            for(let i=0; i<10; i++) {
+            // 重复 15 次以铺满屏幕
+            for(let i=0; i<15; i++) {
                 content += `<span class="bar-text-item">${text}</span>`;
             }
             container.innerHTML = content;
@@ -500,7 +504,6 @@
 
             if (gameState === 'RACING' || gameState === 'COOLDOWN') {
                 ponyQueue.push(newPony);
-                updateHUD();
             } else {
                 ponies.push(newPony);
                 startCooldown(); 
@@ -906,4 +909,3 @@
     </script>
 </body>
 </html>
-```
