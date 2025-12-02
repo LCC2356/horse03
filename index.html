@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - TRACK UI v7.4</title>
+    <title>HORSE RUNRUN - START SIGNAL v7.5</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -23,7 +23,7 @@
         body {
             margin: 0; padding: 0;
             background-color: #0a0a0a; 
-            font-family: 'VT323', monospace; /* 恢复字体 */
+            font-family: 'VT323', monospace;
             color: var(--primary);
             height: 100vh; width: 100vw;
             overflow: hidden;
@@ -61,8 +61,8 @@
             animation: track-flash 0.2s ease-out;
         }
         @keyframes track-flash {
-            0% { background-color: rgba(255, 255, 255, 0.2); border-color: #fff; }
-            100% { background-color: #000; border-color: var(--primary); }
+            0% { background-color: rgba(64, 224, 208, 0.4); box-shadow: inset 0 0 150px var(--primary); border-color: #fff; }
+            100% { background-color: #000; box-shadow: 0 0 30px rgba(64, 224, 208, 0.3); border-color: var(--primary); }
         }
 
         .grid-bg {
@@ -78,22 +78,36 @@
             background-size: 12px 12px; opacity: 0.8; z-index: 0;
         }
 
-        /* === 游戏内悬浮显示板 (In-Game Display Bar) === */
+        /* === 游戏内悬浮显示板 (Start Signal Bar) === */
         #track-display-bar {
             position: absolute; 
-            top: 20px; /* 距离跑道顶部 */
-            left: 50%; transform: translateX(-50%);
-            width: 90%; /* 占据跑道宽度的 90% */
-            height: 50px;
-            display: flex; align-items: center;
+            top: 50%; transform: translate(-50%, -50%); /* 垂直居中 */
+            left: 50%; 
+            width: 90%; 
+            height: 60px;
+            display: none; /* 默认隐藏，只有倒计时才显示 */
+            align-items: center;
             background: rgba(0, 20, 20, 0.9);
             border: 2px solid var(--primary);
-            box-shadow: 0 0 15px rgba(64, 224, 208, 0.3);
+            box-shadow: 0 0 30px rgba(64, 224, 208, 0.6);
             z-index: 100; overflow: hidden;
-            opacity: 0.9;
         }
+        
+        /* 进场/出场动画 */
+        .bar-enter { animation: bar-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .bar-exit { animation: bar-out 0.3s ease-in forwards; }
+        
+        @keyframes bar-in {
+            from { transform: translate(-50%, -50%) scaleX(0); opacity: 0; }
+            to { transform: translate(-50%, -50%) scaleX(1); opacity: 1; }
+        }
+        @keyframes bar-out {
+            from { transform: translate(-50%, -50%) scaleX(1); opacity: 1; }
+            to { transform: translate(-50%, -50%) scaleX(2); opacity: 0; }
+        }
+
         .bar-icon {
-            width: 50px; height: 100%;
+            width: 60px; height: 100%;
             display: flex; justify-content: center; align-items: center;
             background: rgba(64, 224, 208, 0.15);
             border-right: 2px solid var(--primary);
@@ -104,19 +118,18 @@
             display: flex; align-items: center;
             overflow: hidden;
             white-space: nowrap;
-            /* 左右两侧淡出效果 */
             mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
             -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
         }
         .bar-marquee-content {
             display: flex;
-            animation: marquee-scroll 10s linear infinite;
+            animation: marquee-scroll 5s linear infinite; /* 滚动速度加快 */
         }
         .bar-text-item {
-            font-size: 32px;
-            margin: 0 50px;
+            font-size: 36px; /* 字体加大 */
+            margin: 0 60px;
             letter-spacing: 3px;
-            text-shadow: 0 0 5px currentColor;
+            text-shadow: 0 0 10px currentColor;
             font-weight: bold;
         }
         @keyframes marquee-scroll {
@@ -124,16 +137,16 @@
             100% { transform: translateX(-50%); }
         }
         .bar-status {
-            padding: 0 15px; height: 100%;
+            padding: 0 20px; height: 100%;
             display: flex; align-items: center;
             background: rgba(64, 224, 208, 0.15);
             border-left: 2px solid var(--primary);
-            font-size: 18px; letter-spacing: 1px;
+            font-size: 20px; letter-spacing: 1px;
             flex-shrink: 0; white-space: nowrap; color: #fff;
         }
 
         .queue-alert {
-            position: absolute; top: 80px; right: 20px;
+            position: absolute; top: 10px; right: 20px;
             font-size: 24px; color: #ffb300; text-shadow: 0 0 5px #ffb300;
             display: none; z-index: 20;
         }
@@ -412,12 +425,26 @@
             st.innerText = statusText || "";
         }
 
+        function setBarVisibility(show) {
+            const bar = document.getElementById('track-display-bar');
+            if(show) {
+                bar.style.display = 'flex';
+                bar.classList.remove('bar-exit');
+                bar.classList.add('bar-enter');
+            } else {
+                bar.classList.remove('bar-enter');
+                bar.classList.add('bar-exit');
+                // 动画结束后隐藏
+                setTimeout(() => {
+                    if(bar.classList.contains('bar-exit')) bar.style.display = 'none';
+                }, 300);
+            }
+        }
+
         window.onload = function() {
             requestAnimationFrame(gameLoop);
             fitScreen();
             
-            updateBarText("NOWHERE TO RUN", "WAITING FOR PLAYERS");
-
             const zoomInput = document.getElementById('zoom-input');
             zoomInput.addEventListener('input', (e) => {
                 const val = parseFloat(e.target.value);
@@ -547,6 +574,8 @@
                 p.state = 'ready'; 
             });
 
+            // 显示并设置文字
+            setBarVisibility(true);
             updateBarText("READY", "PREPARING");
         }
 
@@ -565,7 +594,16 @@
 
             grass = [];
             gameState = 'RACING';
-            updateBarText("RUN", "RACING!!!");
+            
+            // 更新为 RUN，并设置自动隐藏
+            updateBarText("RUN", "RACING!!!", "#40e0d0");
+            
+            // 1秒后隐藏信号条
+            setTimeout(() => {
+                if (gameState === 'RACING') {
+                    setBarVisibility(false);
+                }
+            }, 1000);
         }
 
         function gameLoop() {
@@ -613,11 +651,6 @@
                 checkRaceEnd();
             }
             else if (gameState === 'ROAMING') {
-                // 确保文字切回闲置状态
-                if(document.getElementById('bar-status').innerText !== "IDLE") {
-                    updateBarText("NOWHERE TO RUN", "IDLE");
-                }
-                
                 alert.style.display = 'none';
                 updatePoniesMovement();
                 
