@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.27 FINAL</title>
+    <title>HORSE RUNRUN - v7.28 FINAL</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -98,15 +98,13 @@
             justify-content: center; 
         }
         
-        /* 修改点 1：宽度改为 310px
-        */
         .bar-text-item {
             font-size: 80px; 
             letter-spacing: 2px;
             text-shadow: 0 0 20px currentColor; 
             font-weight: bold;
             
-            width: 310px;  /* <--- 已修改为 310px */
+            width: 310px; 
             display: flex; 
             justify-content: center; 
             flex-shrink: 0; 
@@ -279,7 +277,6 @@
         }
         .m-footer { display: flex; gap: 15px; height: 60px; flex-shrink: 0; width: 100%; }
 
-        /* 修改点 3：手机端成功弹窗样式 */
         #m-success-modal {
             position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 21000;
             display: none; justify-content: center; align-items: center; flex-direction: column;
@@ -657,19 +654,24 @@
             if (gameState === 'COOLDOWN') {
                 cooldownTimer--;
                 
+                // === 修正点 1: 在倒计时状态下，右上角显示倒计时 ===
+                const sec = Math.ceil(cooldownTimer / 60);
+                alert.style.display = 'block';
                 if (cooldownTimer > 180) {
-                    updateBarText("READY", "#40e0d0");
+                     alert.innerText = "PREPARING...";
+                     updateBarText("READY", "#40e0d0");
                 } else {
-                    const sec = Math.ceil(cooldownTimer / 60);
-                    let color = '#40e0d0';
-                    if (sec === 3) color = '#ff5252';
-                    else if (sec === 2) color = '#ffb300';
-                    
-                    updateBarText(sec.toString(), color);
-
-                    if (cooldownTimer % 60 === 59) {
+                     alert.innerText = `NEXT ROUND IN ${sec}`;
+                     
+                     // 屏幕中间的大字
+                     let color = '#40e0d0';
+                     if (sec === 3) color = '#ff5252';
+                     else if (sec === 2) color = '#ffb300';
+                     updateBarText(sec.toString(), color);
+                     
+                     if (cooldownTimer % 60 === 59) {
                         triggerFlash();
-                    }
+                     }
                 }
                 
                 if (cooldownTimer <= 0) {
@@ -690,11 +692,16 @@
             else if (gameState === 'ROAMING') {
                 hud.style.display = 'block';
                 hud.innerText = "NOWHERE TO RUN";
-                alert.style.display = 'none';
-                updatePoniesMovement();
                 
-                // 修改点 2：ROAMING状态下不自动检查队列，由 checkRaceEnd 的延迟器触发
-                // (如果第一次进入游戏，由 requestSpawnPony 触发)
+                // === 修正点 1: 闲逛等待状态下，如果有排队，也显示 WAITING 字样 ===
+                if (ponyQueue.length > 0) {
+                    alert.style.display = 'block';
+                    alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`;
+                } else {
+                    alert.style.display = 'none';
+                }
+
+                updatePoniesMovement();
             }
 
             const active = ponies.filter(p => p.state === 'racing');
@@ -731,10 +738,8 @@
 
                 gameState = 'ROAMING';
                 
-                // 修改点 2：如果队列里有人，等待 3秒 后再开始下一轮
                 if (ponyQueue.length > 0) {
                     setTimeout(() => {
-                        // 双重检查，防止状态已改变
                         if(gameState === 'ROAMING') {
                             startCooldown();
                         }
@@ -930,13 +935,41 @@
                 });
             } catch(e) { console.error(e); }
         }
+        
+        // === 修正点 2: 手机端校验逻辑 ===
         function sendMobile() {
             if(!conn) return alert("Not Connected!");
-            conn.send({ name: document.getElementById('m-name').value.toUpperCase() || 'MOBILE', pixels: mobileGrid, color: selectedColor });
-            // 修改点 3：显示成功弹窗
+            
+            const nameInput = document.getElementById('m-name');
+            const name = nameInput.value.trim();
+            
+            if (!name) {
+                alert("PLEASE ENTER A NAME");
+                nameInput.focus();
+                return;
+            }
+
+            // 检查是否有绘制像素
+            let hasPixels = false;
+            for(let r=0; r<8; r++) {
+                for(let c=0; c<8; c++) {
+                    if (mobileGrid[r][c] === 1) {
+                        hasPixels = true;
+                        break;
+                    }
+                }
+                if(hasPixels) break;
+            }
+
+            if (!hasPixels) {
+                alert("CANVAS IS EMPTY");
+                return;
+            }
+
+            conn.send({ name: name.toUpperCase(), pixels: mobileGrid, color: selectedColor });
             document.getElementById('m-success-modal').style.display = 'flex';
         }
-        // 修改点 3：One More 逻辑
+        
         function resetMobile() {
             document.getElementById('m-success-modal').style.display = 'none';
             document.getElementById('m-name').value = '';
