@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.39 HYBRID CONTROL</title>
+    <title>HORSE RUNRUN - v7.40 MONO</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -11,9 +11,12 @@
     <style>
         :root {
             --bg: #111;
-            --primary: #40e0d0;
-            --panel: #004d40;
-            --border: #00695c;
+            /* 修改点：主色调改为白色 */
+            --primary: #ffffff; 
+            /* 修改点：面板背景改为深灰 */
+            --panel: #222222;
+            /* 修改点：边框改为灰色 */
+            --border: #444444;
             --game-w: 3500px; 
             --game-h: 100px;
         }
@@ -51,7 +54,8 @@
             width: var(--game-w); height: var(--game-h);
             background: #000; position: relative;
             border: 4px solid var(--primary); 
-            box-shadow: 0 0 30px rgba(64, 224, 208, 0.3);
+            /* 修改点：白色辉光 */
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
             overflow: hidden; 
             flex-shrink: 0; 
         }
@@ -60,20 +64,23 @@
             animation: track-flash 0.2s ease-out;
         }
         @keyframes track-flash {
-            0% { background-color: rgba(64, 224, 208, 0.4); box-shadow: inset 0 0 150px var(--primary); border-color: #fff; }
-            100% { background-color: #000; box-shadow: 0 0 30px rgba(64, 224, 208, 0.3); border-color: var(--primary); }
+            /* 修改点：白色闪光 */
+            0% { background-color: rgba(255, 255, 255, 0.4); box-shadow: inset 0 0 150px var(--primary); border-color: #fff; }
+            100% { background-color: #000; box-shadow: 0 0 30px rgba(255, 255, 255, 0.3); border-color: var(--primary); }
         }
 
         .grid-bg {
             position: absolute; inset: 0; opacity: 0.2;
-            background-image: linear-gradient(rgba(64, 224, 208, 0.3) 1px, transparent 1px),
-                              linear-gradient(90deg, rgba(64, 224, 208, 0.3) 1px, transparent 1px);
+            /* 修改点：白色网格 */
+            background-image: linear-gradient(rgba(255, 255, 255, 0.3) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255, 255, 255, 0.3) 1px, transparent 1px);
             background-size: 50px 50px;
             pointer-events: none;
         }
         .finish-line {
             position: absolute; top: 0; bottom: 0; right: 400px; width: 12px;
-            background-image: linear-gradient(45deg, #40e0d0 25%, transparent 25%, transparent 50%, #40e0d0 50%, #40e0d0 75%, transparent 75%, transparent);
+            /* 修改点：白色终点线 */
+            background-image: linear-gradient(45deg, #fff 25%, transparent 25%, transparent 50%, #fff 50%, #fff 75%, transparent 75%, transparent);
             background-size: 12px 12px; opacity: 0.8; z-index: 0;
         }
 
@@ -215,7 +222,7 @@
         .input-wrapper { display: flex; align-items: center; gap: 5px; }
         
         input[type="number"] {
-            background: #00251a; border: 1px solid var(--border);
+            background: #222; border: 1px solid var(--border);
             color: var(--primary); font-family: 'VT323', monospace;
             font-size: 1.4rem; width: 80px; text-align: center;
             padding: 4px; border-radius: 4px;
@@ -224,9 +231,9 @@
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         
         .btn {
-            background: #00251a; border: 2px solid var(--primary); color: var(--primary);
+            background: #222; border: 2px solid var(--primary); color: var(--primary);
             padding: 10px 20px; font-family: 'VT323', monospace; font-size: 1.2rem;
-            cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(64, 224, 208, 0.2);
+            cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
             transition: all 0.2s; margin-left: 5px;
         }
         .btn:hover { background: var(--primary); color: #000; }
@@ -259,7 +266,8 @@
         }
         .m-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; flex-shrink: 0; }
         .m-title { font-size: 1.5rem; color: #fff; }
-        .m-status { background: #004d40; padding: 4px 8px; border-radius: 4px; font-size: 1rem; color: #40e0d0; }
+        /* 修改点：手机连接状态背景改为深灰 */
+        .m-status { background: #222; padding: 4px 8px; border-radius: 4px; font-size: 1rem; color: #fff; border: 1px solid #444; }
         .m-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; flex-shrink: 0; }
         input[type="text"] {
             background: #222; border: 1px solid #444; color: white; padding: 12px;
@@ -279,8 +287,8 @@
         }
         .push-btn {
             width: 250px; height: 250px; border-radius: 50%;
-            background: #333; /* 默认灰色 */
-            border: 8px solid #555;
+            background: #222; 
+            border: 8px solid #444;
             color: #888; font-size: 4rem; font-family: 'VT323', monospace;
             display: flex; justify-content: center; align-items: center;
             box-shadow: 0 0 50px rgba(0,0,0, 0.4);
@@ -292,8 +300,11 @@
         .controller-info { font-size: 1.5rem; color: #888; margin-bottom: 30px; text-align: center; }
         
         /* 按钮状态颜色 */
-        .btn-wait { background: #333 !important; border-color: #555 !important; color: #888 !important; }
-        .btn-mash { background: #004d40 !important; border-color: var(--primary) !important; color: var(--primary) !important; box-shadow: 0 0 50px rgba(64, 224, 208, 0.4) !important; }
+        /* 修改点：等待时纯灰 */
+        .btn-wait { background: #1a1a1a !important; border-color: #333 !important; color: #555 !important; }
+        /* 修改点：比赛时纯白发光 */
+        .btn-mash { background: #fff !important; border-color: #ccc !important; color: #000 !important; box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; }
+        /* 修改点：START 保持橙色，作为强调 */
         .btn-start { background: #e65100 !important; border-color: #ffb300 !important; color: #fff !important; box-shadow: 0 0 50px rgba(255, 179, 0, 0.4) !important; }
 
         #m-success-modal { display: none; } 
@@ -611,18 +622,13 @@
             } catch(e) { console.error(e); }
         }
 
-        // === 修正后的接管逻辑 ===
         function handleTap(uuid) {
             if (!uuid) return;
             const pony = ponies.find(p => p.playerUUID === uuid);
             if (pony && pony.state === 'racing') {
-                // 强制接管：无论当前是否为 Bot，只要收到信号就变回 Manual
                 pony.isManual = true; 
                 pony.lastTapTime = Date.now(); 
-                // 移除 (BOT) 后缀
                 pony.name = pony.name.replace(" (BOT)", "");
-                
-                // 加速
                 pony.manualSpeed = Math.min(pony.manualSpeed + 2.0, 15);
             }
         }
@@ -679,13 +685,13 @@
             document.getElementById('queue-text').style.display = 'none';
             
             setBarVisibility(true);
-            updateBarText("READY", "#40e0d0");
+            updateBarText("READY", "#ffffff"); /* 修改点：Ready 也是白色 */
             
             broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
         }
 
         function startRace() {
-            updateBarText("RUN", "#40e0d0");
+            updateBarText("RUN", "#ffffff");
             
             const hud = document.getElementById('hud');
             hud.style.display = 'block';
@@ -752,12 +758,13 @@
                 cooldownTimer--;
                 alert.style.display = 'none'; 
                 if (cooldownTimer > 180) {
-                    updateBarText("READY", "#40e0d0");
+                    updateBarText("READY", "#ffffff");
                 } else {
                     const sec = Math.ceil(cooldownTimer / 60);
-                    let color = '#40e0d0';
+                    let color = '#ffffff'; /* 修改点：倒计时全是白色 */
                     if (sec === 3) color = '#ff5252';
                     else if (sec === 2) color = '#ffb300';
+                    
                     updateBarText(sec.toString(), color);
                     if (cooldownTimer % 60 === 59) triggerFlash();
                     
@@ -842,10 +849,8 @@
                 if (p.state === 'ready') { p.x = 20; return; }
 
                 if (p.state === 'racing') {
-                    // === 修正后的状态逻辑 ===
-                    if (p.playerUUID) { // 只针对玩家马
+                    if (p.playerUUID) {
                         if (p.isManual) {
-                            // 检查是否超时 (10秒)
                             if (Date.now() - p.lastTapTime > 10000) { 
                                 p.isManual = false; 
                                 if (!p.name.includes("(BOT)")) p.name += " (BOT)";
@@ -858,7 +863,6 @@
                         if (p.manualSpeed < 0.1) p.manualSpeed = 0;
                         p.x += p.manualSpeed;
                     } else {
-                        // AI 逻辑
                         p.x += p.speed * (0.9 + Math.random() * 0.2);
                     }
                     
@@ -1051,7 +1055,6 @@
             for(let r=0; r<8; r++) { for(let c=0; c<8; c++) { if (mobileGrid[r][c] === 1) { hasPixels = true; break; } } if(hasPixels) break; }
             if (!hasPixels) { alert("CANVAS IS EMPTY"); return; }
 
-            // 随机分配一个音色
             mySoundType = SOUND_TYPES[Math.floor(Math.random() * SOUND_TYPES.length)];
             initAudio();
 
@@ -1064,7 +1067,6 @@
             document.getElementById('m-controller').style.display = 'flex';
         }
 
-        // === 原生 Web Audio 音效系统 ===
         function initAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -1073,8 +1075,6 @@
         function playDynamicSound(interval) {
             if (!audioCtx) return;
             const now = audioCtx.currentTime;
-            
-            // 基础频率映射：越快越高 (150Hz ~ 800Hz)
             let baseFreq = 150 + (30000 / Math.max(50, interval));
             if (baseFreq > 800) baseFreq = 800;
 
@@ -1112,47 +1112,33 @@
                 const carrier = audioCtx.createOscillator();
                 const modulator = audioCtx.createOscillator();
                 const modGain = audioCtx.createGain();
-
                 modulator.frequency.value = baseFreq * 1.4; 
                 modGain.gain.value = baseFreq * 0.5;
-
                 modulator.connect(modGain);
                 modGain.connect(carrier.frequency);
                 carrier.connect(gain);
-
                 carrier.frequency.setValueAtTime(baseFreq, now);
-                
-                modulator.start();
-                carrier.start();
-                modulator.stop(now + 0.2);
-                carrier.stop(now + 0.2);
+                modulator.start(); carrier.start();
+                modulator.stop(now + 0.2); carrier.stop(now + 0.2);
             }
         }
 
-        // === 统一的按钮行为处理 ===
         function btnAction(e) {
             e.preventDefault(); 
             const btn = document.getElementById('m-btn');
-            
-            // 简单的按下动画
             btn.style.transform = 'scale(0.95)';
             setTimeout(() => { btn.style.transform = 'scale(1)'; }, 50);
 
             if (mobileBtnState === 'mash') {
-                // 比赛中：加速
                 if(conn) conn.send({ type: 'tap', uuid: playerUUID });
-                
-                // 播放音效
                 const now = Date.now();
                 const interval = now - lastTapTime;
                 lastTapTime = now;
                 playDynamicSound(interval);
             } 
             else if (mobileBtnState === 'start') {
-                // 闲逛中：开启下一轮
                 if(conn) conn.send({ type: 'force_start' });
             }
-            // wait 状态下点击无效果
         }
         
         function resetMobile() {
