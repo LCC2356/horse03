@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.26 FINAL</title>
+    <title>HORSE RUNRUN - v7.27 FINAL</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -98,13 +98,15 @@
             justify-content: center; 
         }
         
+        /* 修改点 1：宽度改为 310px
+        */
         .bar-text-item {
             font-size: 80px; 
             letter-spacing: 2px;
             text-shadow: 0 0 20px currentColor; 
             font-weight: bold;
             
-            width: 300px; 
+            width: 310px;  /* <--- 已修改为 310px */
             display: flex; 
             justify-content: center; 
             flex-shrink: 0; 
@@ -118,7 +120,6 @@
             100% { transform: scale(1.0); opacity: 1; }
         }
 
-        /* 消失动画：非常快，0.05s内完成 */
         @keyframes text-vanish {
             0% { opacity: 1; }
             100% { opacity: 0; }
@@ -137,33 +138,26 @@
             position: absolute; inset: 0;
             display: flex; align-items: center; justify-content: flex-start;
             overflow: hidden;
-            opacity: 0; /* 默认隐藏 */
+            opacity: 0; 
             pointer-events: none; z-index: 95;
             padding-left: 0;
         }
 
-        /* 单个箭头 (细长锐利风格) */
         #vfd-overlay i {
             display: inline-block;
             width: 0; height: 0; 
-            
-            /* 调整形状：更扁平细长 */
-            border-top: 15px solid transparent;    /* 变窄 */
-            border-bottom: 15px solid transparent; /* 变窄 */
-            border-left: 80px solid var(--primary); /* 变长，且用亮色 */
-            
-            margin-right: 20px; /* 间距 */
+            border-top: 15px solid transparent;    
+            border-bottom: 15px solid transparent; 
+            border-left: 80px solid var(--primary); 
+            margin-right: 20px; 
             flex-shrink: 0;
-            
-            opacity: 0; /* 默认是灭的 */
-            transform: scale(0.8) skewX(-20deg); /* 增加一点倾斜速度感 */
+            opacity: 0; 
+            transform: scale(0.8) skewX(-20deg); 
             filter: drop-shadow(0 0 5px var(--primary));
         }
 
-        /* 容器激活 */
         .vfd-active { opacity: 1 !important; }
         
-        /* 箭头动画：瞬间点亮 -> 迅速熄灭 */
         @keyframes vfd-flash {
             0% { opacity: 0; transform: scale(0.8) translateX(0); }
             10% { opacity: 1; transform: scale(1.2) translateX(10px); filter: drop-shadow(0 0 15px var(--primary)) drop-shadow(0 0 30px #fff); }
@@ -171,12 +165,9 @@
             100% { opacity: 0; transform: scale(0.8) translateX(30px); }
         }
 
-        /* 应用动画 */
         .vfd-active i {
-            /* 动画时长 0.4s，非常短促 */
             animation: vfd-flash 0.4s ease-out forwards calc(var(--d) * 1s);
         }
-        /* ===================================================== */
 
         .entity { position: absolute; width: 38px; height: 38px; will-change: transform; }
         .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; }
@@ -287,6 +278,19 @@
             overflow: hidden; 
         }
         .m-footer { display: flex; gap: 15px; height: 60px; flex-shrink: 0; width: 100%; }
+
+        /* 修改点 3：手机端成功弹窗样式 */
+        #m-success-modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 21000;
+            display: none; justify-content: center; align-items: center; flex-direction: column;
+        }
+        .m-success-box {
+            background: #00251a; border: 2px solid var(--primary); padding: 40px;
+            border-radius: 10px; text-align: center; box-shadow: 0 0 30px rgba(64, 224, 208, 0.4);
+            animation: text-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .m-success-title { font-size: 3rem; margin-bottom: 10px; color: var(--primary); text-shadow: 0 0 10px var(--primary); }
+        .m-success-desc { font-size: 1.5rem; color: #ccc; margin-bottom: 30px; }
     </style>
 </head>
 <body>
@@ -371,6 +375,14 @@
             <button class="btn btn-outline btn-flex" onclick="clearMobile()">CLEAR CANVAS</button>
             <button class="btn btn-flex" onclick="sendMobile()">RUN</button>
         </div>
+        
+        <div id="m-success-modal">
+            <div class="m-success-box">
+                <div class="m-success-title">SUCCESS</div>
+                <div class="m-success-desc">YOUR PONY IS READY!</div>
+                <button class="btn" style="width: 100%; padding: 15px;" onclick="resetMobile()">ONE MORE</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -453,7 +465,6 @@
             const vfdOverlay = document.getElementById('vfd-overlay');
             for (let i = 0; i < 80; i++) {
                 const arrow = document.createElement('i');
-                // 加速箭头扫描：原来是 i * 0.02，现在改为 i * 0.01，速度翻倍
                 arrow.style.setProperty('--d', i * 0.01); 
                 vfdOverlay.appendChild(arrow);
             }
@@ -594,36 +605,27 @@
             document.getElementById('hud').style.display = 'none';
             setBarVisibility(true);
             updateBarText("READY", "#40e0d0");
-            // triggerFlash(); // <--- 已移除：READY 阶段不再闪屏
         }
 
         function startRace() {
-            // 1. 设置文字为 RUN
             updateBarText("RUN", "#40e0d0");
             
-            // 显示 HUD
             const hud = document.getElementById('hud');
             hud.style.display = 'block';
             hud.innerText = "STATUS: RACING!!!";
 
-            // 2. 立即启动 VFD 箭头扫描
             const vfdOverlay = document.getElementById('vfd-overlay');
             vfdOverlay.classList.remove('vfd-active');
-            void vfdOverlay.offsetWidth; // 强制重绘
+            void vfdOverlay.offsetWidth; 
             vfdOverlay.classList.add('vfd-active');
 
-            // 3. 计算延迟，让文字随着箭头扫过而消失 (加速版)
             const textItems = document.querySelectorAll('.bar-text-item');
             
             textItems.forEach((item, index) => {
-                // 箭头加速了一倍，这里延迟间隔也从 0.12 减小到 0.06，保持同步
                 const delay = 0.02 + (index * 0.06);
-                
-                // 动画时长缩短到 0.05s，瞬间消失
                 item.style.animation = `text-vanish 0.05s linear forwards ${delay}s`;
             });
 
-            // 4. 清理工作 (1.5秒后，因为动画变快了)
             setTimeout(() => {
                 if (gameState === 'RACING') {
                     setBarVisibility(false);
@@ -631,7 +633,6 @@
                 }
             }, 1500);
 
-            // --- 马匹逻辑 ---
             ponies.forEach(p => {
                 p.speed = 3.5 + Math.random() * 3; 
                 p.state = 'racing';
@@ -692,7 +693,8 @@
                 alert.style.display = 'none';
                 updatePoniesMovement();
                 
-                if (ponyQueue.length > 0) startCooldown(); 
+                // 修改点 2：ROAMING状态下不自动检查队列，由 checkRaceEnd 的延迟器触发
+                // (如果第一次进入游戏，由 requestSpawnPony 触发)
             }
 
             const active = ponies.filter(p => p.state === 'racing');
@@ -729,8 +731,14 @@
 
                 gameState = 'ROAMING';
                 
+                // 修改点 2：如果队列里有人，等待 3秒 后再开始下一轮
                 if (ponyQueue.length > 0) {
-                    startCooldown();
+                    setTimeout(() => {
+                        // 双重检查，防止状态已改变
+                        if(gameState === 'ROAMING') {
+                            startCooldown();
+                        }
+                    }, 3000);
                 }
             }
         }
@@ -925,8 +933,16 @@
         function sendMobile() {
             if(!conn) return alert("Not Connected!");
             conn.send({ name: document.getElementById('m-name').value.toUpperCase() || 'MOBILE', pixels: mobileGrid, color: selectedColor });
-            alert("Sent!");
+            // 修改点 3：显示成功弹窗
+            document.getElementById('m-success-modal').style.display = 'flex';
         }
+        // 修改点 3：One More 逻辑
+        function resetMobile() {
+            document.getElementById('m-success-modal').style.display = 'none';
+            document.getElementById('m-name').value = '';
+            clearMobile();
+        }
+
         function clearMobile() { clearGridData(mobileGrid); renderGrid('m-grid', mobileGrid, selectedColor); }
         function clearDesktop() { clearGridData(pcGrid); renderGrid('pc-grid', pcGrid, selectedColor); }
         function clearGridData(grid) { for(let r=0; r<8; r++) for(let c=0; c<8; c++) grid[r][c] = 0; }
