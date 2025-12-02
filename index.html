@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.33 FINAL</title>
+    <title>HORSE RUNRUN - v7.34 MANUAL MODE</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -170,12 +170,12 @@
         .entity { position: absolute; width: 38px; height: 38px; will-change: transform; }
         .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; }
         
-        /* === 修改点 1: 皇冠容器样式 === */
+        /* === 皇冠位置调整: top: -31px === */
         .crown-container {
             position: absolute; 
-            top: -32px; /* 改为 -32px */
+            top: -31px; 
             left: 50%; transform: translateX(-50%);
-            width: 18px; height: 18px; /* 改为 18px */
+            width: 18px; height: 18px; 
             animation: bounce 1s infinite; z-index: 10;
             display: flex; flex-direction: column-reverse; align-items: center;
         }
@@ -188,10 +188,9 @@
         }
         @keyframes pulse { from { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } }
         
-        /* === 修改点 2: 名字标签位置 === */
         .name-tag {
             position: absolute; 
-            top: -18px; /* 改为 -18px */
+            top: -18px; 
             left: 50%; transform: translateX(-50%);
             font-size: 20px; 
             white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000;
@@ -285,17 +284,25 @@
         }
         .m-footer { display: flex; gap: 15px; height: 60px; flex-shrink: 0; width: 100%; }
 
-        #m-success-modal {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 21000;
-            display: none; justify-content: center; align-items: center; flex-direction: column;
+        /* 新增：手动控制器样式 */
+        #m-controller {
+            position: fixed; inset: 0; background: #111; z-index: 22000;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
         }
-        .m-success-box {
-            background: #00251a; border: 2px solid var(--primary); padding: 40px;
-            border-radius: 10px; text-align: center; box-shadow: 0 0 30px rgba(64, 224, 208, 0.4);
-            animation: text-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        .push-btn {
+            width: 250px; height: 250px; border-radius: 50%;
+            background: #004d40; border: 8px solid var(--primary);
+            color: var(--primary); font-size: 4rem; font-family: 'VT323', monospace;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 0 50px rgba(64, 224, 208, 0.4);
+            transition: transform 0.05s; user-select: none;
+            cursor: pointer; -webkit-tap-highlight-color: transparent;
         }
-        .m-success-title { font-size: 3rem; margin-bottom: 10px; color: var(--primary); text-shadow: 0 0 10px var(--primary); }
-        .m-success-desc { font-size: 1.5rem; color: #ccc; margin-bottom: 30px; }
+        .push-btn:active { transform: scale(0.9); background: #00695c; }
+        .controller-info { font-size: 1.5rem; color: #888; margin-bottom: 30px; text-align: center; }
+        
+        /* 成功/准备弹窗（复用） */
+        #m-success-modal { display: none; } /* 逻辑中我们直接切换到 controller，所以这个可以作为重新开始的过渡 */
     </style>
 </head>
 <body>
@@ -365,28 +372,28 @@
     </div>
 
     <div id="mobile-view" style="display: none;">
-        <div class="m-header">
-            <span class="m-title">PIXEL MAKER</span>
-            <span id="m-status" class="m-status">Wait...</span>
-        </div>
-        <div class="m-controls">
-            <input type="text" id="m-name" placeholder="ENTER NAME" maxlength="8">
-            <div class="color-picker" id="m-colors"></div>
-        </div>
-        <div class="m-canvas-container">
-            <div id="m-grid" class="editor-grid"></div>
-        </div>
-        <div class="m-footer">
-            <button class="btn btn-outline btn-flex" onclick="clearMobile()">CLEAR CANVAS</button>
-            <button class="btn btn-flex" onclick="sendMobile()">RUN</button>
-        </div>
-        
-        <div id="m-success-modal">
-            <div class="m-success-box">
-                <div class="m-success-title">SUCCESS</div>
-                <div class="m-success-desc">YOUR PONY IS READY!</div>
-                <button class="btn" style="width: 100%; padding: 15px;" onclick="resetMobile()">ONE MORE</button>
+        <div id="m-editor-ui">
+            <div class="m-header">
+                <span class="m-title">PIXEL MAKER</span>
+                <span id="m-status" class="m-status">Wait...</span>
             </div>
+            <div class="m-controls">
+                <input type="text" id="m-name" placeholder="ENTER NAME" maxlength="8">
+                <div class="color-picker" id="m-colors"></div>
+            </div>
+            <div class="m-canvas-container">
+                <div id="m-grid" class="editor-grid"></div>
+            </div>
+            <div class="m-footer">
+                <button class="btn btn-outline btn-flex" onclick="clearMobile()">CLEAR CANVAS</button>
+                <button class="btn btn-flex" onclick="sendMobile()">RUN</button>
+            </div>
+        </div>
+
+        <div id="m-controller">
+            <div class="controller-info">TAP TO RUN!</div>
+            <div class="push-btn" ontouchstart="sendTap(event)" onmousedown="sendTap(event)">PUSH</div>
+            <button class="btn" style="margin-top: 50px;" onclick="resetMobile()">NEW PONY</button>
         </div>
     </div>
 
@@ -558,8 +565,19 @@
                         colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L
                     });
                 });
+                // PC端接收逻辑更新
                 peer.on('connection', c => {
-                    c.on('data', data => requestSpawnPony(data.name, data.pixels, data.color));
+                    c.on('data', data => {
+                        // 兼容旧协议（直接发对象）和新协议（带type）
+                        if (data.type === 'spawn') {
+                            requestSpawnPony(data.payload.name, data.payload.pixels, data.payload.color, c.peer);
+                        } else if (data.type === 'tap') {
+                            handleTap(c.peer);
+                        } else if (data.name) {
+                            // 旧协议 fallback
+                            requestSpawnPony(data.name, data.pixels, data.color, c.peer);
+                        }
+                    });
                 });
                 peer.on('error', (err) => {
                     console.error("PeerJS Error:", err);
@@ -568,9 +586,24 @@
             } catch(e) { console.error(e); }
         }
 
-        function requestSpawnPony(name, pixels, color) {
+        // 处理点击加速
+        function handleTap(ownerId) {
+            if (!ownerId) return;
+            // 找到属于该玩家的小马
+            const pony = ponies.find(p => p.ownerId === ownerId);
+            if (pony && pony.state === 'racing') {
+                // 加速：每次点击增加速度，但设定上限防止飞出
+                pony.manualSpeed = Math.min(pony.manualSpeed + 2.0, 15);
+            }
+        }
+
+        // 增加 ownerId 参数
+        function requestSpawnPony(name, pixels, color, ownerId = null) {
             const newPony = {
                 id: Math.random().toString(36).substr(2, 9),
+                ownerId: ownerId, // 绑定玩家ID
+                isManual: !!ownerId, // 如果有ID，就是手动模式
+                manualSpeed: 0, // 手动模式初始速度
                 name: name || 'PONY',
                 pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_PIXELS)),
                 color: color || COLORS.CYAN,
@@ -609,6 +642,7 @@
                 p.targetX = null; p.targetY = null; 
                 p.facing = 1;
                 p.state = 'ready'; 
+                p.manualSpeed = 0; // 重置速度
             });
 
             document.getElementById('hud').style.display = 'none';
@@ -745,7 +779,7 @@
 
                 if (ponyQueue.length > 0) {
                     gameState = 'WAITING_TO_START';
-                    waitTimer = 180; // 3 seconds wait
+                    waitTimer = 180; 
                 } else {
                     gameState = 'ROAMING';
                 }
@@ -765,7 +799,18 @@
                 }
 
                 if (p.state === 'racing') {
-                    p.x += p.speed * (0.9 + Math.random() * 0.2);
+                    // === 修改：手动模式 vs AI 模式 ===
+                    if (p.isManual) {
+                        // 摩擦力：每一帧速度衰减 (0.96)
+                        p.manualSpeed *= 0.96; 
+                        // 最小移动速度 0.1 防止彻底停死
+                        if (p.manualSpeed < 0.1) p.manualSpeed = 0;
+                        p.x += p.manualSpeed;
+                    } else {
+                        // AI 自动跑
+                        p.x += p.speed * (0.9 + Math.random() * 0.2);
+                    }
+                    
                     p.facing = 1;
                     
                     if (p.x >= FINISH_X) {
@@ -968,12 +1013,36 @@
                 return;
             }
 
-            conn.send({ name: name.toUpperCase(), pixels: mobileGrid, color: selectedColor });
-            document.getElementById('m-success-modal').style.display = 'flex';
+            // 发送 spawn 指令，带上类型
+            conn.send({ 
+                type: 'spawn', 
+                payload: { name: name.toUpperCase(), pixels: mobileGrid, color: selectedColor } 
+            });
+            
+            // 切换到控制器界面
+            document.getElementById('m-editor-ui').style.display = 'none';
+            document.getElementById('m-controller').style.display = 'flex';
+        }
+
+        // 发送加速指令
+        function sendTap(e) {
+            e.preventDefault(); // 防止双击缩放等
+            if(conn) conn.send({ type: 'tap' });
+            
+            // 简单的点击反馈动画
+            const btn = document.querySelector('.push-btn');
+            btn.style.transform = 'scale(0.9)';
+            btn.style.background = '#00695c';
+            setTimeout(() => {
+                btn.style.transform = 'scale(1)';
+                btn.style.background = '#004d40';
+            }, 50);
         }
         
         function resetMobile() {
-            document.getElementById('m-success-modal').style.display = 'none';
+            document.getElementById('m-controller').style.display = 'none';
+            document.getElementById('m-editor-ui').style.display = 'block';
+            
             document.getElementById('m-name').value = '';
             restoreGridData(mobileGrid);
             renderGrid('m-grid', mobileGrid, selectedColor);
