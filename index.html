@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.8 STATIC REPEAT</title>
+    <title>HORSE RUNRUN - v7.9 FIX</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -81,7 +81,7 @@
         /* === 右下角的 HUD === */
         .hud { position: absolute; bottom: 4px; right: 10px; font-size: 32px; opacity: 0.5; letter-spacing: 2px; z-index: 110; }
 
-        /* === 纯文字悬浮显示板 (Static Repeated Text) === */
+        /* === 纯文字悬浮显示板 === */
         #track-display-bar {
             position: absolute; 
             top: 50%; transform: translateY(-50%); /* 垂直居中 */
@@ -93,19 +93,19 @@
         }
         
         .bar-container {
-            width: 90%; /* 文字分布宽度 */
+            width: 90%; 
             display: flex; 
             align-items: center; 
-            justify-content: space-between; /* 均匀分布 */
+            justify-content: space-between; 
         }
         
         .bar-text-item {
-            font-size: 80px; /* 大字体 */
+            font-size: 80px; 
             letter-spacing: 2px;
-            text-shadow: 0 0 20px currentColor; /* 发光 */
+            text-shadow: 0 0 20px currentColor; 
             font-weight: bold;
-            /* 简单的出现动画 */
-            animation: text-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            /* 关键动画：0.3s 弹出 */
+            animation: text-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
         
         @keyframes text-pop {
@@ -353,6 +353,9 @@
             y: 0
         };
 
+        // 当前显示的文字状态 (防止频繁DOM操作)
+        let currentBarText = '';
+
         const PEER_CONFIG = {
             debug: 2,
             config: {
@@ -363,10 +366,13 @@
             }
         };
 
-        // 更新文字：横向重复排列
+        // 更新文字：横向重复排列 (修复了动画重置问题)
         function updateBarText(text, color) {
+            // 如果文字内容没变，就不更新 DOM，防止动画被打断
+            if (currentBarText === text) return;
+            currentBarText = text;
+
             const container = document.getElementById('bar-text');
-            
             let content = '';
             // 重复 6 次以铺满屏幕
             for(let i=0; i<6; i++) {
@@ -387,6 +393,7 @@
                 bar.style.display = 'flex';
             } else {
                 bar.style.display = 'none';
+                currentBarText = ''; // 隐藏时重置状态
             }
         }
 
@@ -508,7 +515,8 @@
 
         function startCooldown() {
             gameState = 'COOLDOWN';
-            cooldownTimer = 180; // 3s
+            // 修改：增加到 4 秒 (240帧)，前 1 秒显示 READY
+            cooldownTimer = 240; 
             
             if (ponyQueue.length > 0) {
                 ponies = ponies.concat(ponyQueue);
@@ -523,9 +531,9 @@
                 p.state = 'ready'; 
             });
 
-            // 显示重复文字
+            // 显示纯文字条
             setBarVisibility(true);
-            updateBarText("READY");
+            updateBarText("READY", "#40e0d0");
             document.getElementById('hud').innerText = "STATUS: PREPARING...";
         }
 
@@ -571,18 +579,23 @@
             if (gameState === 'COOLDOWN') {
                 cooldownTimer--;
                 
-                const sec = Math.ceil(cooldownTimer / 60);
-                let color = '#40e0d0';
-                if (sec === 3) color = '#ff5252';
-                else if (sec === 2) color = '#ffb300';
-                
-                // 更新重复文字
-                updateBarText(sec.toString(), color);
+                // 逻辑修改：前60帧显示READY，后180帧显示倒计时
+                if (cooldownTimer > 180) {
+                    updateBarText("READY", "#40e0d0");
+                } else {
+                    const sec = Math.ceil(cooldownTimer / 60);
+                    let color = '#40e0d0';
+                    if (sec === 3) color = '#ff5252';
+                    else if (sec === 2) color = '#ffb300';
+                    
+                    updateBarText(sec.toString(), color);
 
-                if (cooldownTimer % 60 === 59) {
-                    screen.classList.remove('flash-active');
-                    void screen.offsetWidth; 
-                    screen.classList.add('flash-active');
+                    // 闪烁逻辑
+                    if (cooldownTimer % 60 === 59) {
+                        screen.classList.remove('flash-active');
+                        void screen.offsetWidth; 
+                        screen.classList.add('flash-active');
+                    }
                 }
                 
                 if (cooldownTimer <= 0) {
