@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.6 PURE TEXT</title>
+    <title>HORSE RUNRUN - STATIC TEXT v7.7</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -78,47 +78,39 @@
             background-size: 12px 12px; opacity: 0.8; z-index: 0;
         }
 
-        /* === 恢复右下角的 HUD === */
+        /* === 右下角的 HUD === */
         .hud { position: absolute; bottom: 4px; right: 10px; font-size: 32px; opacity: 0.5; letter-spacing: 2px; z-index: 110; }
 
-        /* === 纯文字悬浮显示板 (Pure Text Display) === */
+        /* === 纯文字悬浮显示板 (Static Big Text) === */
         #track-display-bar {
             position: absolute; 
             top: 50%; transform: translate(-50%, -50%);
-            left: 50%; width: 100%; height: 100px;
+            left: 50%; width: 100%; height: 120px;
             display: none; /* 默认隐藏 */
             align-items: center; justify-content: center;
-            z-index: 100; overflow: hidden;
-            pointer-events: none; /* 点击穿透 */
+            z-index: 100; overflow: visible;
+            pointer-events: none;
         }
         
-        /* 进场/出场动画 */
-        .bar-enter { animation: bar-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        .bar-exit { animation: bar-out 0.3s ease-in forwards; }
-        @keyframes bar-in { from { transform: translate(-50%, -50%) scaleX(0); opacity: 0; } to { transform: translate(-50%, -50%) scaleX(1); opacity: 1; } }
-        @keyframes bar-out { from { transform: translate(-50%, -50%) scaleX(1); opacity: 1; } to { transform: translate(-50%, -50%) scaleX(2); opacity: 0; } }
-
-        /* 隐藏了不需要的元素 */
-        .bar-icon, .bar-status { display: none; }
-
-        .bar-marquee-container {
-            flex: 1; display: flex; align-items: center; overflow: hidden; white-space: nowrap;
-            /* 更柔和的遮罩 */
-            mask-image: linear-gradient(to right, transparent, black 20%, black 80%, transparent);
-            -webkit-mask-image: linear-gradient(to right, transparent, black 20%, black 80%, transparent);
+        .bar-container {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            width: 100%;
         }
-        .bar-marquee-content {
-            display: flex;
-            animation: marquee-scroll 5s linear infinite;
-        }
+        
         .bar-text-item {
-            font-size: 56px; /* 更大的字体 */
-            margin: 0 60px;
-            letter-spacing: 5px;
-            text-shadow: 0 0 20px currentColor; /* 更强的发光 */
+            font-size: 120px; /* 巨大字体 */
+            letter-spacing: 10px;
+            text-shadow: 0 0 30px currentColor; /* 发光 */
             font-weight: bold;
+            animation: text-pulse 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        @keyframes marquee-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        
+        /* 文字跳动动画 */
+        @keyframes text-pulse {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1.0); opacity: 1; }
+        }
 
         .queue-alert {
             position: absolute; top: 10px; right: 20px;
@@ -258,11 +250,8 @@
                 <div id="hud" class="hud">NOWHERE TO RUN</div>
 
                 <div id="track-display-bar">
-                    <div class="bar-icon"></div> <div class="bar-marquee-container">
-                        <div class="bar-marquee-content" id="bar-text-1"></div>
-                        <div class="bar-marquee-content" id="bar-text-2"></div>
-                    </div>
-                    <div class="bar-status" id="bar-status"></div> </div>
+                    <div class="bar-container" id="bar-text"></div>
+                </div>
 
                 <div id="queue-text" class="queue-alert"></div>
                 <div id="scan-line"></div>
@@ -372,25 +361,16 @@
             }
         };
 
-        // 更新悬浮条文字 (只更新文字和颜色)
+        // 更新文字
         function updateBarText(text, color) {
-            const m1 = document.getElementById('bar-text-1');
-            const m2 = document.getElementById('bar-text-2');
-
-            let content = '';
-            // 减少重复次数，因为字体变大了
-            for(let i=0; i<10; i++) {
-                content += `<span class="bar-text-item">${text}</span>`;
-            }
-            m1.innerHTML = content;
-            m2.innerHTML = content;
+            const container = document.getElementById('bar-text');
+            // 只显示一个静态文字
+            container.innerHTML = `<span class="bar-text-item">${text}</span>`;
             
             if(color) {
-                m1.style.color = color;
-                m2.style.color = color;
+                container.style.color = color;
             } else {
-                m1.style.color = '';
-                m2.style.color = '';
+                container.style.color = '';
             }
         }
 
@@ -398,14 +378,8 @@
             const bar = document.getElementById('track-display-bar');
             if(show) {
                 bar.style.display = 'flex';
-                bar.classList.remove('bar-exit');
-                bar.classList.add('bar-enter');
             } else {
-                bar.classList.remove('bar-enter');
-                bar.classList.add('bar-exit');
-                setTimeout(() => {
-                    if(bar.classList.contains('bar-exit')) bar.style.display = 'none';
-                }, 300);
+                bar.style.display = 'none';
             }
         }
 
@@ -545,7 +519,6 @@
             // 显示纯文字条
             setBarVisibility(true);
             updateBarText("READY");
-            // 更新 HUD
             document.getElementById('hud').innerText = "STATUS: PREPARING...";
         }
 
@@ -567,7 +540,6 @@
             
             // 更新文字为 RUN
             updateBarText("RUN", "#40e0d0");
-            // 更新 HUD
             document.getElementById('hud').innerText = "STATUS: RACING!!!";
             
             // 1秒后隐藏文字条
@@ -592,16 +564,14 @@
             if (gameState === 'COOLDOWN') {
                 cooldownTimer--;
                 
-                // 3-2-1 逻辑
                 const sec = Math.ceil(cooldownTimer / 60);
                 let color = '#40e0d0';
                 if (sec === 3) color = '#ff5252';
                 else if (sec === 2) color = '#ffb300';
                 
-                // 更新悬浮条文字
+                // 更新文字 (带脉冲效果)
                 updateBarText(sec.toString(), color);
 
-                // 闪烁特效
                 if (cooldownTimer % 60 === 59) {
                     screen.classList.remove('flash-active');
                     void screen.offsetWidth; 
