@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - READY SET GO v7.1</title>
+    <title>HORSE RUNRUN - v7.2</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -23,7 +23,8 @@
         body {
             margin: 0; padding: 0;
             background-color: #0a0a0a; 
-            font-family: 'Courier New', Courier, monospace;
+            /* 恢复：使用 VT323 字体 */
+            font-family: 'VT323', monospace;
             color: var(--primary);
             height: 100vh; width: 100vw;
             overflow: hidden;
@@ -57,12 +58,12 @@
             flex-shrink: 0; 
         }
         
-        /* 跑道闪烁动画类 */
+        /* 跑道闪烁动画 */
         .flash-active {
             animation: track-flash 0.5s ease-out;
         }
         @keyframes track-flash {
-            0% { background-color: rgba(64, 224, 208, 0.3); box-shadow: inset 0 0 100px var(--primary); border-color: #fff; }
+            0% { background-color: rgba(64, 224, 208, 0.4); box-shadow: inset 0 0 150px var(--primary); border-color: #fff; }
             100% { background-color: #000; box-shadow: 0 0 30px rgba(64, 224, 208, 0.3); border-color: var(--primary); }
         }
 
@@ -78,7 +79,7 @@
             background-image: linear-gradient(45deg, #40e0d0 25%, transparent 25%, transparent 50%, #40e0d0 50%, #40e0d0 75%, transparent 75%, transparent);
             background-size: 12px 12px; opacity: 0.8; z-index: 0;
         }
-        .hud { position: absolute; bottom: 4px; right: 10px; font-size: 32px; opacity: 0.5; letter-spacing: 2px; font-weight: bold; }
+        .hud { position: absolute; bottom: 4px; right: 10px; font-size: 32px; opacity: 0.5; letter-spacing: 2px; }
         
         .queue-alert {
             position: absolute; top: 10px; right: 10px;
@@ -86,27 +87,13 @@
             display: none; z-index: 20;
         }
 
-        /* === 3-2-1 倒计时全屏遮罩 === */
+        /* 倒计时遮罩层 (不再显示文字，只作为微暗背景) */
         #countdown-layer {
             position: absolute; inset: 0;
             display: none; 
-            justify-content: center; align-items: center;
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.1); /* 稍微变暗一点点 */
             z-index: 100;
             pointer-events: none;
-        }
-        #countdown-text {
-            /* 修改：使用 min() 适配不同屏幕比例，防止文字过大 */
-            font-size: min(30vw, 60vh); 
-            font-weight: bold;
-            text-shadow: 0 0 50px currentColor;
-            animation: beat 0.8s infinite;
-            line-height: 1;
-        }
-        @keyframes beat {
-            0% { transform: scale(0.5); opacity: 0; }
-            50% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(1.0); opacity: 0.8; }
         }
 
         /* === 激光扫描线特效 === */
@@ -125,7 +112,6 @@
         .entity { position: absolute; width: 38px; height: 38px; will-change: transform; }
         .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; }
         
-        /* 皇冠容器 -33px */
         .crown-container {
             position: absolute; top: -33px; left: 50%; transform: translateX(-50%);
             width: 24px; height: 24px; animation: bounce 1s infinite; z-index: 10;
@@ -177,7 +163,7 @@
         
         input[type="number"] {
             background: #00251a; border: 1px solid var(--border);
-            color: var(--primary); font-family: inherit;
+            color: var(--primary); font-family: 'VT323', monospace;
             font-size: 1.4rem; width: 80px; text-align: center;
             padding: 4px; border-radius: 4px;
         }
@@ -186,7 +172,7 @@
         
         .btn {
             background: #00251a; border: 2px solid var(--primary); color: var(--primary);
-            padding: 10px 20px; font-family: inherit; font-size: 1.2rem;
+            padding: 10px 20px; font-family: 'VT323', monospace; font-size: 1.2rem;
             cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(64, 224, 208, 0.2);
             transition: all 0.2s; margin-left: 5px;
         }
@@ -244,9 +230,7 @@
                 <div id="hud" class="hud">NOWHERE TO RUN</div>
                 <div id="queue-text" class="queue-alert"></div>
                 
-                <div id="countdown-layer">
-                    <div id="countdown-text">3</div>
-                </div>
+                <div id="countdown-layer"></div>
                 <div id="scan-line"></div>
 
                 <div id="layer-grass"></div>
@@ -468,48 +452,40 @@
                 updateHUD();
             } else {
                 ponies.push(newPony);
-                // 收到小马后，不再直接开始，而是进入倒计时
                 startCooldown(); 
             }
         }
 
-        // 修改：开始倒计时逻辑 (集结所有马)
         function startCooldown() {
             gameState = 'COOLDOWN';
             cooldownTimer = 180; // 3s
             
-            // 1. 将排队的马全部加入比赛
             if (ponyQueue.length > 0) {
                 ponies = ponies.concat(ponyQueue);
                 ponyQueue = [];
             }
 
-            // 2. 所有马立刻回到起跑线 x=20
+            // 集结
             ponies.forEach(p => {
                 p.x = 20;
-                // 重新随机分配跑道位置
                 p.y = 30 + Math.random() * (GAME_H - PONY_SIZE - 30);
-                p.targetX = null; p.targetY = null; // 停止漫游
+                p.targetX = null; p.targetY = null; 
                 p.facing = 1;
-                p.state = 'ready'; // 设置为准备状态
+                p.state = 'ready'; 
             });
 
-            // 3. 显示倒计时层
             document.getElementById('countdown-layer').style.display = 'flex';
         }
 
         function startRace() {
-            // 隐藏倒计时
             document.getElementById('countdown-layer').style.display = 'none';
 
-            // 触发扫描线特效
             const scan = document.getElementById('scan-line');
             scan.style.display = 'block';
             scan.style.animation = 'none'; 
             scan.offsetHeight; 
             scan.style.animation = 'scan 1.5s linear forwards'; 
 
-            // 开始比赛，重新随机速度
             ponies.forEach(p => {
                 p.speed = 3.5 + Math.random() * 3; 
                 p.state = 'racing';
@@ -529,26 +505,15 @@
         function updateGameLogic() {
             const hud = document.getElementById('hud');
             const alert = document.getElementById('queue-text');
-            const countdownText = document.getElementById('countdown-text');
             const screen = document.getElementById('game-screen');
 
             if (gameState === 'COOLDOWN') {
                 cooldownTimer--;
                 
-                // 计算秒数 (3, 2, 1)
-                const sec = Math.ceil(cooldownTimer / 60);
-                countdownText.innerText = sec;
-                
-                // 颜色变化
-                if (sec === 3) countdownText.style.color = '#ff5252'; 
-                else if (sec === 2) countdownText.style.color = '#ffb300'; 
-                else if (sec === 1) countdownText.style.color = '#40e0d0'; 
-
-                // === 闪烁特效逻辑 ===
-                // 在 179(3), 119(2), 59(1) 时触发闪烁
+                // 闪烁逻辑：179, 119, 59 时闪烁
                 if (cooldownTimer % 60 === 59) {
                     screen.classList.remove('flash-active');
-                    void screen.offsetWidth; // 触发重绘
+                    void screen.offsetWidth; 
                     screen.classList.add('flash-active');
                 }
 
@@ -557,8 +522,6 @@
                 if (cooldownTimer <= 0) {
                     startRace();
                 }
-                
-                // 倒计时期间保持马在起跑线
                 updatePoniesMovement(); 
             }
             else if (gameState === 'RACING') {
@@ -627,10 +590,9 @@
             ponies.forEach(p => {
                 p.frame++;
                 
-                // 如果是准备状态，强制在起跑线
                 if (p.state === 'ready') {
                     p.x = 20;
-                    return; // 不执行后续移动逻辑
+                    return; 
                 }
 
                 if (p.state === 'racing') {
@@ -661,7 +623,6 @@
             });
         }
 
-        // === AI 行为逻辑 ===
         function aiBehavior(p, restrictFinish) {
             const minX = restrictFinish ? FINISH_X : 0;
             const maxX = GAME_W - 38;
