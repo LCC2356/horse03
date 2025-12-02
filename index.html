@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.43 DELAYED START</title>
+    <title>HORSE RUNRUN - v7.44 11x11 GRID</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -50,7 +50,6 @@
         #game-screen {
             width: var(--game-w); height: var(--game-h);
             background: #000; position: relative;
-            /* 修改点 1：边框改为 2px */
             border: 2px solid var(--primary); 
             box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
             overflow: hidden; 
@@ -162,8 +161,11 @@
             100% { opacity: 0; transform: scale(0.8) translateX(30px); }
         }
 
-        .entity { position: absolute; width: 38px; height: 38px; will-change: transform; }
-        .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; }
+        /* 修改：Entity 放大到 44px 以容纳 11格 (4px/格) */
+        .entity { position: absolute; width: 44px; height: 44px; will-change: transform; }
+        
+        /* 修改：Grid 改为 11 列 */
+        .pixel-grid { display: grid; grid-template-columns: repeat(11, 1fr); width: 100%; height: 100%; }
         
         .crown-container {
             position: absolute; top: -31px; left: 50%; transform: translateX(-50%);
@@ -241,12 +243,16 @@
             background: #1a1c20; border: 2px solid var(--primary); padding: 30px;
             display: flex; flex-direction: column; align-items: center; gap: 20px;
         }
+        
+        /* 修改：编辑器网格改为 11x11 */
         .editor-grid {
-            display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr);
+            display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr);
             gap: 2px; background: #333; border: 2px solid #555; 
             touch-action: none; 
         }
-        .editor-cell { width: 38px; height: 38px; background: #000; }
+        /* 修改：单个格子缩小，适配手机屏幕 */
+        .editor-cell { width: 28px; height: 28px; background: #000; }
+        
         .color-picker { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
         .c-dot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #333; }
         .c-dot.active { border-color: white; transform: scale(1.1); }
@@ -292,7 +298,6 @@
         .push-btn:active { transform: scale(0.95); }
         .controller-info { font-size: 1.5rem; color: #888; margin-bottom: 30px; text-align: center; }
         
-        /* 按钮状态颜色 */
         .btn-wait { background: #1a1a1a !important; border-color: #333 !important; color: #555 !important; }
         .btn-mash { background: #fff !important; border-color: #ccc !important; color: #000 !important; box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; }
         .btn-start { background: #e65100 !important; border-color: #ffb300 !important; color: #fff !important; box-shadow: 0 0 50px rgba(255, 179, 0, 0.4) !important; }
@@ -399,9 +404,19 @@
 
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#ffffff', BLUE:'#2979ff' };
         
+        // 修改：11x11 网格数据
         const DEFAULT_PIXELS = [
-            [0,0,0,0,0,0,1,0], [0,0,0,0,0,1,1,1], [0,0,0,0,0,1,1,0], [0,0,1,1,1,1,1,0],
-            [0,1,1,1,1,1,1,0], [1,1,1,1,1,1,1,0], [0,1,0,0,0,1,0,0], [0,1,0,0,0,1,0,0]
+            [0,0,0,0,0,0,0,0,1,0,0], 
+            [0,0,0,0,0,0,0,1,1,1,0], 
+            [0,0,0,0,0,0,0,1,1,0,0], 
+            [0,0,0,1,1,1,1,1,1,0,0],
+            [0,0,1,1,1,1,1,1,1,0,0], 
+            [0,1,1,1,1,1,1,1,1,0,0], 
+            [1,1,1,1,1,1,1,1,1,0,0], 
+            [0,1,0,0,0,0,0,1,0,0,0], 
+            [0,1,0,0,0,0,0,1,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0]
         ];
 
         let ponies = [];
@@ -749,9 +764,8 @@
                     updateBarText("READY", "#ffffff");
                 } else {
                     const sec = Math.ceil(cooldownTimer / 60);
-                    let color = '#ffffff';
-                    if (sec === 3) color = '#ff5252';
-                    else if (sec === 2) color = '#ffb300';
+                    // 修改：颜色强制为白色
+                    let color = '#ffffff'; 
                     updateBarText(sec.toString(), color);
                     if (cooldownTimer % 60 === 59) triggerFlash();
                     
@@ -822,8 +836,8 @@
                     waitTimer = 180; 
                 } else {
                     gameState = 'ROAMING';
-                    // 修改点 2：比赛结束，空队列时才广播 START RACE 按钮，且先发 wait 缓冲一下
-                    broadcast({ type: 'sync_ui', label: 'FINISHING...', mode: 'wait' });
+                    // 修改：先发 DONE 提示，3秒后再允许开始
+                    broadcast({ type: 'sync_ui', label: 'DONE', mode: 'wait' });
                     setTimeout(() => {
                         if (gameState === 'ROAMING') {
                             broadcast({ type: 'sync_ui', label: 'START RACE', mode: 'start' });
@@ -879,8 +893,9 @@
                     aiBehavior(p, false);
                 }
                 
+                // 适配：Entity 高度变大，底部范围需要调整
                 p.x = Math.max(0, Math.min(GAME_W - 38, p.x));
-                p.y = Math.max(p.hasCrown ? 35 : 20, Math.min(GAME_H - 38 - 6, p.y));
+                p.y = Math.max(p.hasCrown ? 35 : 20, Math.min(GAME_H - 44 - 6, p.y));
             });
         }
 
@@ -967,7 +982,7 @@
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path></svg>
                         </div>
                         <div class="name-tag">${p.name}</div>
-                        <div class="p-grid" style="display:grid; grid-template-columns:repeat(8,1fr); width:100%; height:100%;"></div>
+                        <div class="p-grid" style="display:grid; grid-template-columns:repeat(11,1fr); width:100%; height:100%;"></div>
                     `;
                     ponyL.appendChild(el);
                 }
@@ -982,11 +997,13 @@
                 const isMoving = p.state === 'racing' || p.finishedWalking || (p.targetX !== null);
                 const frameStep = isMoving ? Math.floor(p.frame / 10) % 2 : 0;
                 let html = '';
-                for(let y=0; y<8; y++) {
+                // 修改：循环到 11
+                for(let y=0; y<11; y++) {
                     let row = p.pixels[y];
-                    if (frameStep === 1 && y > 5) row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[0]]; 
-                    if (p.state === 'eating') { if(y===1) row = [0,0,0,0,0,0,0,0]; if(y===3) row = p.pixels[1]; }
-                    for(let x=0; x<8; x++) { if (row[x]) html += `<div style="background:${p.color}; width:100%; height:100%; grid-column:${x+1}; grid-row:${y+1}"></div>`; }
+                    // 简单的行走动画，只移动底部两行
+                    if (frameStep === 1 && y > 8) row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[0]]; 
+                    if (p.state === 'eating') { if(y===3) row = [0,0,0,0,0,0,0,0,0,0,0]; }
+                    for(let x=0; x<11; x++) { if (row[x]) html += `<div style="background:${p.color}; width:100%; height:100%; grid-column:${x+1}; grid-row:${y+1}"></div>`; }
                 }
                 el.querySelector('.p-grid').innerHTML = html;
             });
@@ -1045,7 +1062,8 @@
             if (!name) { alert("PLEASE ENTER A NAME"); nameInput.focus(); return; }
 
             let hasPixels = false;
-            for(let r=0; r<8; r++) { for(let c=0; c<8; c++) { if (mobileGrid[r][c] === 1) { hasPixels = true; break; } } if(hasPixels) break; }
+            // 修改：循环到 11
+            for(let r=0; r<11; r++) { for(let c=0; c<11; c++) { if (mobileGrid[r][c] === 1) { hasPixels = true; break; } } if(hasPixels) break; }
             if (!hasPixels) { alert("CANVAS IS EMPTY"); return; }
 
             mySoundType = SOUND_TYPES[Math.floor(Math.random() * SOUND_TYPES.length)];
@@ -1144,8 +1162,10 @@
 
         function clearMobile() { clearGridData(mobileGrid); renderGrid('m-grid', mobileGrid, selectedColor); }
         function clearDesktop() { clearGridData(pcGrid); renderGrid('pc-grid', pcGrid, selectedColor); }
-        function clearGridData(grid) { for(let r=0; r<8; r++) for(let c=0; c<8; c++) grid[r][c] = 0; }
-        function restoreGridData(grid) { for(let r=0; r<8; r++) for(let c=0; c<8; c++) grid[r][c] = DEFAULT_PIXELS[r][c]; }
+        // 修改：循环到 11
+        function clearGridData(grid) { for(let r=0; r<11; r++) for(let c=0; c<11; c++) grid[r][c] = 0; }
+        // 修改：循环到 11
+        function restoreGridData(grid) { for(let r=0; r<11; r++) for(let c=0; c<11; c++) grid[r][c] = DEFAULT_PIXELS[r][c]; }
 
         function openDesktopEditor() {
             renderGrid('pc-grid', pcGrid, selectedColor);
