@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.35 STABLE</title>
+    <title>HORSE RUNRUN - v7.36 SYNC MODE</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -80,7 +80,6 @@
         /* HUD */
         .hud { position: absolute; bottom: 4px; right: 10px; font-size: 32px; opacity: 0.5; letter-spacing: 2px; z-index: 110; }
 
-        /* 纯文字悬浮显示板 */
         #track-display-bar {
             position: absolute; 
             top: 50%; transform: translateY(-50%); 
@@ -103,13 +102,11 @@
             letter-spacing: 2px;
             text-shadow: 0 0 20px currentColor; 
             font-weight: bold;
-            
             width: 310px; 
             display: flex; 
             justify-content: center; 
             flex-shrink: 0; 
             margin: 0; 
-            
             animation: text-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
         
@@ -131,7 +128,7 @@
 
         #scan-line { display: none; }
 
-        /* === VFD 箭头动画样式 === */
+        /* VFD Overlay */
         #vfd-overlay {
             position: absolute; inset: 0;
             display: flex; align-items: center; justify-content: flex-start;
@@ -155,6 +152,7 @@
         }
 
         .vfd-active { opacity: 1 !important; }
+        .vfd-active i { animation: vfd-flash 0.4s ease-out forwards calc(var(--d) * 1s); }
         
         @keyframes vfd-flash {
             0% { opacity: 0; transform: scale(0.8) translateX(0); }
@@ -163,18 +161,11 @@
             100% { opacity: 0; transform: scale(0.8) translateX(30px); }
         }
 
-        .vfd-active i {
-            animation: vfd-flash 0.4s ease-out forwards calc(var(--d) * 1s);
-        }
-
         .entity { position: absolute; width: 38px; height: 38px; will-change: transform; }
         .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; }
         
-        /* 皇冠 top: -31px */
         .crown-container {
-            position: absolute; 
-            top: -31px; 
-            left: 50%; transform: translateX(-50%);
+            position: absolute; top: -31px; left: 50%; transform: translateX(-50%);
             width: 18px; height: 18px; 
             animation: bounce 1s infinite; z-index: 10;
             display: flex; flex-direction: column-reverse; align-items: center;
@@ -189,11 +180,8 @@
         @keyframes pulse { from { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } }
         
         .name-tag {
-            position: absolute; 
-            top: -18px; 
-            left: 50%; transform: translateX(-50%);
-            font-size: 20px; 
-            white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000;
+            position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+            font-size: 20px; white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000;
         }
         .grass { position: absolute; width: 6px; height: 6px; background: #69f0ae; box-shadow: 0 0 4px #69f0ae; }
         .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
@@ -291,16 +279,23 @@
         }
         .push-btn {
             width: 250px; height: 250px; border-radius: 50%;
-            background: #004d40; border: 8px solid var(--primary);
-            color: var(--primary); font-size: 4rem; font-family: 'VT323', monospace;
+            background: #333; /* 默认灰色 */
+            border: 8px solid #555;
+            color: #888; font-size: 4rem; font-family: 'VT323', monospace;
             display: flex; justify-content: center; align-items: center;
-            box-shadow: 0 0 50px rgba(64, 224, 208, 0.4);
-            transition: transform 0.05s; user-select: none;
+            box-shadow: 0 0 50px rgba(0,0,0, 0.4);
+            transition: all 0.2s; user-select: none;
             cursor: pointer; -webkit-tap-highlight-color: transparent;
+            text-align: center; line-height: 1; padding: 20px;
         }
-        .push-btn:active { transform: scale(0.9); background: #00695c; }
+        .push-btn:active { transform: scale(0.95); }
         .controller-info { font-size: 1.5rem; color: #888; margin-bottom: 30px; text-align: center; }
         
+        /* 按钮状态颜色 */
+        .btn-wait { background: #333 !important; border-color: #555 !important; color: #888 !important; }
+        .btn-mash { background: #004d40 !important; border-color: var(--primary) !important; color: var(--primary) !important; box-shadow: 0 0 50px rgba(64, 224, 208, 0.4) !important; }
+        .btn-start { background: #e65100 !important; border-color: #ffb300 !important; color: #fff !important; box-shadow: 0 0 50px rgba(255, 179, 0, 0.4) !important; }
+
         #m-success-modal { display: none; } 
     </style>
 </head>
@@ -390,9 +385,9 @@
         </div>
 
         <div id="m-controller">
-            <div class="controller-info">TAP TO RUN!</div>
-            <div class="push-btn" ontouchstart="sendTap(event)" onmousedown="sendTap(event)">PUSH</div>
-            </div>
+            <div id="m-info" class="controller-info">GET READY</div>
+            <div id="m-btn" class="push-btn btn-wait" ontouchstart="btnAction(event)" onmousedown="btnAction(event)">WAIT</div>
+        </div>
     </div>
 
     <script>
@@ -419,7 +414,10 @@
         let pcGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
         let mobileGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
         let selectedColor = COLORS.CYAN;
-        let playerUUID = null; // 手机端身份ID
+        let playerUUID = null;
+
+        // 手机端按钮状态: 'wait', 'mash', 'start'
+        let mobileBtnState = 'wait';
 
         let layout = {
             scale: 1.0,
@@ -428,6 +426,7 @@
         };
 
         let currentBarText = '';
+        let lastBroadcastText = '';
 
         const PEER_CONFIG = {
             debug: 2,
@@ -472,6 +471,16 @@
             screen.classList.remove('flash-active');
             void screen.offsetWidth; 
             screen.classList.add('flash-active');
+        }
+
+        // 广播消息给所有连接
+        function broadcast(data) {
+            if(!peer || !peer.connections) return;
+            Object.values(peer.connections).forEach(conns => {
+                conns.forEach(conn => {
+                    if(conn.open) conn.send(data);
+                });
+            });
         }
 
         window.onload = function() {
@@ -567,19 +576,15 @@
                 
                 peer.on('connection', c => {
                     c.on('data', data => {
-                        // === 处理不同类型的信号 ===
                         if (data.type === 'check_reconnect') {
                             const uuid = data.uuid;
-                            // 检查该 UUID 是否已经有马在场
                             const exists = ponies.find(p => p.playerUUID === uuid) || ponyQueue.find(p => p.playerUUID === uuid);
                             if (exists) {
-                                // 告诉手机：你已经有马了，切控制模式
                                 c.send({ type: 'reconnect_success' });
                             }
                         }
                         else if (data.type === 'spawn') {
                             const uuid = data.payload.uuid;
-                            // 防重复：如果该 UUID 已经在场，忽略 spawn 请求
                             const exists = ponies.find(p => p.playerUUID === uuid) || ponyQueue.find(p => p.playerUUID === uuid);
                             if (!exists) {
                                 requestSpawnPony(data.payload.name, data.payload.pixels, data.payload.color, uuid);
@@ -587,6 +592,12 @@
                         } 
                         else if (data.type === 'tap') {
                             handleTap(data.uuid);
+                        }
+                        // === 新增：强制开始 ===
+                        else if (data.type === 'force_start') {
+                            if (gameState === 'ROAMING' || gameState === 'WAITING_TO_START') {
+                                startCooldown();
+                            }
                         }
                     });
                 });
@@ -597,23 +608,22 @@
             } catch(e) { console.error(e); }
         }
 
-        // 根据 UUID 处理加速
         function handleTap(uuid) {
             if (!uuid) return;
             const pony = ponies.find(p => p.playerUUID === uuid);
             if (pony && pony.state === 'racing' && pony.isManual) {
                 pony.manualSpeed = Math.min(pony.manualSpeed + 2.0, 15);
-                pony.lastTapTime = Date.now(); // 更新最后点击时间
+                pony.lastTapTime = Date.now(); 
             }
         }
 
         function requestSpawnPony(name, pixels, color, uuid = null) {
             const newPony = {
                 id: Math.random().toString(36).substr(2, 9),
-                playerUUID: uuid, // 绑定 UUID
-                isManual: !!uuid, // 标记为手动
+                playerUUID: uuid, 
+                isManual: !!uuid, 
                 manualSpeed: 0,
-                lastTapTime: Date.now(), // 初始化时间
+                lastTapTime: Date.now(), 
                 name: name || 'PONY',
                 pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_PIXELS)),
                 color: color || COLORS.CYAN,
@@ -660,6 +670,9 @@
             
             setBarVisibility(true);
             updateBarText("READY", "#40e0d0");
+            
+            // 广播: 进入 READY 状态
+            broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
         }
 
         function startRace() {
@@ -692,12 +705,14 @@
                 p.speed = 3.5 + Math.random() * 3; 
                 p.state = 'racing';
                 p.finishedWalking = false;
-                // 比赛开始时，刷新手动玩家的活跃时间，防止起跑瞬间被判定为挂机
                 if(p.isManual) p.lastTapTime = Date.now();
             });
 
             grass = [];
             gameState = 'RACING';
+            
+            // 广播: 比赛开始
+            broadcast({ type: 'sync_ui', label: 'RUN!', mode: 'mash' });
         }
 
         function gameLoop() {
@@ -716,6 +731,13 @@
                 alert.style.display = 'block';
                 const sec = Math.ceil(waitTimer / 60);
                 alert.innerText = `NEXT ROUND IN ${sec}`; 
+                
+                // 倒计时文字变化广播
+                if (lastBroadcastText !== sec) {
+                    broadcast({ type: 'sync_ui', label: `STARTING ${sec}`, mode: 'wait' });
+                    lastBroadcastText = sec;
+                }
+
                 updatePoniesMovement(); 
                 if (waitTimer <= 0) startCooldown();
             }
@@ -731,6 +753,12 @@
                     else if (sec === 2) color = '#ffb300';
                     updateBarText(sec.toString(), color);
                     if (cooldownTimer % 60 === 59) triggerFlash();
+                    
+                    // 广播 3, 2, 1
+                    if (lastBroadcastText !== sec) {
+                        broadcast({ type: 'sync_ui', label: sec.toString(), mode: 'wait' });
+                        lastBroadcastText = sec;
+                    }
                 }
                 if (cooldownTimer <= 0) startRace();
                 updatePoniesMovement(); 
@@ -794,6 +822,8 @@
                     waitTimer = 180; 
                 } else {
                     gameState = 'ROAMING';
+                    // 广播: 比赛结束，可以手动开启下一轮
+                    broadcast({ type: 'sync_ui', label: 'START RACE', mode: 'start' });
                 }
             }
         }
@@ -804,33 +834,21 @@
 
             ponies.forEach(p => {
                 p.frame++;
-                
-                if (p.state === 'ready') {
-                    p.x = 20;
-                    return; 
-                }
+                if (p.state === 'ready') { p.x = 20; return; }
 
                 if (p.state === 'racing') {
                     if (p.isManual) {
-                        // === 防挂机逻辑 ===
-                        if (Date.now() - p.lastTapTime > 3000) { // 3秒无操作
-                            p.isManual = false; // 切回 AI
-                            p.name += " (BOT)"; // 改名提示
+                        if (Date.now() - p.lastTapTime > 3000) { 
+                            p.isManual = false; p.name += " (BOT)"; 
                         } else {
                             p.manualSpeed *= 0.96; 
                             if (p.manualSpeed < 0.1) p.manualSpeed = 0;
                             p.x += p.manualSpeed;
                         }
                     }
-                    
-                    // 注意：这里用了 else if 不是 else，因为上一行可能把 isManual 变成了 false
-                    // 这样当这帧变成 BOT 时，下一帧才会开始 AI 移动，或者直接这里处理
-                    if (!p.isManual) {
-                        p.x += p.speed * (0.9 + Math.random() * 0.2);
-                    }
+                    if (!p.isManual) p.x += p.speed * (0.9 + Math.random() * 0.2);
                     
                     p.facing = 1;
-                    
                     if (p.x >= FINISH_X) {
                         p.state = 'finished';
                         if (finishedCount === 0 && !winnerFoundThisFrame && gameState === 'RACING') {
@@ -865,14 +883,10 @@
                 for(let i=0; i<grass.length; i++) {
                     const g = grass[i];
                     if (Math.abs(g.x - p.x) < 20 && Math.abs(g.y - p.y) < 20) {
-                        p.state = 'eating'; 
-                        p.timer = 100; 
-                        grass.splice(i, 1); 
-                        p.targetX = null; p.targetY = null; 
-                        return; 
+                        p.state = 'eating'; p.timer = 100; 
+                        grass.splice(i, 1); p.targetX = null; p.targetY = null; return; 
                     }
                 }
-
                 if (p.timer-- <= 0) { 
                     const action = Math.random();
                     if (action > 0.4) {
@@ -881,29 +895,18 @@
                         p.targetY = minY + Math.random() * (maxY - minY);
                     } else {
                         p.timer = 40 + Math.random() * 60; 
-                        p.targetX = null;
-                        p.targetY = null;
+                        p.targetX = null; p.targetY = null;
                     }
                 }
-                
                 if (p.targetX !== null && p.targetY !== null) {
-                    const dx = p.targetX - p.x;
-                    const dy = p.targetY - p.y;
+                    const dx = p.targetX - p.x; const dy = p.targetY - p.y;
                     const dist = Math.sqrt(dx*dx + dy*dy);
-
                     if (dist > 2) {
                         const speed = 0.5 + Math.random() * 0.3; 
-                        const vx = (dx / dist) * speed;
-                        const vy = (dy / dist) * speed;
-                        p.x += vx;
-                        p.y += vy;
+                        p.x += (dx / dist) * speed; p.y += (dy / dist) * speed;
                         p.facing = Math.sign(dx) || 1; 
-                    } else {
-                        p.targetX = null;
-                        p.targetY = null;
-                    }
+                    } else { p.targetX = null; p.targetY = null; }
                 }
-
             } else if (p.state === 'eating') {
                 if (p.timer-- <= 0) p.state = 'roaming';
             }
@@ -930,9 +933,7 @@
                 tick();
             }
             const grassCount = Math.floor(Math.random() * 3) + 1;
-            for(let i=0; i<grassCount; i++) {
-                 grass.push({ x: p.x + (Math.random()-0.5) * 60, y: p.y + (Math.random()-0.5) * 40 });
-            }
+            for(let i=0; i<grassCount; i++) { grass.push({ x: p.x + (Math.random()-0.5) * 60, y: p.y + (Math.random()-0.5) * 40 }); }
         }
 
         function draw() {
@@ -959,18 +960,11 @@
                     `;
                     ponyL.appendChild(el);
                 }
-
                 el.style.transform = `translate(${p.x}px, ${p.y}px) scale(1.1)`;
                 el.style.zIndex = Math.floor(p.y);
                 el.querySelector('.p-grid').style.transform = `scaleX(${p.facing || 1})`;
-
                 const crownC = el.querySelector('.crown-container');
-                if (p.hasCrown) {
-                    crownC.style.display = 'flex';
-                } else {
-                    crownC.style.display = 'none';
-                }
-
+                if (p.hasCrown) { crownC.style.display = 'flex'; } else { crownC.style.display = 'none'; }
                 el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none';
                 el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
 
@@ -981,16 +975,13 @@
                     let row = p.pixels[y];
                     if (frameStep === 1 && y > 5) row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[0]]; 
                     if (p.state === 'eating') { if(y===1) row = [0,0,0,0,0,0,0,0]; if(y===3) row = p.pixels[1]; }
-                    for(let x=0; x<8; x++) {
-                        if (row[x]) html += `<div style="background:${p.color}; width:100%; height:100%; grid-column:${x+1}; grid-row:${y+1}"></div>`;
-                    }
+                    for(let x=0; x<8; x++) { if (row[x]) html += `<div style="background:${p.color}; width:100%; height:100%; grid-column:${x+1}; grid-row:${y+1}"></div>`; }
                 }
                 el.querySelector('.p-grid').innerHTML = html;
             });
         }
 
         function initMobile() {
-            // === 获取/生成 UUID ===
             playerUUID = localStorage.getItem('horse_uuid');
             if (!playerUUID) {
                 playerUUID = 'user_' + Math.random().toString(36).substr(2, 9);
@@ -1005,16 +996,33 @@
                     conn.on('open', () => {
                         document.getElementById('m-status').innerText = "CONNECTED";
                         document.getElementById('m-status').style.color = "#69f0ae";
-                        // 连上后立即检查是否需要重连
                         conn.send({ type: 'check_reconnect', uuid: playerUUID });
                     });
                     
-                    // 监听电脑发回的消息
                     conn.on('data', data => {
                         if (data.type === 'reconnect_success') {
-                            // 电脑说我在场上，直接切控制模式
                             document.getElementById('m-editor-ui').style.display = 'none';
                             document.getElementById('m-controller').style.display = 'flex';
+                        }
+                        // === 同步 UI 状态 ===
+                        else if (data.type === 'sync_ui') {
+                            const btn = document.getElementById('m-btn');
+                            const info = document.getElementById('m-info');
+                            mobileBtnState = data.mode;
+                            
+                            btn.innerText = data.label;
+                            btn.className = 'push-btn'; // reset class
+                            
+                            if (data.mode === 'wait') {
+                                btn.classList.add('btn-wait');
+                                info.innerText = "GET READY...";
+                            } else if (data.mode === 'mash') {
+                                btn.classList.add('btn-mash');
+                                info.innerText = "TAP FAST!!!";
+                            } else if (data.mode === 'start') {
+                                btn.classList.add('btn-start');
+                                info.innerText = "RACE FINISHED";
+                            }
                         }
                     });
                 });
@@ -1026,28 +1034,11 @@
             
             const nameInput = document.getElementById('m-name');
             const name = nameInput.value.trim();
-            
-            if (!name) {
-                alert("PLEASE ENTER A NAME");
-                nameInput.focus();
-                return;
-            }
+            if (!name) { alert("PLEASE ENTER A NAME"); nameInput.focus(); return; }
 
             let hasPixels = false;
-            for(let r=0; r<8; r++) {
-                for(let c=0; c<8; c++) {
-                    if (mobileGrid[r][c] === 1) {
-                        hasPixels = true;
-                        break;
-                    }
-                }
-                if(hasPixels) break;
-            }
-
-            if (!hasPixels) {
-                alert("CANVAS IS EMPTY");
-                return;
-            }
+            for(let r=0; r<8; r++) { for(let c=0; c<8; c++) { if (mobileGrid[r][c] === 1) { hasPixels = true; break; } } if(hasPixels) break; }
+            if (!hasPixels) { alert("CANVAS IS EMPTY"); return; }
 
             conn.send({ 
                 type: 'spawn', 
@@ -1058,21 +1049,27 @@
             document.getElementById('m-controller').style.display = 'flex';
         }
 
-        function sendTap(e) {
+        // === 统一的按钮行为处理 ===
+        function btnAction(e) {
             e.preventDefault(); 
-            if(conn) conn.send({ type: 'tap', uuid: playerUUID });
+            const btn = document.getElementById('m-btn');
             
-            const btn = document.querySelector('.push-btn');
-            btn.style.transform = 'scale(0.9)';
-            btn.style.background = '#00695c';
-            setTimeout(() => {
-                btn.style.transform = 'scale(1)';
-                btn.style.background = '#004d40';
-            }, 50);
+            // 简单的按下动画
+            btn.style.transform = 'scale(0.95)';
+            setTimeout(() => { btn.style.transform = 'scale(1)'; }, 50);
+
+            if (mobileBtnState === 'mash') {
+                // 比赛中：加速
+                if(conn) conn.send({ type: 'tap', uuid: playerUUID });
+            } 
+            else if (mobileBtnState === 'start') {
+                // 闲逛中：开启下一轮
+                if(conn) conn.send({ type: 'force_start' });
+            }
+            // wait 状态下点击无效果
         }
         
         function resetMobile() {
-            // 目前没有按钮调用这个了，但保留逻辑备用
             document.getElementById('m-controller').style.display = 'none';
             document.getElementById('m-editor-ui').style.display = 'block';
             document.getElementById('m-name').value = '';
