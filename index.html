@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.40 MONO</title>
+    <title>HORSE RUNRUN - v7.41 CROWN FIX</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -11,11 +11,8 @@
     <style>
         :root {
             --bg: #111;
-            /* 修改点：主色调改为白色 */
             --primary: #ffffff; 
-            /* 修改点：面板背景改为深灰 */
             --panel: #222222;
-            /* 修改点：边框改为灰色 */
             --border: #444444;
             --game-w: 3500px; 
             --game-h: 100px;
@@ -54,7 +51,6 @@
             width: var(--game-w); height: var(--game-h);
             background: #000; position: relative;
             border: 4px solid var(--primary); 
-            /* 修改点：白色辉光 */
             box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
             overflow: hidden; 
             flex-shrink: 0; 
@@ -64,14 +60,12 @@
             animation: track-flash 0.2s ease-out;
         }
         @keyframes track-flash {
-            /* 修改点：白色闪光 */
             0% { background-color: rgba(255, 255, 255, 0.4); box-shadow: inset 0 0 150px var(--primary); border-color: #fff; }
             100% { background-color: #000; box-shadow: 0 0 30px rgba(255, 255, 255, 0.3); border-color: var(--primary); }
         }
 
         .grid-bg {
             position: absolute; inset: 0; opacity: 0.2;
-            /* 修改点：白色网格 */
             background-image: linear-gradient(rgba(255, 255, 255, 0.3) 1px, transparent 1px),
                               linear-gradient(90deg, rgba(255, 255, 255, 0.3) 1px, transparent 1px);
             background-size: 50px 50px;
@@ -79,7 +73,6 @@
         }
         .finish-line {
             position: absolute; top: 0; bottom: 0; right: 400px; width: 12px;
-            /* 修改点：白色终点线 */
             background-image: linear-gradient(45deg, #fff 25%, transparent 25%, transparent 50%, #fff 50%, #fff 75%, transparent 75%, transparent);
             background-size: 12px 12px; opacity: 0.8; z-index: 0;
         }
@@ -266,7 +259,6 @@
         }
         .m-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; flex-shrink: 0; }
         .m-title { font-size: 1.5rem; color: #fff; }
-        /* 修改点：手机连接状态背景改为深灰 */
         .m-status { background: #222; padding: 4px 8px; border-radius: 4px; font-size: 1rem; color: #fff; border: 1px solid #444; }
         .m-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; flex-shrink: 0; }
         input[type="text"] {
@@ -300,11 +292,8 @@
         .controller-info { font-size: 1.5rem; color: #888; margin-bottom: 30px; text-align: center; }
         
         /* 按钮状态颜色 */
-        /* 修改点：等待时纯灰 */
         .btn-wait { background: #1a1a1a !important; border-color: #333 !important; color: #555 !important; }
-        /* 修改点：比赛时纯白发光 */
         .btn-mash { background: #fff !important; border-color: #ccc !important; color: #000 !important; box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; }
-        /* 修改点：START 保持橙色，作为强调 */
         .btn-start { background: #e65100 !important; border-color: #ffb300 !important; color: #fff !important; box-shadow: 0 0 50px rgba(255, 179, 0, 0.4) !important; }
 
         #m-success-modal { display: none; } 
@@ -685,7 +674,7 @@
             document.getElementById('queue-text').style.display = 'none';
             
             setBarVisibility(true);
-            updateBarText("READY", "#ffffff"); /* 修改点：Ready 也是白色 */
+            updateBarText("READY", "#ffffff");
             
             broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
         }
@@ -761,10 +750,9 @@
                     updateBarText("READY", "#ffffff");
                 } else {
                     const sec = Math.ceil(cooldownTimer / 60);
-                    let color = '#ffffff'; /* 修改点：倒计时全是白色 */
+                    let color = '#ffffff';
                     if (sec === 3) color = '#ff5252';
                     else if (sec === 2) color = '#ffb300';
-                    
                     updateBarText(sec.toString(), color);
                     if (cooldownTimer % 60 === 59) triggerFlash();
                     
@@ -886,16 +874,18 @@
                     aiBehavior(p, false);
                 }
                 
+                // === 修改点：Crown fix logic (最小Y 35) ===
                 p.x = Math.max(0, Math.min(GAME_W - 38, p.x));
-                p.y = Math.max(20, Math.min(GAME_H - 38 - 6, p.y));
+                p.y = Math.max(p.hasCrown ? 35 : 20, Math.min(GAME_H - 38 - 6, p.y));
             });
         }
 
         function aiBehavior(p, restrictFinish) {
             const minX = restrictFinish ? FINISH_X : 0;
             const maxX = GAME_W - 38;
-            const minY = 20;
             const maxY = GAME_H - 44;
+            // === 修改点：Crown fix logic (最小Y 35) ===
+            const minY = p.hasCrown ? 35 : 20;
 
             if (p.state === 'roaming' || p.state === 'finished') {
                 for(let i=0; i<grass.length; i++) {
