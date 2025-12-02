@@ -1,9 +1,23 @@
+好的，没问题。
+
+这是 **v7.9 - MORE TEXT & HIDDEN STATUS** 版本。
+
+### 修改重点：
+
+1.  **数量增加**：起跑准备时的文字（READY/3/2/1/RUN）现在会横向重复 **10次**，铺满更宽的屏幕。
+2.  **隐藏状态栏**：进入倒计时（3-2-1）阶段时，右下角的 `STATUS: ...` 文字会自动**隐藏**，直到比赛正式开始（RUN）才会再次出现，让画面更聚焦于中间的大字。
+
+-----
+
+### 完整代码 (Copy & Paste)
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.9 FIX</title>
+    <title>HORSE RUNRUN - v7.9</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -56,7 +70,6 @@
             flex-shrink: 0; 
         }
         
-        /* 跑道闪烁动画 */
         .flash-active {
             animation: track-flash 0.2s ease-out;
         }
@@ -78,22 +91,22 @@
             background-size: 12px 12px; opacity: 0.8; z-index: 0;
         }
 
-        /* === 右下角的 HUD === */
+        /* HUD */
         .hud { position: absolute; bottom: 4px; right: 10px; font-size: 32px; opacity: 0.5; letter-spacing: 2px; z-index: 110; }
 
-        /* === 纯文字悬浮显示板 === */
+        /* 纯文字悬浮显示板 */
         #track-display-bar {
             position: absolute; 
-            top: 50%; transform: translateY(-50%); /* 垂直居中 */
-            left: 0; width: 100%; height: 100px; /* 占满全宽 */
-            display: none; /* 默认隐藏 */
+            top: 50%; transform: translateY(-50%); 
+            left: 0; width: 100%; height: 100px; 
+            display: none; 
             align-items: center; justify-content: center;
             z-index: 100; 
-            pointer-events: none; /* 点击穿透 */
+            pointer-events: none; 
         }
         
         .bar-container {
-            width: 90%; 
+            width: 95%; /* 稍微加宽一点，容纳更多文字 */
             display: flex; 
             align-items: center; 
             justify-content: space-between; 
@@ -104,7 +117,6 @@
             letter-spacing: 2px;
             text-shadow: 0 0 20px currentColor; 
             font-weight: bold;
-            /* 关键动画：0.3s 弹出 */
             animation: text-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
         
@@ -119,7 +131,6 @@
             display: none; z-index: 20;
         }
 
-        /* 扫描线特效 */
         #scan-line {
             position: absolute; top: 0; bottom: 0; width: 100px;
             background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
@@ -153,7 +164,6 @@
         .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
         @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
 
-        /* 底部控制栏 */
         #bottom-controls {
             position: fixed; bottom: 20px; left: 20px;
             display: flex; align-items: center; gap: 15px;
@@ -353,7 +363,6 @@
             y: 0
         };
 
-        // 当前显示的文字状态 (防止频繁DOM操作)
         let currentBarText = '';
 
         const PEER_CONFIG = {
@@ -366,16 +375,14 @@
             }
         };
 
-        // 更新文字：横向重复排列 (修复了动画重置问题)
         function updateBarText(text, color) {
-            // 如果文字内容没变，就不更新 DOM，防止动画被打断
             if (currentBarText === text) return;
             currentBarText = text;
 
             const container = document.getElementById('bar-text');
             let content = '';
-            // 重复 6 次以铺满屏幕
-            for(let i=0; i<6; i++) {
+            // 重复 10 次以铺满屏幕
+            for(let i=0; i<10; i++) {
                 content += `<span class="bar-text-item">${text}</span>`;
             }
             container.innerHTML = content;
@@ -393,7 +400,7 @@
                 bar.style.display = 'flex';
             } else {
                 bar.style.display = 'none';
-                currentBarText = ''; // 隐藏时重置状态
+                currentBarText = ''; 
             }
         }
 
@@ -507,6 +514,7 @@
 
             if (gameState === 'RACING' || gameState === 'COOLDOWN') {
                 ponyQueue.push(newPony);
+                updateHUD();
             } else {
                 ponies.push(newPony);
                 startCooldown(); 
@@ -515,7 +523,6 @@
 
         function startCooldown() {
             gameState = 'COOLDOWN';
-            // 修改：增加到 4 秒 (240帧)，前 1 秒显示 READY
             cooldownTimer = 240; 
             
             if (ponyQueue.length > 0) {
@@ -531,10 +538,11 @@
                 p.state = 'ready'; 
             });
 
-            // 显示纯文字条
+            // 隐藏右下角状态
+            document.getElementById('hud').style.display = 'none';
+            // 显示中间大字
             setBarVisibility(true);
             updateBarText("READY", "#40e0d0");
-            document.getElementById('hud').innerText = "STATUS: PREPARING...";
         }
 
         function startRace() {
@@ -553,11 +561,13 @@
             grass = [];
             gameState = 'RACING';
             
-            // 更新文字为 RUN
+            // 显示右下角状态
+            const hud = document.getElementById('hud');
+            hud.style.display = 'block';
+            hud.innerText = "STATUS: RACING!!!";
+
             updateBarText("RUN", "#40e0d0");
-            document.getElementById('hud').innerText = "STATUS: RACING!!!";
             
-            // 1秒后隐藏文字条
             setTimeout(() => {
                 if (gameState === 'RACING') {
                     setBarVisibility(false);
@@ -579,7 +589,6 @@
             if (gameState === 'COOLDOWN') {
                 cooldownTimer--;
                 
-                // 逻辑修改：前60帧显示READY，后180帧显示倒计时
                 if (cooldownTimer > 180) {
                     updateBarText("READY", "#40e0d0");
                 } else {
@@ -590,7 +599,6 @@
                     
                     updateBarText(sec.toString(), color);
 
-                    // 闪烁逻辑
                     if (cooldownTimer % 60 === 59) {
                         screen.classList.remove('flash-active');
                         void screen.offsetWidth; 
@@ -614,6 +622,8 @@
                 checkRaceEnd();
             }
             else if (gameState === 'ROAMING') {
+                // 确保 ROAMING 状态下 HUD 显示
+                hud.style.display = 'block';
                 hud.innerText = "NOWHERE TO RUN";
                 alert.style.display = 'none';
                 updatePoniesMovement();
@@ -910,3 +920,4 @@
     </script>
 </body>
 </html>
+```
