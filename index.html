@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.38 MULTI-AUDIO</title>
+    <title>HORSE RUNRUN - v7.39 HYBRID CONTROL</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -421,7 +421,7 @@
         // 音频相关
         let audioCtx = null;
         let lastTapTime = 0;
-        let mySoundType = 'SAWTOOTH'; // 默认音色
+        let mySoundType = 'SAWTOOTH'; 
         const SOUND_TYPES = ['SAWTOOTH', 'LASER', 'SQUARE', 'FM'];
 
         let layout = {
@@ -478,7 +478,6 @@
             screen.classList.add('flash-active');
         }
 
-        // 广播消息给所有连接
         function broadcast(data) {
             if(!peer || !peer.connections) return;
             Object.values(peer.connections).forEach(conns => {
@@ -612,12 +611,19 @@
             } catch(e) { console.error(e); }
         }
 
+        // === 修正后的接管逻辑 ===
         function handleTap(uuid) {
             if (!uuid) return;
             const pony = ponies.find(p => p.playerUUID === uuid);
-            if (pony && pony.state === 'racing' && pony.isManual) {
-                pony.manualSpeed = Math.min(pony.manualSpeed + 2.0, 15);
+            if (pony && pony.state === 'racing') {
+                // 强制接管：无论当前是否为 Bot，只要收到信号就变回 Manual
+                pony.isManual = true; 
                 pony.lastTapTime = Date.now(); 
+                // 移除 (BOT) 后缀
+                pony.name = pony.name.replace(" (BOT)", "");
+                
+                // 加速
+                pony.manualSpeed = Math.min(pony.manualSpeed + 2.0, 15);
             }
         }
 
@@ -675,7 +681,6 @@
             setBarVisibility(true);
             updateBarText("READY", "#40e0d0");
             
-            // 广播: 进入 READY 状态
             broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
         }
 
@@ -715,7 +720,6 @@
             grass = [];
             gameState = 'RACING';
             
-            // 广播: 比赛开始
             broadcast({ type: 'sync_ui', label: 'RUN!', mode: 'mash' });
         }
 
@@ -824,7 +828,6 @@
                     waitTimer = 180; 
                 } else {
                     gameState = 'ROAMING';
-                    // 广播: 比赛结束，可以手动开启下一轮
                     broadcast({ type: 'sync_ui', label: 'START RACE', mode: 'start' });
                 }
             }
@@ -839,16 +842,25 @@
                 if (p.state === 'ready') { p.x = 20; return; }
 
                 if (p.state === 'racing') {
-                    if (p.isManual) {
-                        if (Date.now() - p.lastTapTime > 3000) { 
-                            p.isManual = false; p.name += " (BOT)"; 
-                        } else {
-                            p.manualSpeed *= 0.96; 
-                            if (p.manualSpeed < 0.1) p.manualSpeed = 0;
-                            p.x += p.manualSpeed;
+                    // === 修正后的状态逻辑 ===
+                    if (p.playerUUID) { // 只针对玩家马
+                        if (p.isManual) {
+                            // 检查是否超时 (10秒)
+                            if (Date.now() - p.lastTapTime > 10000) { 
+                                p.isManual = false; 
+                                if (!p.name.includes("(BOT)")) p.name += " (BOT)";
+                            }
                         }
                     }
-                    if (!p.isManual) p.x += p.speed * (0.9 + Math.random() * 0.2);
+
+                    if (p.isManual) {
+                        p.manualSpeed *= 0.96; 
+                        if (p.manualSpeed < 0.1) p.manualSpeed = 0;
+                        p.x += p.manualSpeed;
+                    } else {
+                        // AI 逻辑
+                        p.x += p.speed * (0.9 + Math.random() * 0.2);
+                    }
                     
                     p.facing = 1;
                     if (p.x >= FINISH_X) {
@@ -1080,7 +1092,6 @@
                 osc.stop(now + 0.15);
             } 
             else if (mySoundType === 'SQUARE') {
-                // 8-bit Pluck
                 const osc = audioCtx.createOscillator();
                 osc.type = 'square';
                 osc.frequency.setValueAtTime(baseFreq, now);
@@ -1089,7 +1100,6 @@
                 osc.stop(now + 0.1);
             }
             else if (mySoundType === 'LASER') {
-                // Pew Pew
                 const osc = audioCtx.createOscillator();
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(baseFreq * 2, now);
@@ -1099,12 +1109,11 @@
                 osc.stop(now + 0.15);
             }
             else if (mySoundType === 'FM') {
-                // Metallic Bell
                 const carrier = audioCtx.createOscillator();
                 const modulator = audioCtx.createOscillator();
                 const modGain = audioCtx.createGain();
 
-                modulator.frequency.value = baseFreq * 1.4; // 非整数倍产生金属感
+                modulator.frequency.value = baseFreq * 1.4; 
                 modGain.gain.value = baseFreq * 0.5;
 
                 modulator.connect(modGain);
