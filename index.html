@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.28 FINAL</title>
+    <title>HORSE RUNRUN - v7.29 FINAL</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -400,6 +400,9 @@
         let grass = [];
         let gameState = 'ROAMING';
         let cooldownTimer = 0;
+        // === 新增：用于 "NEXT ROUND IN ..." 阶段的计时器
+        let waitTimer = 0;
+        
         let peer = null, conn = null;
         let pcGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
         let mobileGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
@@ -573,7 +576,7 @@
                 targetX: null, targetY: null 
             };
 
-            if (gameState === 'RACING' || gameState === 'COOLDOWN') {
+            if (gameState === 'RACING' || gameState === 'COOLDOWN' || gameState === 'WAITING_TO_START') {
                 ponyQueue.push(newPony);
                 updateHUD();
             } else {
@@ -581,6 +584,9 @@
                 startCooldown(); 
             }
         }
+
+        // 简单的刷新UI文字逻辑，实际显示逻辑在 updateGameLogic
+        function updateHUD() {}
 
         function startCooldown() {
             gameState = 'COOLDOWN';
@@ -600,6 +606,9 @@
             });
 
             document.getElementById('hud').style.display = 'none';
+            // 在这里隐藏 waiting 提示
+            document.getElementById('queue-text').style.display = 'none';
+            
             setBarVisibility(true);
             updateBarText("READY", "#40e0d0");
         }
@@ -651,27 +660,40 @@
             const screen = document.getElementById('game-screen');
             const hud = document.getElementById('hud');
 
-            if (gameState === 'COOLDOWN') {
+            // === 新增状态处理：WAITING_TO_START (比赛后 3秒 缓冲) ===
+            if (gameState === 'WAITING_TO_START') {
+                waitTimer--;
+                
+                alert.style.display = 'block';
+                const sec = Math.ceil(waitTimer / 60);
+                // 这里显示倒计时
+                alert.innerText = `NEXT ROUND IN ${sec}`;
+
+                updatePoniesMovement(); // 让马继续闲逛吃草
+
+                if (waitTimer <= 0) {
+                    startCooldown();
+                }
+            }
+            else if (gameState === 'COOLDOWN') {
                 cooldownTimer--;
                 
-                // === 修正点 1: 在倒计时状态下，右上角显示倒计时 ===
-                const sec = Math.ceil(cooldownTimer / 60);
-                alert.style.display = 'block';
+                // 倒计时阶段，alert 不显示，因为队列已经清空进入比赛了
+                alert.style.display = 'none';
+
                 if (cooldownTimer > 180) {
-                     alert.innerText = "PREPARING...";
-                     updateBarText("READY", "#40e0d0");
+                    updateBarText("READY", "#40e0d0");
                 } else {
-                     alert.innerText = `NEXT ROUND IN ${sec}`;
-                     
-                     // 屏幕中间的大字
-                     let color = '#40e0d0';
-                     if (sec === 3) color = '#ff5252';
-                     else if (sec === 2) color = '#ffb300';
-                     updateBarText(sec.toString(), color);
-                     
-                     if (cooldownTimer % 60 === 59) {
+                    const sec = Math.ceil(cooldownTimer / 60);
+                    let color = '#40e0d0';
+                    if (sec === 3) color = '#ff5252';
+                    else if (sec === 2) color = '#ffb300';
+                    
+                    updateBarText(sec.toString(), color);
+
+                    if (cooldownTimer % 60 === 59) {
                         triggerFlash();
-                     }
+                    }
                 }
                 
                 if (cooldownTimer <= 0) {
@@ -682,6 +704,7 @@
             else if (gameState === 'RACING') {
                 if (ponyQueue.length > 0) {
                     alert.style.display = 'block';
+                    // 比赛中显示多少人等待
                     alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`;
                 } else {
                     alert.style.display = 'none';
@@ -693,7 +716,6 @@
                 hud.style.display = 'block';
                 hud.innerText = "NOWHERE TO RUN";
                 
-                // === 修正点 1: 闲逛等待状态下，如果有排队，也显示 WAITING 字样 ===
                 if (ponyQueue.length > 0) {
                     alert.style.display = 'block';
                     alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`;
@@ -736,14 +758,12 @@
                     p.targetY = null;
                 });
 
-                gameState = 'ROAMING';
-                
+                // 修改点 1：不直接 setTimeout，而是切换状态
                 if (ponyQueue.length > 0) {
-                    setTimeout(() => {
-                        if(gameState === 'ROAMING') {
-                            startCooldown();
-                        }
-                    }, 3000);
+                    gameState = 'WAITING_TO_START';
+                    waitTimer = 180; // 3 seconds @ 60fps
+                } else {
+                    gameState = 'ROAMING';
                 }
             }
         }
@@ -936,7 +956,6 @@
             } catch(e) { console.error(e); }
         }
         
-        // === 修正点 2: 手机端校验逻辑 ===
         function sendMobile() {
             if(!conn) return alert("Not Connected!");
             
@@ -949,7 +968,7 @@
                 return;
             }
 
-            // 检查是否有绘制像素
+            // 校验像素：如果全0，则禁止提交
             let hasPixels = false;
             for(let r=0; r<8; r++) {
                 for(let c=0; c<8; c++) {
