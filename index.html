@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.19 SPACING 310</title>
+    <title>HORSE RUNRUN - v7.27 MOBILE FEEDBACK</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -98,14 +98,13 @@
             justify-content: center; 
         }
         
-        /* 关键修改：宽度调整为 310px */
         .bar-text-item {
             font-size: 80px; 
             letter-spacing: 2px;
             text-shadow: 0 0 20px currentColor; 
             font-weight: bold;
             
-            width: 310px; /* 这里的宽度决定了文字的间距 */
+            width: 310px; 
             display: flex; 
             justify-content: center; 
             flex-shrink: 0; 
@@ -125,13 +124,7 @@
             display: none; z-index: 20;
         }
 
-        #scan-line {
-            position: absolute; top: 0; bottom: 0; width: 100px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
-            left: -200px; z-index: 50;
-            pointer-events: none; display: none;
-        }
-        @keyframes scan { 0% { left: -200px; } 100% { left: 100%; } }
+        #scan-line { display: none; }
 
         .entity { position: absolute; width: 38px; height: 38px; will-change: transform; }
         .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; }
@@ -202,6 +195,13 @@
         }
         .btn:hover { background: var(--primary); color: #000; }
         .btn:active { transform: translateY(2px); }
+        /* 按钮禁用样式 */
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #333;
+            border-color: #555;
+        }
 
         #modal-editor {
             position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000;
@@ -223,6 +223,7 @@
         .btn-outline { background: transparent; border-color: #ff5252; color: #ff5252; }
         .btn-flex { flex: 1; display: flex; justify-content: center; align-items: center; }
 
+        /* === 移动端 === */
         #mobile-view {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #111; display: flex; flex-direction: column; z-index: 20000;
@@ -242,9 +243,32 @@
             overflow: hidden; 
         }
         .m-footer { display: flex; gap: 15px; height: 60px; flex-shrink: 0; width: 100%; }
+
+        /* === 新增：手机端提示弹窗 === */
+        #mobile-toast {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0, 30, 30, 0.95);
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 20px var(--primary);
+            padding: 30px;
+            text-align: center;
+            z-index: 30000;
+            border-radius: 8px;
+            display: none; /* 默认隐藏 */
+        }
+        #mobile-toast h2 { margin: 0; font-size: 2.5rem; color: var(--primary); text-shadow: 0 0 10px var(--primary); }
+        #mobile-toast p { margin: 10px 0 0 0; font-size: 1.2rem; color: #fff; }
+        
+        .toast-show { animation: toast-in 0.3s forwards; }
+        @keyframes toast-in { from { opacity: 0; transform: translate(-50%, -40%); } to { opacity: 1; transform: translate(-50%, -50%); } }
     </style>
 </head>
 <body>
+
+    <div id="mobile-toast">
+        <h2>PONY SENT!</h2>
+        <p>Look at the big screen!</p>
+    </div>
 
     <div id="desktop-view">
         <div id="game-container">
@@ -255,13 +279,11 @@
                 <div id="hud" class="hud">NOWHERE TO RUN</div>
 
                 <div id="track-display-bar">
-                    <div class="bar-container" id="bar-text">
-                        </div>
+                    <div class="bar-container" id="bar-text"></div>
                 </div>
 
                 <div id="queue-text" class="queue-alert"></div>
-                <div id="scan-line"></div>
-
+                
                 <div id="layer-grass"></div>
                 <div id="layer-pony"></div>
                 <div id="layer-fx"></div>
@@ -324,7 +346,7 @@
         </div>
         <div class="m-footer">
             <button class="btn btn-outline btn-flex" onclick="clearMobile()">CLEAR CANVAS</button>
-            <button class="btn btn-flex" onclick="sendMobile()">RUN</button>
+            <button id="mobile-run-btn" class="btn btn-flex" onclick="sendMobile()">RUN</button>
         </div>
     </div>
 
@@ -369,14 +391,12 @@
             }
         };
 
-        // 更新文字：横向重复排列 13次
         function updateBarText(text, color) {
             if (currentBarText === text) return;
             currentBarText = text;
 
             const container = document.getElementById('bar-text');
             let content = '';
-            // 重复 13 次
             for(let i=0; i<13; i++) {
                 content += `<span class="bar-text-item">${text}</span>`;
             }
@@ -540,9 +560,7 @@
                 p.state = 'ready'; 
             });
 
-            // 隐藏右下角 HUD
             document.getElementById('hud').style.display = 'none';
-            // 显示准备文字
             setBarVisibility(true);
             updateBarText("READY", "#40e0d0");
             triggerFlash();
@@ -564,7 +582,6 @@
             grass = [];
             gameState = 'RACING';
             
-            // 恢复右下角 HUD
             const hud = document.getElementById('hud');
             hud.style.display = 'block';
             hud.innerText = "STATUS: RACING!!!";
@@ -858,11 +875,32 @@
                 });
             } catch(e) { console.error(e); }
         }
+
+        // === 关键修改：点击发送后的反馈与防抖 ===
         function sendMobile() {
             if(!conn) return alert("Not Connected!");
             conn.send({ name: document.getElementById('m-name').value.toUpperCase() || 'MOBILE', pixels: mobileGrid, color: selectedColor });
-            alert("Sent!");
+            
+            // 1. 显示成功弹窗
+            const toast = document.getElementById('mobile-toast');
+            toast.style.display = 'block';
+            toast.classList.add('toast-show');
+
+            // 2. 禁用按钮，改变样式
+            const btn = document.getElementById('mobile-run-btn');
+            btn.disabled = true;
+            btn.innerText = "SENDING...";
+            
+            // 3. 1.5秒后恢复
+            setTimeout(() => {
+                toast.style.display = 'none';
+                toast.classList.remove('toast-show');
+                
+                btn.disabled = false;
+                btn.innerText = "RUN";
+            }, 1500);
         }
+
         function clearMobile() { clearGridData(mobileGrid); renderGrid('m-grid', mobileGrid, selectedColor); }
         function clearDesktop() { clearGridData(pcGrid); renderGrid('pc-grid', pcGrid, selectedColor); }
         function clearGridData(grid) { for(let r=0; r<8; r++) for(let c=0; c<8; c++) grid[r][c] = 0; }
