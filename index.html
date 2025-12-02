@@ -1,41 +1,9 @@
-这个修改非常细腻，能极大地提升视觉质感。
-
-我更新了代码至 **v7.24 - FINAL POLISH**。
-
-### 主要修改点：
-
-1.  **时序调整**：
-
-      * 现在 `startRace` 后，先显示 "RUN" 1秒。
-      * 1秒后，"RUN" 消失，**紧接着** 箭头扫描动画开始。
-      * 这就像是：“预备...跑！ -\> (文字消失) -\> (光速飞出去的视觉残留)”。
-
-2.  **箭头形态重塑 (更细长)**：
-
-      * 调整了 CSS 绘制三角形的参数。
-      * 高度减半（`border-top/bottom` 从 40px 减到 **15px**）。
-      * 长度增加（`border-left` 从 60px 增加到 **80px**）。
-      * 现在的箭头看起来像是一束束飞速穿梭的光梭，非常锋利。
-
-3.  **视觉聚焦 (只亮5个)**：
-
-      * 修改了动画逻辑。默认状态下箭头是 **完全透明 (`opacity: 0`)** 的，看不见。
-      * 只有当光波扫过时，它们才会瞬间点亮并迅速熄灭。
-      * 调整了动画曲线和时长，确保屏幕上同一时间大约只有 **5-6个** 箭头是亮着的，形成完美的“拖尾流星”效果。
-
-4.  **速度提升**：
-
-      * 整体扫描速度加快了 50%。现在的光波一闪而过，非常有速度感。
-
-### 完整代码 (请复制替换)
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.24 FINAL</title>
+    <title>HORSE RUNRUN - v7.26 RUN FX & SPACING FIX</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -136,12 +104,15 @@
             text-shadow: 0 0 20px currentColor; 
             font-weight: bold;
             
-            width: 300px; 
+            /* === 关键修改：恢复间距为 310px === */
+            width: 310px; 
+            
             display: flex; 
             justify-content: center; 
             flex-shrink: 0; 
             margin: 0; 
             
+            /* 默认进场动画 */
             animation: text-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
         
@@ -150,6 +121,21 @@
             100% { transform: scale(1.0); opacity: 1; }
         }
 
+        /* === 关键修改：RUN 文字消失特效 === */
+        .text-out {
+            /* 强制应用退场动画，覆盖进场动画 */
+            animation: text-out-fx 0.5s ease-in forwards !important;
+        }
+
+        @keyframes text-out-fx {
+            0% { opacity: 1; transform: scale(1); filter: blur(0); color: var(--primary); }
+            /* 瞬间变亮、变大、模糊 */
+            20% { opacity: 1; transform: scale(1.1); filter: blur(2px); color: #fff; text-shadow: 0 0 20px #fff; }
+            /* 快速缩小、旋转、消失 */
+            100% { opacity: 0; transform: scale(0) rotate(5deg); filter: blur(20px); color: #fff; }
+        }
+        /* ================================= */
+
         .queue-alert {
             position: absolute; top: 10px; right: 20px;
             font-size: 24px; color: #ffb300; text-shadow: 0 0 5px #ffb300;
@@ -157,52 +143,7 @@
         }
 
         #scan-line { display: none; }
-
-        /* === VFD 箭头动画样式 === */
-        #vfd-overlay {
-            position: absolute; inset: 0;
-            display: flex; align-items: center; justify-content: flex-start;
-            overflow: hidden;
-            opacity: 0; /* 默认隐藏 */
-            pointer-events: none; z-index: 95;
-            padding-left: 0;
-        }
-
-        /* 单个箭头 (细长锐利风格) */
-        #vfd-overlay i {
-            display: inline-block;
-            width: 0; height: 0; 
-            
-            /* 调整形状：更扁平细长 */
-            border-top: 15px solid transparent;    /* 变窄 */
-            border-bottom: 15px solid transparent; /* 变窄 */
-            border-left: 80px solid var(--primary); /* 变长，且用亮色 */
-            
-            margin-right: 20px; /* 间距 */
-            flex-shrink: 0;
-            
-            opacity: 0; /* 默认是灭的 */
-            transform: scale(0.8) skewX(-20deg); /* 增加一点倾斜速度感 */
-            filter: drop-shadow(0 0 5px var(--primary));
-        }
-
-        /* 容器激活 */
-        .vfd-active { opacity: 1 !important; }
-        
-        /* 箭头动画：瞬间点亮 -> 迅速熄灭 */
-        @keyframes vfd-flash {
-            0% { opacity: 0; transform: scale(0.8) translateX(0); }
-            10% { opacity: 1; transform: scale(1.2) translateX(10px); filter: drop-shadow(0 0 15px var(--primary)) drop-shadow(0 0 30px #fff); }
-            40% { opacity: 0.3; transform: scale(1.0) translateX(20px); }
-            100% { opacity: 0; transform: scale(0.8) translateX(30px); }
-        }
-
-        /* 应用动画 (加快50%) */
-        .vfd-active i {
-            /* 动画时长 0.4s，非常短促 */
-            animation: vfd-flash 0.4s ease-out forwards calc(var(--d) * 1s);
-        }
-        /* ===================================================== */
+        /* 已移除 #vfd-overlay 相关样式 */
 
         .entity { position: absolute; width: 38px; height: 38px; will-change: transform; }
         .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; }
@@ -331,8 +272,6 @@
 
                 <div id="queue-text" class="queue-alert"></div>
                 
-                <div id="vfd-overlay"></div>
-
                 <div id="layer-grass"></div>
                 <div id="layer-pony"></div>
                 <div id="layer-fx"></div>
@@ -478,15 +417,7 @@
         }
 
         window.onload = function() {
-            // 初始化 VFD 箭头
-            const vfdOverlay = document.getElementById('vfd-overlay');
-            // 增加箭头数量到 80 个，保证覆盖 3500px 宽的跑道
-            for (let i = 0; i < 80; i++) {
-                const arrow = document.createElement('i');
-                // 延迟参数 (speed up: 0.02 per step)
-                arrow.style.setProperty('--d', i * 0.02); 
-                vfdOverlay.appendChild(arrow);
-            }
+            // 已移除 VFD 箭头初始化代码
 
             requestAnimationFrame(gameLoop);
             fitScreen();
@@ -638,23 +569,22 @@
             hud.style.display = 'block';
             hud.innerText = "STATUS: RACING!!!";
 
-            // 1秒后：隐藏文字条，并触发箭头扫描
+            // === 关键修改：触发文字消失动画 ===
             setTimeout(() => {
                 if (gameState === 'RACING') {
-                    setBarVisibility(false);
-                    
-                    // 触发箭头动画
-                    const vfdOverlay = document.getElementById('vfd-overlay');
-                    vfdOverlay.classList.remove('vfd-active');
-                    void vfdOverlay.offsetWidth; 
-                    vfdOverlay.classList.add('vfd-active');
-                    
-                    // 2.5s 后移除动画类
+                    // 1. 获取所有文字元素
+                    const textItems = document.querySelectorAll('.bar-text-item');
+                    // 2. 添加退场动画类
+                    textItems.forEach(item => item.classList.add('text-out'));
+
+                    // 3. 等待动画结束后隐藏容器并清理类名
                     setTimeout(() => {
-                        vfdOverlay.classList.remove('vfd-active');
-                    }, 2500);
+                        setBarVisibility(false);
+                        textItems.forEach(item => item.classList.remove('text-out'));
+                    }, 500); // 动画时长 0.5s
                 }
-            }, 1000);
+            }, 1000); // 显示 RUN 1秒后再消失
+            // ================================
 
             ponies.forEach(p => {
                 p.speed = 3.5 + Math.random() * 3; 
@@ -1008,4 +938,3 @@
     </script>
 </body>
 </html>
-```
