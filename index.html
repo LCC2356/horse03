@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.30 FINAL</title>
+    <title>HORSE RUNRUN - v7.31 FINAL</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -184,9 +184,13 @@
         }
         @keyframes pulse { from { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } }
         
+        /* === 修改点 2: 名字字号和位置 === */
         .name-tag {
-            position: absolute; top: -17px; left: 50%; transform: translateX(-50%);
-            font-size: 16px; white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000;
+            position: absolute; 
+            top: -22px; /* 稍微往上提一点，原来是 -17px */
+            left: 50%; transform: translateX(-50%);
+            font-size: 21px; /* 字号改为 21px */
+            white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000;
         }
         .grass { position: absolute; width: 6px; height: 6px; background: #69f0ae; box-shadow: 0 0 4px #69f0ae; }
         .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
@@ -657,25 +661,17 @@
             const screen = document.getElementById('game-screen');
             const hud = document.getElementById('hud');
 
-            // === 状态：比赛结束后的等待期 (3秒) ===
             if (gameState === 'WAITING_TO_START') {
                 waitTimer--;
-                
                 alert.style.display = 'block';
                 const sec = Math.ceil(waitTimer / 60);
-                alert.innerText = `NEXT ROUND IN ${sec}`; // 倒计时显示在这里
-
+                alert.innerText = `NEXT ROUND IN ${sec}`; 
                 updatePoniesMovement(); 
-
-                if (waitTimer <= 0) {
-                    startCooldown();
-                }
+                if (waitTimer <= 0) startCooldown();
             }
             else if (gameState === 'COOLDOWN') {
                 cooldownTimer--;
-                
-                alert.style.display = 'none'; // 倒计时(READY)阶段隐藏排队提示
-
+                alert.style.display = 'none'; 
                 if (cooldownTimer > 180) {
                     updateBarText("READY", "#40e0d0");
                 } else {
@@ -683,17 +679,10 @@
                     let color = '#40e0d0';
                     if (sec === 3) color = '#ff5252';
                     else if (sec === 2) color = '#ffb300';
-                    
                     updateBarText(sec.toString(), color);
-
-                    if (cooldownTimer % 60 === 59) {
-                        triggerFlash();
-                    }
+                    if (cooldownTimer % 60 === 59) triggerFlash();
                 }
-                
-                if (cooldownTimer <= 0) {
-                    startRace();
-                }
+                if (cooldownTimer <= 0) startRace();
                 updatePoniesMovement(); 
             }
             else if (gameState === 'RACING') {
@@ -709,14 +698,12 @@
             else if (gameState === 'ROAMING') {
                 hud.style.display = 'block';
                 hud.innerText = "NOWHERE TO RUN";
-                
                 if (ponyQueue.length > 0) {
                     alert.style.display = 'block';
                     alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`;
                 } else {
                     alert.style.display = 'none';
                 }
-
                 updatePoniesMovement();
             }
 
@@ -906,7 +893,8 @@
                     ponyL.appendChild(el);
                 }
 
-                el.style.transform = `translate(${p.x}px, ${p.y}px)`;
+                // === 修改点 1: 在 translate 后增加 scale(1.2) 放大马匹 ===
+                el.style.transform = `translate(${p.x}px, ${p.y}px) scale(1.2)`;
                 el.style.zIndex = Math.floor(p.y);
                 el.querySelector('.p-grid').style.transform = `scaleX(${p.facing || 1})`;
 
@@ -981,7 +969,6 @@
             document.getElementById('m-success-modal').style.display = 'flex';
         }
         
-        // === 修改：ONE MORE 时重置为默认小马 ===
         function resetMobile() {
             document.getElementById('m-success-modal').style.display = 'none';
             document.getElementById('m-name').value = '';
@@ -992,7 +979,6 @@
         function clearMobile() { clearGridData(mobileGrid); renderGrid('m-grid', mobileGrid, selectedColor); }
         function clearDesktop() { clearGridData(pcGrid); renderGrid('pc-grid', pcGrid, selectedColor); }
         function clearGridData(grid) { for(let r=0; r<8; r++) for(let c=0; c<8; c++) grid[r][c] = 0; }
-        // 新增：重置为默认
         function restoreGridData(grid) { for(let r=0; r<8; r++) for(let c=0; c<8; c++) grid[r][c] = DEFAULT_PIXELS[r][c]; }
 
         function openDesktopEditor() {
