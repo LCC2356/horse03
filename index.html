@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.17 SPACING 320</title>
+    <title>HORSE RUNRUN - v7.18 SPACING 300</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -98,14 +98,14 @@
             justify-content: center; 
         }
         
-        /* 关键修改：宽度调整为 320px */
+        /* 关键修改：宽度调整为 300px */
         .bar-text-item {
             font-size: 80px; 
             letter-spacing: 2px;
             text-shadow: 0 0 20px currentColor; 
             font-weight: bold;
             
-            width: 320px; /* 这里的宽度决定了文字的间距 */
+            width: 300px; /* 这里的宽度决定了文字的间距 */
             display: flex; 
             justify-content: center; 
             flex-shrink: 0; 
@@ -376,7 +376,7 @@
 
             const container = document.getElementById('bar-text');
             let content = '';
-            // 重复 13 次
+            // 重复 13 次，保证铺满且对齐
             for(let i=0; i<13; i++) {
                 content += `<span class="bar-text-item">${text}</span>`;
             }
@@ -540,8 +540,9 @@
                 p.state = 'ready'; 
             });
 
+            // 隐藏右下角 HUD
             document.getElementById('hud').style.display = 'none';
-            
+            // 显示准备文字
             setBarVisibility(true);
             updateBarText("READY", "#40e0d0");
             triggerFlash();
@@ -563,6 +564,7 @@
             grass = [];
             gameState = 'RACING';
             
+            // 恢复右下角 HUD
             const hud = document.getElementById('hud');
             hud.style.display = 'block';
             hud.innerText = "STATUS: RACING!!!";
