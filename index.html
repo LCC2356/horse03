@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.3 CYBER HUD</title>
+    <title>HORSE RUNRUN - TRACK UI v7.4</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -23,7 +23,7 @@
         body {
             margin: 0; padding: 0;
             background-color: #0a0a0a; 
-            font-family: 'VT323', monospace;
+            font-family: 'VT323', monospace; /* 恢复字体 */
             color: var(--primary);
             height: 100vh; width: 100vw;
             overflow: hidden;
@@ -56,12 +56,13 @@
             flex-shrink: 0; 
         }
         
+        /* 跑道闪烁动画 */
         .flash-active {
-            animation: track-flash 0.5s ease-out;
+            animation: track-flash 0.2s ease-out;
         }
         @keyframes track-flash {
-            0% { background-color: rgba(64, 224, 208, 0.4); box-shadow: inset 0 0 150px var(--primary); border-color: #fff; }
-            100% { background-color: #000; box-shadow: 0 0 30px rgba(64, 224, 208, 0.3); border-color: var(--primary); }
+            0% { background-color: rgba(255, 255, 255, 0.2); border-color: #fff; }
+            100% { background-color: #000; border-color: var(--primary); }
         }
 
         .grid-bg {
@@ -77,79 +78,74 @@
             background-size: 12px 12px; opacity: 0.8; z-index: 0;
         }
 
-        /* === 新版 HUD 样式 === */
-        #hud-container {
-            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-            width: 95%; height: 60px;
+        /* === 游戏内悬浮显示板 (In-Game Display Bar) === */
+        #track-display-bar {
+            position: absolute; 
+            top: 20px; /* 距离跑道顶部 */
+            left: 50%; transform: translateX(-50%);
+            width: 90%; /* 占据跑道宽度的 90% */
+            height: 50px;
             display: flex; align-items: center;
-            background: rgba(0, 20, 20, 0.8);
+            background: rgba(0, 20, 20, 0.9);
             border: 2px solid var(--primary);
-            box-shadow: 0 0 15px rgba(64, 224, 208, 0.5);
+            box-shadow: 0 0 15px rgba(64, 224, 208, 0.3);
             z-index: 100; overflow: hidden;
+            opacity: 0.9;
         }
-        .hud-icon {
-            width: 60px; height: 100%;
+        .bar-icon {
+            width: 50px; height: 100%;
             display: flex; justify-content: center; align-items: center;
-            background: rgba(64, 224, 208, 0.1);
+            background: rgba(64, 224, 208, 0.15);
             border-right: 2px solid var(--primary);
             flex-shrink: 0;
         }
-        #hud-marquee {
+        .bar-marquee-container {
             flex: 1;
             display: flex; align-items: center;
             overflow: hidden;
             white-space: nowrap;
-            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            /* 左右两侧淡出效果 */
+            mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
         }
-        .marquee-content {
+        .bar-marquee-content {
             display: flex;
             animation: marquee-scroll 10s linear infinite;
         }
-        .marquee-item {
+        .bar-text-item {
             font-size: 32px;
-            margin: 0 40px;
-            letter-spacing: 2px;
+            margin: 0 50px;
+            letter-spacing: 3px;
             text-shadow: 0 0 5px currentColor;
+            font-weight: bold;
         }
         @keyframes marquee-scroll {
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
         }
-        #hud-status {
-            padding: 0 20px; height: 100%;
+        .bar-status {
+            padding: 0 15px; height: 100%;
             display: flex; align-items: center;
-            background: rgba(64, 224, 208, 0.1);
+            background: rgba(64, 224, 208, 0.15);
             border-left: 2px solid var(--primary);
             font-size: 18px; letter-spacing: 1px;
-            flex-shrink: 0; white-space: nowrap;
+            flex-shrink: 0; white-space: nowrap; color: #fff;
         }
 
         .queue-alert {
-            position: absolute; top: 80px; /* 调整位置，避开新的 HUD */
-            right: 10px;
+            position: absolute; top: 80px; right: 20px;
             font-size: 24px; color: #ffb300; text-shadow: 0 0 5px #ffb300;
             display: none; z-index: 20;
         }
 
-        #countdown-layer {
-            position: absolute; inset: 0;
-            display: none; 
-            background: rgba(0, 0, 0, 0.1); 
-            z-index: 90;
-            pointer-events: none;
-        }
-
+        /* 扫描线特效 */
         #scan-line {
             position: absolute; top: 0; bottom: 0; width: 100px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
             left: -200px; z-index: 50;
-            pointer-events: none;
-            display: none;
+            pointer-events: none; display: none;
         }
-        @keyframes scan {
-            0% { left: -200px; }
-            100% { left: 100%; }
-        }
+        @keyframes scan { 0% { left: -200px; } 100% { left: 100%; } }
 
         .entity { position: absolute; width: 38px; height: 38px; will-change: transform; }
         .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; }
@@ -176,6 +172,7 @@
         .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
         @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
 
+        /* 底部控制栏 */
         #bottom-controls {
             position: fixed; bottom: 20px; left: 20px;
             display: flex; align-items: center; gap: 15px;
@@ -265,29 +262,25 @@
 <body>
 
     <div id="desktop-view">
-        <div id="hud-container">
-            <div class="hud-icon">
-                <svg width="30" height="30" viewBox="0 0 24 24" fill="var(--primary)">
-                    <path d="M20 6h-2.18c.11-.31.18-.65.18-1a3 3 0 0 0-3-3c-1.65 0-3 1.35-3 3 0 .35.07.69.18 1H10V4H8v2H6V4H4v2c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM6 18H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V8h2v2zm4 8H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V8h2v2zm4 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V8h2v2zm4 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V8h2v2z"/>
-                </svg>
-            </div>
-            <div id="hud-marquee">
-                <div class="marquee-content" id="marquee-text-1">
-                    </div>
-                <div class="marquee-content" id="marquee-text-2">
-                     </div>
-            </div>
-            <div id="hud-status">STATUS: IDLE</div>
-        </div>
-
         <div id="game-container">
             <div id="game-screen">
                 <div class="grid-bg"></div>
                 <div class="finish-line"></div>
                 
+                <div id="track-display-bar">
+                    <div class="bar-icon">
+                        <svg width="30" height="30" viewBox="0 0 24 24" fill="var(--primary)">
+                            <path d="M20 6h-2.18c.11-.31.18-.65.18-1a3 3 0 0 0-3-3c-1.65 0-3 1.35-3 3 0 .35.07.69.18 1H10V4H8v2H6V4H4v2c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM6 18H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V8h2v2zm4 8H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V8h2v2zm4 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V8h2v2zm4 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V8h2v2z"/>
+                        </svg>
+                    </div>
+                    <div class="bar-marquee-container">
+                        <div class="bar-marquee-content" id="bar-text-1"></div>
+                        <div class="bar-marquee-content" id="bar-text-2"></div>
+                    </div>
+                    <div class="bar-status" id="bar-status">IDLE</div>
+                </div>
+
                 <div id="queue-text" class="queue-alert"></div>
-                
-                <div id="countdown-layer"></div>
                 <div id="scan-line"></div>
 
                 <div id="layer-grass"></div>
@@ -395,37 +388,35 @@
             }
         };
 
-        // === 新增：更新 HUD 文字的函数 ===
-        function updateHUD(marqueeText, statusText, color = null) {
-            const marquee1 = document.getElementById('marquee-text-1');
-            const marquee2 = document.getElementById('marquee-text-2');
-            const status = document.getElementById('hud-status');
+        // 更新游戏内悬浮条文字
+        function updateBarText(text, statusText, color) {
+            const m1 = document.getElementById('bar-text-1');
+            const m2 = document.getElementById('bar-text-2');
+            const st = document.getElementById('bar-status');
 
-            // 生成重复的文字内容
             let content = '';
-            for(let i=0; i<10; i++) {
-                content += `<span class="marquee-item">${marqueeText}</span>`;
+            for(let i=0; i<15; i++) {
+                content += `<span class="bar-text-item">${text}</span>`;
             }
-            
-            marquee1.innerHTML = content;
-            marquee2.innerHTML = content;
+            m1.innerHTML = content;
+            m2.innerHTML = content;
             
             if(color) {
-                marquee1.style.color = color;
-                marquee2.style.color = color;
+                m1.style.color = color;
+                m2.style.color = color;
             } else {
-                marquee1.style.color = '';
-                marquee2.style.color = '';
+                m1.style.color = '';
+                m2.style.color = '';
             }
             
-            status.innerText = statusText;
+            st.innerText = statusText || "";
         }
 
         window.onload = function() {
             requestAnimationFrame(gameLoop);
             fitScreen();
-            // 初始 HUD 状态
-            updateHUD("NOWHERE TO RUN", "STATUS: IDLE");
+            
+            updateBarText("NOWHERE TO RUN", "WAITING FOR PLAYERS");
 
             const zoomInput = document.getElementById('zoom-input');
             zoomInput.addEventListener('input', (e) => {
@@ -533,7 +524,6 @@
 
             if (gameState === 'RACING' || gameState === 'COOLDOWN') {
                 ponyQueue.push(newPony);
-                // 这里不需要更新 HUD，GameLoop 会处理
             } else {
                 ponies.push(newPony);
                 startCooldown(); 
@@ -557,14 +547,10 @@
                 p.state = 'ready'; 
             });
 
-            document.getElementById('countdown-layer').style.display = 'flex';
-            // 更新 HUD 为 READY 状态
-            updateHUD("READY", "STATUS: PREPARING...");
+            updateBarText("READY", "PREPARING");
         }
 
         function startRace() {
-            document.getElementById('countdown-layer').style.display = 'none';
-
             const scan = document.getElementById('scan-line');
             scan.style.display = 'block';
             scan.style.animation = 'none'; 
@@ -579,8 +565,7 @@
 
             grass = [];
             gameState = 'RACING';
-            // 更新 HUD 为 RUN 状态
-            updateHUD("RUN", "STATUS: RACING!!!");
+            updateBarText("RUN", "RACING!!!");
         }
 
         function gameLoop() {
@@ -596,14 +581,16 @@
             if (gameState === 'COOLDOWN') {
                 cooldownTimer--;
                 
+                // 3-2-1 逻辑
                 const sec = Math.ceil(cooldownTimer / 60);
-                let color = '#40e0d0';
-                if (sec === 3) color = '#ff5252'; 
-                else if (sec === 2) color = '#ffb300'; 
+                let color = '#40e0d0'; // Default Cyan
+                if (sec === 3) color = '#ff5252'; // Red
+                else if (sec === 2) color = '#ffb300'; // Yellow
                 
-                // 更新 HUD 倒计时数字和颜色
-                updateHUD(sec.toString(), `STATUS: STARTING IN ${sec}`, color);
+                // 更新悬浮条文字
+                updateBarText(sec.toString(), "STARTING IN " + sec, color);
 
+                // 闪烁特效
                 if (cooldownTimer % 60 === 59) {
                     screen.classList.remove('flash-active');
                     void screen.offsetWidth; 
@@ -616,7 +603,6 @@
                 updatePoniesMovement(); 
             }
             else if (gameState === 'RACING') {
-                // HUD 已经在 startRace 更新过了，这里只需要处理排队信息
                 if (ponyQueue.length > 0) {
                     alert.style.display = 'block';
                     alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`;
@@ -627,12 +613,12 @@
                 checkRaceEnd();
             }
             else if (gameState === 'ROAMING') {
-                // 游戏结束回到漫游状态时，更新 HUD
-                if (alert.style.display !== 'none') {
-                     updateHUD("NOWHERE TO RUN", "STATUS: IDLE");
-                     alert.style.display = 'none';
+                // 确保文字切回闲置状态
+                if(document.getElementById('bar-status').innerText !== "IDLE") {
+                    updateBarText("NOWHERE TO RUN", "IDLE");
                 }
                 
+                alert.style.display = 'none';
                 updatePoniesMovement();
                 
                 if (ponyQueue.length > 0) startCooldown(); 
@@ -671,8 +657,6 @@
                 });
 
                 gameState = 'ROAMING';
-                // 比赛结束，更新 HUD
-                updateHUD("FINISHED", "STATUS: RACE OVER");
                 
                 if (ponyQueue.length > 0) {
                     startCooldown();
@@ -858,7 +842,6 @@
             initEditor('m-grid', 'm-colors', mobileGrid);
             try {
                 peer = new Peer(null, PEER_CONFIG);
-                
                 peer.on('open', () => {
                     conn = peer.connect(new URLSearchParams(window.location.search).get('host'));
                     conn.on('open', () => {
