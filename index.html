@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.36 SYNC MODE</title>
+    <title>HORSE RUNRUN - v7.37 SOUND FX</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -80,6 +80,7 @@
         /* HUD */
         .hud { position: absolute; bottom: 4px; right: 10px; font-size: 32px; opacity: 0.5; letter-spacing: 2px; z-index: 110; }
 
+        /* 纯文字悬浮显示板 */
         #track-display-bar {
             position: absolute; 
             top: 50%; transform: translateY(-50%); 
@@ -102,11 +103,13 @@
             letter-spacing: 2px;
             text-shadow: 0 0 20px currentColor; 
             font-weight: bold;
+            
             width: 310px; 
             display: flex; 
             justify-content: center; 
             flex-shrink: 0; 
             margin: 0; 
+            
             animation: text-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
         
@@ -128,7 +131,7 @@
 
         #scan-line { display: none; }
 
-        /* VFD Overlay */
+        /* === VFD 箭头动画样式 === */
         #vfd-overlay {
             position: absolute; inset: 0;
             display: flex; align-items: center; justify-content: flex-start;
@@ -152,7 +155,6 @@
         }
 
         .vfd-active { opacity: 1 !important; }
-        .vfd-active i { animation: vfd-flash 0.4s ease-out forwards calc(var(--d) * 1s); }
         
         @keyframes vfd-flash {
             0% { opacity: 0; transform: scale(0.8) translateX(0); }
@@ -161,11 +163,18 @@
             100% { opacity: 0; transform: scale(0.8) translateX(30px); }
         }
 
+        .vfd-active i {
+            animation: vfd-flash 0.4s ease-out forwards calc(var(--d) * 1s);
+        }
+
         .entity { position: absolute; width: 38px; height: 38px; will-change: transform; }
         .pixel-grid { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; height: 100%; }
         
+        /* 皇冠 top: -31px */
         .crown-container {
-            position: absolute; top: -31px; left: 50%; transform: translateX(-50%);
+            position: absolute; 
+            top: -31px; 
+            left: 50%; transform: translateX(-50%);
             width: 18px; height: 18px; 
             animation: bounce 1s infinite; z-index: 10;
             display: flex; flex-direction: column-reverse; align-items: center;
@@ -180,8 +189,11 @@
         @keyframes pulse { from { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } }
         
         .name-tag {
-            position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
-            font-size: 20px; white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000;
+            position: absolute; 
+            top: -18px; 
+            left: 50%; transform: translateX(-50%);
+            font-size: 20px; 
+            white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000;
         }
         .grass { position: absolute; width: 6px; height: 6px; background: #69f0ae; box-shadow: 0 0 4px #69f0ae; }
         .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
@@ -418,6 +430,9 @@
 
         // 手机端按钮状态: 'wait', 'mash', 'start'
         let mobileBtnState = 'wait';
+        // 音频上下文
+        let audioCtx = null;
+        let lastTapTime = 0;
 
         let layout = {
             scale: 1.0,
@@ -593,7 +608,6 @@
                         else if (data.type === 'tap') {
                             handleTap(data.uuid);
                         }
-                        // === 新增：强制开始 ===
                         else if (data.type === 'force_start') {
                             if (gameState === 'ROAMING' || gameState === 'WAITING_TO_START') {
                                 startCooldown();
@@ -1040,6 +1054,9 @@
             for(let r=0; r<8; r++) { for(let c=0; c<8; c++) { if (mobileGrid[r][c] === 1) { hasPixels = true; break; } } if(hasPixels) break; }
             if (!hasPixels) { alert("CANVAS IS EMPTY"); return; }
 
+            // 初始化音频上下文
+            initAudio();
+
             conn.send({ 
                 type: 'spawn', 
                 payload: { name: name.toUpperCase(), pixels: mobileGrid, color: selectedColor, uuid: playerUUID } 
@@ -1047,6 +1064,37 @@
             
             document.getElementById('m-editor-ui').style.display = 'none';
             document.getElementById('m-controller').style.display = 'flex';
+        }
+
+        // === 简单 Web Audio API 实现 ===
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playEngineSound(interval) {
+            if (!audioCtx) return;
+            
+            // 越快间隔越小 -> 频率越高
+            // 基础频率 150Hz，最高可达 ~800Hz
+            // 假设最快手速是 100ms 连点
+            let freq = 150 + (30000 / Math.max(50, interval));
+            if (freq > 800) freq = 800;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sawtooth'; // 锯齿波更有引擎感
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.15);
         }
 
         // === 统一的按钮行为处理 ===
@@ -1061,6 +1109,12 @@
             if (mobileBtnState === 'mash') {
                 // 比赛中：加速
                 if(conn) conn.send({ type: 'tap', uuid: playerUUID });
+                
+                // 播放音效
+                const now = Date.now();
+                const interval = now - lastTapTime;
+                lastTapTime = now;
+                playEngineSound(interval);
             } 
             else if (mobileBtnState === 'start') {
                 // 闲逛中：开启下一轮
