@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.21 FIXED ARROW</title>
+    <title>HORSE RUNRUN - v7.22 PURE CSS SCAN</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -16,6 +16,7 @@
             --border: #00695c;
             --game-w: 3500px; 
             --game-h: 100px;
+            --neon-blue: #007bff; /* 定义蓝色霓虹色 */
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
@@ -126,39 +127,61 @@
 
         #scan-line { display: none; }
 
-        /* === 关键修改：修复后的箭头扫描样式 === */
-        #arrow-overlay {
+        /* === 关键修改：纯CSS箭头扫描动画 === */
+        
+        /* 扫描条容器：包含多个箭头 */
+        #css-scan-bar {
             position: absolute;
             top: 0;
             left: -250px; /* 起始位置在屏幕外左侧 */
-            width: 250px; /* 固定宽度的光柱 */
+            width: 250px; /* 光柱宽度 */
             height: 100%;
             
-            /* 修正：使用正确的箭头图片 image_0.png */
-            background-image: url('image_0.png'); 
-            background-repeat: repeat-y; /* 纵向重复 */
-            background-size: 100% auto; /* 宽度撑满光柱，高度自动 */
-            
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+
             opacity: 0; 
             pointer-events: none;
             z-index: 90;
-            /* 增加蓝色霓虹光晕，让效果更明显 */
-            filter: drop-shadow(0 0 15px #007bff) brightness(1.5);
         }
 
+        /* 单个箭头的容器 */
+        .chevron {
+            position: relative;
+            width: 100%;
+            height: 60px; /* 控制箭头纵向间距 */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            margin-bottom: -15px; /* 让箭头稍微重叠一点，更紧凑 */
+        }
+
+        /* 使用伪元素绘制 V 形 */
+        .chevron::before {
+            content: '';
+            width: 80px;  /* 箭头大小 */
+            height: 80px; /* 箭头大小 */
+            border-right: 8px solid var(--neon-blue); /* 箭头线条粗细和颜色 */
+            border-bottom: 8px solid var(--neon-blue);
+            transform: rotate(45deg); /* 旋转形成 V */
+            /* 强烈的蓝色霓虹光晕 */
+            filter: drop-shadow(0 0 10px var(--neon-blue)) drop-shadow(0 0 20px var(--neon-blue));
+        }
+
+        /* 激活时的动画类 */
         .arrow-scan-active {
             opacity: 1 !important;
-            /* 动画改为移动光柱本身的位置 */
-            animation: arrow-scan-move 2s linear forwards;
+            animation: arrow-scan-move 2s cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards;
         }
 
         @keyframes arrow-scan-move {
-            0% {
-                left: -250px;
-            }
-            100% {
-                left: 100%; /* 移动到屏幕最右侧外 */
-            }
+            0% { left: -250px; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { left: 100%; opacity: 0; }
         }
         /* ===================================================== */
 
@@ -201,7 +224,7 @@
         #qrcode {
             background: white; padding: 4px;
             width: 70px; height: 70px;
-            display: flex; justify-content center; align-items: center;
+            display: flex; justify-content: center; align-items: center;
             border-radius: 4px;
         }
         #qrcode img { display: block; width: 100%; height: 100%; }
@@ -290,7 +313,16 @@
 
                 <div id="queue-text" class="queue-alert"></div>
                 
-                <div id="arrow-overlay"></div>
+                <div id="css-scan-bar">
+                    <div class="chevron"></div>
+                    <div class="chevron"></div>
+                    <div class="chevron"></div>
+                    <div class="chevron"></div>
+                    <div class="chevron"></div>
+                    <div class="chevron"></div>
+                    <div class="chevron"></div>
+                    <div class="chevron"></div>
+                </div>
                 <div id="layer-grass"></div>
                 <div id="layer-pony"></div>
                 <div id="layer-fx"></div>
@@ -578,17 +610,17 @@
         }
 
         function startRace() {
-            // === 关键修改：触发修复后的箭头动画 ===
-            const arrowOverlay = document.getElementById('arrow-overlay');
+            // === 关键修改：触发纯CSS箭头动画 ===
+            const arrowScanBar = document.getElementById('css-scan-bar');
             // 移除类名并强制重绘，以支持重复触发动画
-            arrowOverlay.classList.remove('arrow-scan-active');
-            void arrowOverlay.offsetWidth; 
-            arrowOverlay.classList.add('arrow-scan-active');
+            arrowScanBar.classList.remove('arrow-scan-active');
+            void arrowScanBar.offsetWidth; 
+            arrowScanBar.classList.add('arrow-scan-active');
             
             // 动画结束后移除类名，避免遮挡
             setTimeout(() => {
-                arrowOverlay.classList.remove('arrow-scan-active');
-            }, 2000); // 2秒后移除，略大于动画时间
+                arrowScanBar.classList.remove('arrow-scan-active');
+            }, 2050); // 略大于动画时间
             // ================================
 
             ponies.forEach(p => {
