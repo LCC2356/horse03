@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.11 ALIGNMENT</title>
+    <title>HORSE RUNRUN - v7.15 FIXED 13</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -95,20 +95,20 @@
             width: 100%; 
             display: flex; 
             align-items: center; 
-            justify-content: center; /* 整体居中 */
+            justify-content: center; 
         }
         
-        /* 关键修改：固定宽度 300px 实现完美对齐 */
+        /* 关键修改：固定宽度 300px，强制不换行不挤压 */
         .bar-text-item {
             font-size: 80px; 
             letter-spacing: 2px;
             text-shadow: 0 0 20px currentColor; 
             font-weight: bold;
             
-            width: 300px; /* 固定宽度，确保 READY 和 3 占据相同空间 */
+            width: 300px; /* 强制宽度 */
             display: flex; 
-            justify-content: center; /* 文字在 300px 内居中 */
-            flex-shrink: 0; /* 禁止挤压 */
+            justify-content: center; /* 内容居中 */
+            flex-shrink: 0; /* 禁止被挤压 */
             margin: 0; 
             
             animation: text-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
@@ -369,15 +369,18 @@
             }
         };
 
-        // 更新文字：横向重复排列 13次
+        // 常量：强制所有文字重复次数一致
+        const TEXT_REPEAT_COUNT = 13;
+
+        // 更新文字：强制 13 次重复
         function updateBarText(text, color) {
             if (currentBarText === text) return;
             currentBarText = text;
 
             const container = document.getElementById('bar-text');
             let content = '';
-            // 重复 13 次
-            for(let i=0; i<13; i++) {
+            // 严格使用 TEXT_REPEAT_COUNT
+            for(let i=0; i<TEXT_REPEAT_COUNT; i++) {
                 content += `<span class="bar-text-item">${text}</span>`;
             }
             container.innerHTML = content;
@@ -397,6 +400,13 @@
                 bar.style.display = 'none';
                 currentBarText = ''; 
             }
+        }
+        
+        function triggerFlash() {
+            const screen = document.getElementById('game-screen');
+            screen.classList.remove('flash-active');
+            void screen.offsetWidth; 
+            screen.classList.add('flash-active');
         }
 
         window.onload = function() {
@@ -533,11 +543,11 @@
                 p.state = 'ready'; 
             });
 
-            // 隐藏右下角 HUD
             document.getElementById('hud').style.display = 'none';
-            // 显示准备文字
+            
             setBarVisibility(true);
             updateBarText("READY", "#40e0d0");
+            triggerFlash();
         }
 
         function startRace() {
@@ -556,7 +566,6 @@
             grass = [];
             gameState = 'RACING';
             
-            // 恢复右下角 HUD
             const hud = document.getElementById('hud');
             hud.style.display = 'block';
             hud.innerText = "STATUS: RACING!!!";
@@ -595,9 +604,7 @@
                     updateBarText(sec.toString(), color);
 
                     if (cooldownTimer % 60 === 59) {
-                        screen.classList.remove('flash-active');
-                        void screen.offsetWidth; 
-                        screen.classList.add('flash-active');
+                        triggerFlash();
                     }
                 }
                 
