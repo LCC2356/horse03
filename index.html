@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.29 FINAL</title>
+    <title>HORSE RUNRUN - v7.30 FINAL</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -400,7 +400,6 @@
         let grass = [];
         let gameState = 'ROAMING';
         let cooldownTimer = 0;
-        // === 新增：用于 "NEXT ROUND IN ..." 阶段的计时器
         let waitTimer = 0;
         
         let peer = null, conn = null;
@@ -585,7 +584,6 @@
             }
         }
 
-        // 简单的刷新UI文字逻辑，实际显示逻辑在 updateGameLogic
         function updateHUD() {}
 
         function startCooldown() {
@@ -606,7 +604,6 @@
             });
 
             document.getElementById('hud').style.display = 'none';
-            // 在这里隐藏 waiting 提示
             document.getElementById('queue-text').style.display = 'none';
             
             setBarVisibility(true);
@@ -660,16 +657,15 @@
             const screen = document.getElementById('game-screen');
             const hud = document.getElementById('hud');
 
-            // === 新增状态处理：WAITING_TO_START (比赛后 3秒 缓冲) ===
+            // === 状态：比赛结束后的等待期 (3秒) ===
             if (gameState === 'WAITING_TO_START') {
                 waitTimer--;
                 
                 alert.style.display = 'block';
                 const sec = Math.ceil(waitTimer / 60);
-                // 这里显示倒计时
-                alert.innerText = `NEXT ROUND IN ${sec}`;
+                alert.innerText = `NEXT ROUND IN ${sec}`; // 倒计时显示在这里
 
-                updatePoniesMovement(); // 让马继续闲逛吃草
+                updatePoniesMovement(); 
 
                 if (waitTimer <= 0) {
                     startCooldown();
@@ -678,8 +674,7 @@
             else if (gameState === 'COOLDOWN') {
                 cooldownTimer--;
                 
-                // 倒计时阶段，alert 不显示，因为队列已经清空进入比赛了
-                alert.style.display = 'none';
+                alert.style.display = 'none'; // 倒计时(READY)阶段隐藏排队提示
 
                 if (cooldownTimer > 180) {
                     updateBarText("READY", "#40e0d0");
@@ -704,7 +699,6 @@
             else if (gameState === 'RACING') {
                 if (ponyQueue.length > 0) {
                     alert.style.display = 'block';
-                    // 比赛中显示多少人等待
                     alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`;
                 } else {
                     alert.style.display = 'none';
@@ -758,10 +752,9 @@
                     p.targetY = null;
                 });
 
-                // 修改点 1：不直接 setTimeout，而是切换状态
                 if (ponyQueue.length > 0) {
                     gameState = 'WAITING_TO_START';
-                    waitTimer = 180; // 3 seconds @ 60fps
+                    waitTimer = 180; // 3 seconds wait
                 } else {
                     gameState = 'ROAMING';
                 }
@@ -968,7 +961,6 @@
                 return;
             }
 
-            // 校验像素：如果全0，则禁止提交
             let hasPixels = false;
             for(let r=0; r<8; r++) {
                 for(let c=0; c<8; c++) {
@@ -989,15 +981,19 @@
             document.getElementById('m-success-modal').style.display = 'flex';
         }
         
+        // === 修改：ONE MORE 时重置为默认小马 ===
         function resetMobile() {
             document.getElementById('m-success-modal').style.display = 'none';
             document.getElementById('m-name').value = '';
-            clearMobile();
+            restoreGridData(mobileGrid);
+            renderGrid('m-grid', mobileGrid, selectedColor);
         }
 
         function clearMobile() { clearGridData(mobileGrid); renderGrid('m-grid', mobileGrid, selectedColor); }
         function clearDesktop() { clearGridData(pcGrid); renderGrid('pc-grid', pcGrid, selectedColor); }
         function clearGridData(grid) { for(let r=0; r<8; r++) for(let c=0; c<8; c++) grid[r][c] = 0; }
+        // 新增：重置为默认
+        function restoreGridData(grid) { for(let r=0; r<8; r++) for(let c=0; c<8; c++) grid[r][c] = DEFAULT_PIXELS[r][c]; }
 
         function openDesktopEditor() {
             renderGrid('pc-grid', pcGrid, selectedColor);
