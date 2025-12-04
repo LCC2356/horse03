@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.44 11x11 GRID</title>
+    <title>HORSE RUNRUN - v7.45 LEG FIX</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -161,10 +161,7 @@
             100% { opacity: 0; transform: scale(0.8) translateX(30px); }
         }
 
-        /* 修改：Entity 放大到 44px 以容纳 11格 (4px/格) */
         .entity { position: absolute; width: 44px; height: 44px; will-change: transform; }
-        
-        /* 修改：Grid 改为 11 列 */
         .pixel-grid { display: grid; grid-template-columns: repeat(11, 1fr); width: 100%; height: 100%; }
         
         .crown-container {
@@ -243,16 +240,12 @@
             background: #1a1c20; border: 2px solid var(--primary); padding: 30px;
             display: flex; flex-direction: column; align-items: center; gap: 20px;
         }
-        
-        /* 修改：编辑器网格改为 11x11 */
         .editor-grid {
             display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr);
             gap: 2px; background: #333; border: 2px solid #555; 
             touch-action: none; 
         }
-        /* 修改：单个格子缩小，适配手机屏幕 */
         .editor-cell { width: 28px; height: 28px; background: #000; }
-        
         .color-picker { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
         .c-dot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #333; }
         .c-dot.active { border-color: white; transform: scale(1.1); }
@@ -279,7 +272,6 @@
         }
         .m-footer { display: flex; gap: 15px; height: 60px; flex-shrink: 0; width: 100%; }
 
-        /* 手动控制器 */
         #m-controller {
             position: fixed; inset: 0; background: #111; z-index: 22000;
             display: none; flex-direction: column; align-items: center; justify-content: center;
@@ -404,19 +396,19 @@
 
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#ffffff', BLUE:'#2979ff' };
         
-        // 修改：11x11 网格数据
+        // 修改：11x11 默认小马 (腿部填充到最底下)
         const DEFAULT_PIXELS = [
-            [0,0,0,0,0,0,0,0,1,0,0], 
-            [0,0,0,0,0,0,0,1,1,1,0], 
-            [0,0,0,0,0,0,0,1,1,0,0], 
-            [0,0,0,1,1,1,1,1,1,0,0],
-            [0,0,1,1,1,1,1,1,1,0,0], 
-            [0,1,1,1,1,1,1,1,1,0,0], 
-            [1,1,1,1,1,1,1,1,1,0,0], 
-            [0,1,0,0,0,0,0,1,0,0,0], 
-            [0,1,0,0,0,0,0,1,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,0,0,0]
+            [0,0,0,0,0,0,0,0,0,0,0], 
+            [0,0,0,0,0,0,0,0,1,1,0], // Ear
+            [0,0,0,0,0,0,1,1,1,1,1], // Head
+            [0,0,0,0,0,0,1,1,1,1,0], // Head
+            [0,0,1,1,1,1,1,1,1,1,0], // Body
+            [0,1,1,1,1,1,1,1,1,0,0], // Body
+            [1,1,1,1,1,1,1,1,0,0,0], // Body/Tail
+            [1,1,0,0,0,0,0,1,0,0,0], // Legs top
+            [1,0,0,0,0,0,0,1,0,0,0], // Legs mid
+            [1,0,0,0,0,0,0,1,0,0,0], // Legs bot 
+            [1,1,0,0,0,0,0,1,1,0,0]  // Feet (Index 10)
         ];
 
         let ponies = [];
@@ -764,7 +756,6 @@
                     updateBarText("READY", "#ffffff");
                 } else {
                     const sec = Math.ceil(cooldownTimer / 60);
-                    // 修改：颜色强制为白色
                     let color = '#ffffff'; 
                     updateBarText(sec.toString(), color);
                     if (cooldownTimer % 60 === 59) triggerFlash();
@@ -836,7 +827,7 @@
                     waitTimer = 180; 
                 } else {
                     gameState = 'ROAMING';
-                    // 修改：先发 DONE 提示，3秒后再允许开始
+                    // 修改：更短的提示 DONE
                     broadcast({ type: 'sync_ui', label: 'DONE', mode: 'wait' });
                     setTimeout(() => {
                         if (gameState === 'ROAMING') {
@@ -893,7 +884,6 @@
                     aiBehavior(p, false);
                 }
                 
-                // 适配：Entity 高度变大，底部范围需要调整
                 p.x = Math.max(0, Math.min(GAME_W - 38, p.x));
                 p.y = Math.max(p.hasCrown ? 35 : 20, Math.min(GAME_H - 44 - 6, p.y));
             });
@@ -995,12 +985,13 @@
                 el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
 
                 const isMoving = p.state === 'racing' || p.finishedWalking || (p.targetX !== null);
-                const frameStep = isMoving ? Math.floor(p.frame / 10) % 2 : 0;
+                // 修改：步频 / 5
+                const frameStep = isMoving ? Math.floor(p.frame / 5) % 2 : 0;
                 let html = '';
                 // 修改：循环到 11
                 for(let y=0; y<11; y++) {
                     let row = p.pixels[y];
-                    // 简单的行走动画，只移动底部两行
+                    // 修改：动画逻辑适配 11x11，只动最底下的两行 (index 9, 10)
                     if (frameStep === 1 && y > 8) row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[0]]; 
                     if (p.state === 'eating') { if(y===3) row = [0,0,0,0,0,0,0,0,0,0,0]; }
                     for(let x=0; x<11; x++) { if (row[x]) html += `<div style="background:${p.color}; width:100%; height:100%; grid-column:${x+1}; grid-row:${y+1}"></div>`; }
@@ -1062,7 +1053,6 @@
             if (!name) { alert("PLEASE ENTER A NAME"); nameInput.focus(); return; }
 
             let hasPixels = false;
-            // 修改：循环到 11
             for(let r=0; r<11; r++) { for(let c=0; c<11; c++) { if (mobileGrid[r][c] === 1) { hasPixels = true; break; } } if(hasPixels) break; }
             if (!hasPixels) { alert("CANVAS IS EMPTY"); return; }
 
@@ -1162,9 +1152,7 @@
 
         function clearMobile() { clearGridData(mobileGrid); renderGrid('m-grid', mobileGrid, selectedColor); }
         function clearDesktop() { clearGridData(pcGrid); renderGrid('pc-grid', pcGrid, selectedColor); }
-        // 修改：循环到 11
         function clearGridData(grid) { for(let r=0; r<11; r++) for(let c=0; c<11; c++) grid[r][c] = 0; }
-        // 修改：循环到 11
         function restoreGridData(grid) { for(let r=0; r<11; r++) for(let c=0; c<11; c++) grid[r][c] = DEFAULT_PIXELS[r][c]; }
 
         function openDesktopEditor() {
