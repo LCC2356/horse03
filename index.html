@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.48 FINAL SPRITE</title>
+    <title>HORSE RUNRUN - v7.49 INTEGRATED QR</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -14,7 +14,8 @@
             --primary: #ffffff; 
             --panel: #222222;
             --border: #444444;
-            --game-w: 3500px; 
+            /* 修改点 1: 跑道长度改为 3400px */
+            --game-w: 3400px; 
             --game-h: 100px;
         }
 
@@ -47,13 +48,51 @@
             display: flex; justify-content: center; align-items: center;
         }
 
+        /* 新增：跑道和二维码的包裹容器 */
+        #track-wrapper {
+            display: flex;
+            /* 总宽度 = 跑道宽 + 二维码方块宽(即高度) */
+            width: calc(var(--game-w) + var(--game-h)); 
+            height: var(--game-h);
+            /* 将外发光移到这个总容器上 */
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            flex-shrink: 0;
+        }
+
         #game-screen {
             width: var(--game-w); height: var(--game-h);
             background: #000; position: relative;
             border: 2px solid var(--primary); 
-            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            /* 修改：去掉右边框，连接二维码盒子 */
+            border-right: none; 
+            /* 修改：去掉自身外发光 */
+            box-shadow: none;
             overflow: hidden; 
             flex-shrink: 0; 
+        }
+
+        /* 新增：右侧二维码方块容器 */
+        #side-qr-box {
+            width: var(--game-h); /* 宽度等于高度，形成正方形 (100x100) */
+            height: var(--game-h);
+            background: #000;
+            border: 2px solid var(--primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            flex-shrink: 0;
+        }
+        
+        .join-label {
+            position: absolute;
+            bottom: 2px;
+            left: 0; width: 100%;
+            text-align: center;
+            font-size: 14px;
+            color: #888;
+            pointer-events: none;
+            text-shadow: 1px 1px 0 #000;
         }
         
         .flash-active {
@@ -61,7 +100,7 @@
         }
         @keyframes track-flash {
             0% { background-color: rgba(255, 255, 255, 0.4); box-shadow: inset 0 0 150px var(--primary); border-color: #fff; }
-            100% { background-color: #000; box-shadow: 0 0 30px rgba(255, 255, 255, 0.3); border-color: var(--primary); }
+            100% { background-color: #000; box-shadow: none; border-color: var(--primary); }
         }
 
         .grid-bg {
@@ -197,15 +236,20 @@
             z-index: 1000;
             box-shadow: 0 0 20px rgba(0,0,0,0.8);
         }
-        #qr-card { display: flex; align-items: center; gap: 15px; }
+        
+        /* 修改：移除底部旧的二维码卡片样式 */
+        
+        /* 修改：调整二维码容器样式以适配新位置 */
         #qrcode {
-            background: white; padding: 4px;
-            width: 70px; height: 70px;
+            background: white; 
+            padding: 3px;
+            /* 适配 100px 容器 (100 - 2*2border - 3*2padding = 90) */
+            width: 90px; 
+            height: 90px;
             display: flex; justify-content: center; align-items: center;
-            border-radius: 4px;
+            border-radius: 2px;
         }
         #qrcode img { display: block; width: 100%; height: 100%; }
-        .qr-info h2 { margin: 0; font-size: 1.5rem; text-shadow: 0 0 10px var(--primary); line-height: 1; }
 
         .control-group {
             display: flex; flex-direction: column; 
@@ -301,36 +345,34 @@
 
     <div id="desktop-view">
         <div id="game-container">
-            <div id="game-screen">
-                <div class="grid-bg"></div>
-                <div class="finish-line"></div>
-                
-                <div id="hud" class="hud">NOWHERE TO RUN</div>
+            <div id="track-wrapper">
+                <div id="game-screen">
+                    <div class="grid-bg"></div>
+                    <div class="finish-line"></div>
+                    
+                    <div id="hud" class="hud">NOWHERE TO RUN</div>
 
-                <div id="track-display-bar">
-                    <div class="bar-container" id="bar-text"></div>
+                    <div id="track-display-bar">
+                        <div class="bar-container" id="bar-text"></div>
+                    </div>
+
+                    <div id="queue-text" class="queue-alert"></div>
+                    
+                    <div id="vfd-overlay"></div>
+
+                    <div id="layer-grass"></div>
+                    <div id="layer-pony"></div>
+                    <div id="layer-fx"></div>
                 </div>
-
-                <div id="queue-text" class="queue-alert"></div>
-                
-                <div id="vfd-overlay"></div>
-
-                <div id="layer-grass"></div>
-                <div id="layer-pony"></div>
-                <div id="layer-fx"></div>
+                <div id="side-qr-box">
+                    <div id="qrcode"></div>
+                    <div class="join-label">JOIN</div>
+                </div>
             </div>
         </div>
 
         <div id="bottom-controls">
-            <div id="qr-card">
-                <div id="qrcode"></div>
-                <div class="qr-info">
-                    <h2>JOIN</h2>
-                </div>
-            </div>
-
-            <div class="control-group">
-                <span class="control-label">ZOOM</span>
+            <div class="control-group" style="border-left: none;"> <span class="control-label">ZOOM</span>
                 <div class="input-wrapper">
                     <input type="number" id="zoom-input" value="100" min="1" max="500">
                     <span class="unit-label">%</span>
@@ -389,26 +431,26 @@
     </div>
 
     <script>
-        const GAME_W = 3500;
-        const GAME_H = 100;
+        // 修改：更新全局变量以匹配 CSS
+        const GAME_W = 3400; // 跑道长度
+        const GAME_H = 100;  // 跑道高度 (也是二维码方块的边长)
         const PONY_SIZE = 50; 
         const FINISH_X = GAME_W - 400;
 
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#ffffff', BLUE:'#2979ff' };
         
-        // 修改点 1：严格按照提供的图片复刻的 11x11 像素马
         const DEFAULT_PIXELS = [
             [0,0,0,0,0,0,0,0,0,0,0], 
             [0,0,0,0,0,0,0,0,0,0,0], 
-            [0,0,0,0,0,0,0,1,0,0,0], // Ear
-            [0,0,0,0,0,0,1,1,1,0,0], // Head
-            [0,0,0,0,0,0,1,1,1,1,0], // Head/Nose
-            [0,0,0,0,0,1,1,1,0,0,0], // Neck
-            [0,1,0,1,1,1,1,1,0,0,0], // Body/Tail top
-            [1,1,0,1,1,1,1,1,0,0,0], // Body/Tail mid
-            [1,1,0,1,1,1,1,1,0,0,0], // Body/Tail bot
-            [0,0,0,1,0,1,0,1,0,0,0], // Legs (Index 9)
-            [0,0,0,1,0,1,0,1,0,0,0]  // Feet (Index 10)
+            [0,0,0,0,0,0,0,1,0,0,0], 
+            [0,0,0,0,0,0,1,1,1,0,0], 
+            [0,0,0,0,0,0,1,1,1,1,0], 
+            [0,0,0,0,0,1,1,1,0,0,0], 
+            [0,1,0,1,1,1,1,1,0,0,0], 
+            [1,1,0,1,1,1,1,1,0,0,0], 
+            [1,1,0,1,1,1,1,1,0,0,0], 
+            [0,0,0,1,0,1,0,1,0,0,0], 
+            [0,0,0,1,0,1,0,1,0,0,0] 
         ];
 
         let ponies = [];
@@ -478,7 +520,8 @@
         }
         
         function triggerFlash() {
-            const screen = document.getElementById('game-screen');
+            // 修改：闪光效果现在应用于整个包裹层
+            const screen = document.getElementById('track-wrapper');
             screen.classList.remove('flash-active');
             void screen.offsetWidth; 
             screen.classList.add('flash-active');
@@ -556,14 +599,16 @@
 
         function fitScreen() {
             const availableW = window.innerWidth * 0.95;
-            layout.scale = Math.min(availableW / GAME_W, 1);
+            // 修改：计算缩放时要考虑总宽度 (跑道 + 二维码)
+            layout.scale = Math.min(availableW / (GAME_W + GAME_H), 1);
             layout.x = 0;
             layout.y = 0;
             applyLayout(true);
         }
 
         function applyLayout(updateInput = true) {
-            const el = document.getElementById('game-screen');
+            // 修改：应用缩放到新的包裹层上
+            const el = document.getElementById('track-wrapper');
             el.style.transform = `scale(${layout.scale}) translate(${layout.x}px, ${layout.y}px)`;
             
             if(updateInput) {
@@ -578,8 +623,9 @@
                 peer = new Peer(null, PEER_CONFIG);
                 peer.on('open', id => {
                     const url = `${location.href}?host=${id}`;
+                    // 修改：调整二维码尺寸以适配新的 100x100 容器 (减去padding和border)
                     new QRCode(document.getElementById("qrcode"), {
-                        text: url, width: 70, height: 70,
+                        text: url, width: 86, height: 86,
                         colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L
                     });
                 });
@@ -735,7 +781,6 @@
 
         function updateGameLogic() {
             const alert = document.getElementById('queue-text');
-            const screen = document.getElementById('game-screen');
             const hud = document.getElementById('hud');
 
             if (gameState === 'WAITING_TO_START') {
