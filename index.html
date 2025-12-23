@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.45 LEG FIX</title>
+    <title>HORSE RUNRUN - v7.46 NEW HORSE & ANIM FIX</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -396,19 +396,19 @@
 
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#ffffff', BLUE:'#2979ff' };
         
-        // 修改：11x11 默认小马 (腿部填充到最底下)
+        // 修改：新的 11x11 默认小马造型，更像马
         const DEFAULT_PIXELS = [
-            [0,0,0,0,0,0,0,0,0,0,0], 
             [0,0,0,0,0,0,0,0,1,1,0], // Ear
-            [0,0,0,0,0,0,1,1,1,1,1], // Head
-            [0,0,0,0,0,0,1,1,1,1,0], // Head
-            [0,0,1,1,1,1,1,1,1,1,0], // Body
-            [0,1,1,1,1,1,1,1,1,0,0], // Body
-            [1,1,1,1,1,1,1,1,0,0,0], // Body/Tail
-            [1,1,0,0,0,0,0,1,0,0,0], // Legs top
-            [1,0,0,0,0,0,0,1,0,0,0], // Legs mid
-            [1,0,0,0,0,0,0,1,0,0,0], // Legs bot 
-            [1,1,0,0,0,0,0,1,1,0,0]  // Feet (Index 10)
+            [0,0,0,0,0,0,0,1,1,1,1], // Head
+            [0,0,0,0,0,0,1,1,1,1,1], // Head/Neck
+            [0,0,0,0,0,1,1,1,1,1,0], // Neck
+            [0,0,0,0,1,1,1,1,1,1,0], // Body
+            [0,0,0,1,1,1,1,1,1,1,0], // Body
+            [0,0,1,1,1,1,1,1,1,1,0], // Body/Tail
+            [0,1,1,1,1,1,1,1,1,0,0], // Body bottom
+            [0,1,1,0,0,0,1,1,0,0,0], // Legs top
+            [0,1,0,0,0,0,1,0,0,0,0], // Legs mid (Index 9)
+            [1,1,0,0,0,0,1,1,0,0,0]  // Feet (Index 10)
         ];
 
         let ponies = [];
@@ -984,8 +984,14 @@
                 el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none';
                 el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
 
-                const isMoving = p.state === 'racing' || p.finishedWalking || (p.targetX !== null);
-                // 修改：步频 / 5
+                // 修改点 2：手动挡只有在移动时才播放动画
+                let isMoving = false;
+                if (p.isManual) {
+                    isMoving = p.manualSpeed > 0.1;
+                } else {
+                    isMoving = p.state === 'racing' || p.finishedWalking || (p.targetX !== null);
+                }
+
                 const frameStep = isMoving ? Math.floor(p.frame / 5) % 2 : 0;
                 let html = '';
                 // 修改：循环到 11
