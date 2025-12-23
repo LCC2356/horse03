@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.47 NEW SPRITE & TAP ANIM</title>
+    <title>HORSE RUNRUN - v7.48 FINAL SPRITE</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -396,19 +396,19 @@
 
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#ffffff', BLUE:'#2979ff' };
         
-        // 修改点 1：在 11x11 限制下重新设计的更像马的造型
+        // 修改点 1：严格按照提供的图片复刻的 11x11 像素马
         const DEFAULT_PIXELS = [
-            [0,0,0,0,0,0,1,1,0,0,0], 
-            [0,0,0,0,0,1,1,1,1,0,0], 
-            [0,0,0,0,1,1,1,1,1,1,0], 
-            [0,0,0,1,1,1,1,1,1,0,0], 
-            [0,0,1,1,1,1,1,1,1,1,0], 
-            [0,1,1,1,1,1,1,1,1,1,1], 
-            [0,1,1,1,1,1,1,1,1,1,1], 
-            [0,1,1,1,0,0,0,0,1,1,1], 
-            [0,1,1,0,0,0,0,0,0,1,1], 
-            [0,1,0,0,0,0,0,0,0,0,1], 
-            [0,1,0,0,0,0,0,0,0,0,1]
+            [0,0,0,0,0,0,0,0,0,0,0], 
+            [0,0,0,0,0,0,0,0,0,0,0], 
+            [0,0,0,0,0,0,0,1,0,0,0], // Ear
+            [0,0,0,0,0,0,1,1,1,0,0], // Head
+            [0,0,0,0,0,0,1,1,1,1,0], // Head/Nose
+            [0,0,0,0,0,1,1,1,0,0,0], // Neck
+            [0,1,0,1,1,1,1,1,0,0,0], // Body/Tail top
+            [1,1,0,1,1,1,1,1,0,0,0], // Body/Tail mid
+            [1,1,0,1,1,1,1,1,0,0,0], // Body/Tail bot
+            [0,0,0,1,0,1,0,1,0,0,0], // Legs (Index 9)
+            [0,0,0,1,0,1,0,1,0,0,0]  // Feet (Index 10)
         ];
 
         let ponies = [];
@@ -623,7 +623,6 @@
             if (pony && pony.state === 'racing') {
                 pony.isManual = true; 
                 pony.lastTapTime = Date.now(); 
-                // 修改点 2a: 增加点击计数
                 pony.tapCount++;
                 pony.name = pony.name.replace(" (BOT)", "");
                 pony.manualSpeed = Math.min(pony.manualSpeed + 2.0, 15);
@@ -636,7 +635,6 @@
                 playerUUID: uuid, 
                 isManual: !!uuid, 
                 manualSpeed: 0,
-                // 修改点 2b: 初始化点击计数
                 tapCount: 0,
                 lastTapTime: Date.now(), 
                 name: name || 'PONY',
@@ -988,15 +986,12 @@
                 el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none';
                 el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
 
-                // 修改点 2c: 重写动画帧计算逻辑
                 let frameStep = 0;
                 if (p.isManual) {
-                    // 手动挡：动画帧取决于点击次数，且只有在有速度时才显示
                     if (p.manualSpeed > 0.1) {
                         frameStep = p.tapCount % 2;
                     }
                 } else {
-                    // 自动挡：保持原有的基于时间的动画
                     const isMoving = p.state === 'racing' || p.finishedWalking || (p.targetX !== null);
                     frameStep = isMoving ? Math.floor(p.frame / 5) % 2 : 0;
                 }
@@ -1004,7 +999,6 @@
                 let html = '';
                 for(let y=0; y<11; y++) {
                     let row = p.pixels[y];
-                    // 动画逻辑：只动最底下的两行 (index 9, 10)
                     if (frameStep === 1 && y > 8) row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[0]]; 
                     if (p.state === 'eating') { if(y===3) row = [0,0,0,0,0,0,0,0,0,0,0]; }
                     for(let x=0; x<11; x++) { if (row[x]) html += `<div style="background:${p.color}; width:100%; height:100%; grid-column:${x+1}; grid-row:${y+1}"></div>`; }
