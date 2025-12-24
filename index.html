@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.71 SLIDER RETURN</title>
+    <title>HORSE RUNRUN - v7.76 STABLE MOD</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -32,7 +32,8 @@
             position: relative;
         }
 
-        .hidden { display: none !important; }
+        /* 修复点：移除 !important，避免 JS 无法控制 */
+        .hidden { display: none; }
 
         #desktop-view {
             position: absolute; inset: 0;
@@ -79,19 +80,12 @@
         }
         
         .join-label {
-            position: absolute;
-            bottom: 2px;
-            left: 0; width: 100%;
-            text-align: center;
-            font-size: 14px;
-            color: #888;
-            pointer-events: none;
-            text-shadow: 1px 1px 0 #000;
+            position: absolute; bottom: 2px; left: 0; width: 100%;
+            text-align: center; font-size: 14px; color: #888;
+            pointer-events: none; text-shadow: 1px 1px 0 #000;
         }
         
-        .flash-active {
-            animation: track-flash 0.2s ease-out;
-        }
+        .flash-active { animation: track-flash 0.2s ease-out; }
         @keyframes track-flash {
             0% { background-color: rgba(255, 255, 255, 0.4); box-shadow: inset 0 0 150px var(--primary); border-color: #fff; }
             100% { background-color: #000; box-shadow: none; border-color: var(--primary); }
@@ -101,8 +95,7 @@
             position: absolute; inset: 0; opacity: 0.2;
             background-image: linear-gradient(rgba(255, 255, 255, 0.3) 1px, transparent 1px),
                               linear-gradient(90deg, rgba(255, 255, 255, 0.3) 1px, transparent 1px);
-            background-size: 50px 50px;
-            pointer-events: none;
+            background-size: 50px 50px; pointer-events: none;
         }
         .finish-line {
             position: absolute; top: 0; bottom: 0; right: 400px; width: 12px;
@@ -110,83 +103,32 @@
             background-size: 12px 12px; opacity: 0.8; z-index: 0;
         }
 
-        /* HUD */
         .hud { position: absolute; bottom: 4px; right: 10px; font-size: 32px; opacity: 0.5; letter-spacing: 2px; z-index: 110; }
 
         #track-display-bar {
-            position: absolute; 
-            top: 50%; transform: translateY(-50%); 
-            left: 0; width: 100%; height: 100px; 
-            display: none; 
-            align-items: center; justify-content: center;
-            z-index: 100; 
-            pointer-events: none; 
+            position: absolute; top: 50%; transform: translateY(-50%); left: 0; width: 100%; height: 100px; 
+            display: none; align-items: center; justify-content: center; z-index: 100; pointer-events: none; 
         }
-        
-        .bar-container {
-            width: 100%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-        }
-        
+        .bar-container { width: 100%; display: flex; align-items: center; justify-content: center; }
         .bar-text-item {
-            font-size: 80px; 
-            letter-spacing: 2px;
-            text-shadow: 0 0 20px currentColor; 
-            font-weight: bold;
-            width: 260px; 
-            display: flex; 
-            justify-content: center; 
-            flex-shrink: 0; 
-            margin: 0; 
+            font-size: 80px; letter-spacing: 2px; text-shadow: 0 0 20px currentColor; font-weight: bold;
+            width: 260px; display: flex; justify-content: center; flex-shrink: 0; margin: 0; 
             animation: text-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
-        
-        @keyframes text-pop {
-            0% { transform: scale(0.5); opacity: 0; }
-            100% { transform: scale(1.0); opacity: 1; }
-        }
-
-        @keyframes text-vanish {
-            0% { opacity: 1; }
-            100% { opacity: 0; }
-        }
+        @keyframes text-pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1.0); opacity: 1; } }
+        @keyframes text-vanish { 0% { opacity: 1; } 100% { opacity: 0; } }
 
         .queue-alert {
-            position: absolute; top: 10px; right: 20px;
-            font-size: 24px; color: #ffb300; text-shadow: 0 0 5px #ffb300;
-            display: none; z-index: 20;
+            position: absolute; top: 10px; right: 20px; font-size: 24px; color: #ffb300; text-shadow: 0 0 5px #ffb300; display: none; z-index: 20;
         }
 
         #scan-line { display: none; }
 
         /* VFD Overlay */
-        #vfd-overlay {
-            position: absolute; inset: 0;
-            display: flex; align-items: center; justify-content: flex-start;
-            overflow: hidden;
-            opacity: 0; 
-            pointer-events: none; z-index: 95;
-            padding-left: 0;
-        }
-
-        #vfd-overlay i {
-            display: inline-block;
-            width: 0; height: 0; 
-            border-top: 15px solid transparent;    
-            border-bottom: 15px solid transparent; 
-            border-left: 80px solid var(--primary); 
-            margin-right: 20px; 
-            flex-shrink: 0;
-            opacity: 0; 
-            transform: scale(0.8) skewX(-20deg); 
-            filter: drop-shadow(0 0 5px var(--primary));
-        }
-
+        #vfd-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: flex-start; overflow: hidden; opacity: 0; pointer-events: none; z-index: 95; padding-left: 0; }
+        #vfd-overlay i { display: inline-block; width: 0; height: 0; border-top: 15px solid transparent; border-bottom: 15px solid transparent; border-left: 80px solid var(--primary); margin-right: 20px; flex-shrink: 0; opacity: 0; transform: scale(0.8) skewX(-20deg); filter: drop-shadow(0 0 5px var(--primary)); }
         .vfd-active { opacity: 1 !important; }
         .vfd-active i { animation: vfd-flash 0.4s ease-out forwards calc(var(--d) * 1s); }
-        
         @keyframes vfd-flash {
             0% { opacity: 0; transform: scale(0.8) translateX(0); }
             10% { opacity: 1; transform: scale(1.2) translateX(10px); filter: drop-shadow(0 0 15px var(--primary)) drop-shadow(0 0 30px #fff); }
@@ -195,158 +137,112 @@
         }
 
         .entity { position: absolute; width: 44px; height: 44px; will-change: transform; }
-        .pixel-grid { 
-            display: grid; 
-            grid-template-columns: repeat(11, 1fr); 
-            width: 100%; height: 100%; 
-            transform-origin: bottom center;
-            transition: transform 0.2s;
-        }
+        /* 增加 winner 层级，但不做全屏动画 */
+        .entity.winner { z-index: 200 !important; }
+
+        .pixel-grid { display: grid; grid-template-columns: repeat(11, 1fr); width: 100%; height: 100%; transform-origin: bottom center; transition: transform 0.2s; }
         
-        .crown-container {
-            position: absolute; top: -31px; left: 50%; transform: translateX(-50%);
-            width: 18px; height: 18px; 
-            animation: bounce 1s infinite; z-index: 10;
-            display: flex; flex-direction: column-reverse; align-items: center;
-        }
-        .aura {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 160%; height: 160%; border-radius: 50%;
-            background: radial-gradient(circle, rgba(250,204,21,0.4) 0%, transparent 70%);
-            box-shadow: 0 0 10px #facc15; z-index: -1;
-            animation: pulse 0.5s infinite alternate; display: none;
-        }
+        .crown-container { position: absolute; top: -31px; left: 50%; transform: translateX(-50%); width: 18px; height: 18px; animation: bounce 1s infinite; z-index: 10; display: flex; flex-direction: column-reverse; align-items: center; }
+        .aura { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 160%; height: 160%; border-radius: 50%; background: radial-gradient(circle, rgba(250,204,21,0.4) 0%, transparent 70%); box-shadow: 0 0 10px #facc15; z-index: -1; animation: pulse 0.5s infinite alternate; display: none; }
         @keyframes pulse { from { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } }
         
-        .name-tag {
-            position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
-            font-size: 20px; white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000;
-        }
+        .name-tag { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 20px; white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000; }
         .grass { position: absolute; width: 6px; height: 6px; background: #69f0ae; box-shadow: 0 0 4px #69f0ae; }
         .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
         @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
 
-        #bottom-controls {
-            position: fixed; bottom: 20px; left: 20px;
-            display: flex; align-items: center; gap: 15px;
-            padding: 15px;
-            background: rgba(0, 0, 0, 0.85);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            z-index: 1000;
-            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        /* 新增：扬尘特效 (速度 > 4) */
+        .dust { position: absolute; width: 4px; height: 4px; background: #ddd; opacity: 0.8; pointer-events: none; animation: dust-fade 0.5s linear forwards; }
+        @keyframes dust-fade { 0% { opacity: 0.8; transform: scale(1); } 100% { opacity: 0; transform: translate(-10px, -5px) scale(0.2); } }
+
+        /* 新增：极速光线拖影 (速度 > 12) */
+        .trail-ghost { position: absolute; width: 44px; height: 44px; opacity: 0.5; pointer-events: none; mix-blend-mode: screen; animation: trail-vanish 0.3s ease-out forwards; }
+        @keyframes trail-vanish { 0% { opacity: 0.6; transform: scale(1); } 100% { opacity: 0; transform: scale(0.9) translateX(-20px); } }
+
+        /* 新增：像素化表情气泡 */
+        .emoji-bubble {
+            position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
+            font-size: 16px; /* 缩小尺寸 */
+            animation: bubble-float 2s ease-out forwards; pointer-events: none; z-index: 200;
+            text-shadow: 0 0 2px #000;
+            filter: contrast(1.5); /* 像素感滤镜 */
         }
-        #qrcode {
-            background: white; padding: 3px;
-            width: 90px; height: 90px;
-            display: flex; justify-content: center; align-items: center;
-            border-radius: 2px;
+        @keyframes bubble-float { 
+            0% { opacity: 0; transform: translateX(-50%) translateY(5px) scale(0.5); } 
+            10% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.0); }
+            80% { opacity: 1; transform: translateX(-50%) translateY(-15px); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-25px); } 
         }
+
+        /* Controls */
+        #bottom-controls { position: fixed; bottom: 20px; left: 20px; display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(0, 0, 0, 0.85); border: 1px solid var(--border); border-radius: 8px; z-index: 1000; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        #qrcode { background: white; padding: 3px; width: 90px; height: 90px; display: flex; justify-content: center; align-items: center; border-radius: 2px; }
         #qrcode img { display: block; width: 100%; height: 100%; }
 
-        .control-group {
-            display: flex; flex-direction: column; 
-            gap: 5px; border-left: 1px solid #333; padding-left: 15px;
-            width: 140px; 
-        }
+        .control-group { display: flex; flex-direction: column; gap: 5px; border-left: 1px solid #333; padding-left: 15px; width: 140px; }
         .control-label { font-size: 0.8rem; color: #888; letter-spacing: 1px; }
         .input-wrapper { display: flex; align-items: center; gap: 5px; width: 100%; }
-        
-        /* Slider Styling */
-        input[type=range] {
-            -webkit-appearance: none; width: 100%; background: transparent; margin: 5px 0;
-        }
-        input[type=range]:focus { outline: none; }
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%; height: 6px; cursor: pointer; background: #333; border-radius: 3px; border: 1px solid #555;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            height: 16px; width: 16px; border-radius: 2px; background: var(--accent);
-            cursor: pointer; -webkit-appearance: none; margin-top: -6px; box-shadow: 0 0 5px var(--accent);
-        }
-        input[type=range]::-moz-range-track {
-            width: 100%; height: 6px; cursor: pointer; background: #333; border-radius: 3px; border: 1px solid #555;
-        }
-        input[type=range]::-moz-range-thumb {
-            height: 16px; width: 16px; border: none; border-radius: 2px; background: var(--accent); cursor: pointer;
-        }
+        .stepper { display: flex; align-items: center; gap: 5px; width: 100%; }
+        .btn-step { background: #222; border: 1px solid var(--primary); color: var(--primary); width: 30px; height: 30px; display: flex; justify-content: center; align-items: center; cursor: pointer; font-family: 'VT323', monospace; font-size: 1.2rem; transition: all 0.1s; }
+        .btn-step:hover { background: #333; }
+        .btn-step:active { background: var(--primary); color: #000; transform: scale(0.95); }
 
-        input[type="number"] {
-            background: #222; border: 1px solid var(--border);
-            color: var(--primary); font-family: 'VT323', monospace;
-            font-size: 1.4rem; width: 60px; text-align: center;
-            padding: 2px; border-radius: 4px;
-        }
-        .unit-label { font-size: 1.2rem; color: #555; }
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; margin: 5px 0; }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: #333; border-radius: 3px; border: 1px solid #555; }
+        input[type=range]::-webkit-slider-thumb { height: 16px; width: 16px; border-radius: 2px; background: var(--accent); cursor: pointer; -webkit-appearance: none; margin-top: -6px; box-shadow: 0 0 5px var(--accent); }
         
-        .btn {
-            background: #222; border: 2px solid var(--primary); color: var(--primary);
-            padding: 10px 20px; font-family: 'VT323', monospace; font-size: 1.2rem;
-            cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
-            transition: all 0.2s; margin-left: 5px;
-        }
+        input[type="number"] { background: #222; border: 1px solid var(--border); color: var(--primary); font-family: 'VT323', monospace; font-size: 1.4rem; width: 60px; text-align: center; padding: 2px; border-radius: 4px; }
+        .unit-label { font-size: 1.2rem; color: #555; }
+        
+        .btn { background: #222; border: 2px solid var(--primary); color: var(--primary); padding: 10px 20px; font-family: 'VT323', monospace; font-size: 1.2rem; cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(255, 255, 255, 0.2); transition: all 0.2s; margin-left: 5px; }
         .btn:hover { background: var(--primary); color: #000; }
         .btn:active { transform: translateY(2px); }
 
-        #modal-editor {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000;
-            display: none; justify-content: center; align-items: center;
+        /* 修复点：移除了 HTML 中的 hidden class，并使用 ID 控制，解决画板无法打开问题 */
+        #modal-editor { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; 
+            display: none; /* 默认隐藏 */
+            justify-content: center; align-items: center; 
         }
-        .modal-content {
-            background: #1a1c20; border: 2px solid var(--primary); padding: 30px;
-            display: flex; flex-direction: column; align-items: center; gap: 20px;
-        }
-        .editor-grid {
-            display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr);
+        
+        .modal-content { background: #1a1c20; border: 2px solid var(--primary); padding: 30px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+        
+        /* 修复点：强制指定网格大小，防止画板塌陷 */
+        .editor-grid { 
+            display: grid; 
+            grid-template-columns: repeat(11, 28px); 
+            grid-template-rows: repeat(11, 28px); 
             gap: 2px; background: #333; border: 2px solid #555; 
-            touch-action: none; 
+            touch-action: none; margin: 0 auto;
         }
         .editor-cell { width: 28px; height: 28px; background: #000; }
+        
         .color-picker { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
         .c-dot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #333; }
         .c-dot.active { border-color: white; transform: scale(1.1); }
         .btn-outline { background: transparent; border-color: #ff5252; color: #ff5252; }
         .btn-flex { flex: 1; display: flex; justify-content: center; align-items: center; }
 
-        #mobile-view {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #111; display: flex; flex-direction: column; z-index: 20000;
-            padding: 20px;
-        }
+        #mobile-view { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111; display: flex; flex-direction: column; z-index: 20000; padding: 20px; }
         .m-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; flex-shrink: 0; }
         .m-title { font-size: 1.5rem; color: #fff; }
         .m-status { background: #222; padding: 4px 8px; border-radius: 4px; font-size: 1rem; color: #fff; border: 1px solid #444; }
         .m-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; flex-shrink: 0; }
-        input[type="text"] {
-            background: #222; border: 1px solid #444; color: white; padding: 12px;
-            font-family: inherit; text-align: center; font-size: 1.5rem; width: 100%; border-radius: 4px;
-        }
-        .m-canvas-container {
-            flex: 1; display: flex; justify-content: center; align-items: center;
-            background: #1a1a1a; border-radius: 8px; margin-bottom: 20px;
-            overflow: hidden; 
-        }
+        input[type="text"] { background: #222; border: 1px solid #444; color: white; padding: 12px; font-family: inherit; text-align: center; font-size: 1.5rem; width: 100%; border-radius: 4px; }
+        .m-canvas-container { flex: 1; display: flex; justify-content: center; align-items: center; background: #1a1a1a; border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
         .m-footer { display: flex; gap: 15px; height: 60px; flex-shrink: 0; width: 100%; }
 
-        #m-controller {
-            position: fixed; inset: 0; background: #111; z-index: 22000;
-            display: none; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .push-btn {
-            width: 250px; height: 250px; border-radius: 50%;
-            background: #222; 
-            border: 8px solid #444;
-            color: #888; font-size: 4rem; font-family: 'VT323', monospace;
-            display: flex; justify-content: center; align-items: center;
-            box-shadow: 0 0 50px rgba(0,0,0, 0.4);
-            transition: all 0.2s; user-select: none;
-            cursor: pointer; -webkit-tap-highlight-color: transparent;
-            text-align: center; line-height: 1; padding: 20px;
-        }
+        #m-controller { position: fixed; inset: 0; background: #111; z-index: 22000; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        .push-btn { width: 250px; height: 250px; border-radius: 50%; background: #222; border: 8px solid #444; color: #888; font-size: 4rem; font-family: 'VT323', monospace; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 50px rgba(0,0,0, 0.4); transition: all 0.2s; user-select: none; cursor: pointer; -webkit-tap-highlight-color: transparent; text-align: center; line-height: 1; padding: 20px; margin-bottom: 30px; }
         .push-btn:active { transform: scale(0.95); }
-        .controller-info { font-size: 1.5rem; color: #888; margin-bottom: 30px; text-align: center; }
+        .controller-info { font-size: 1.5rem; color: #888; margin-bottom: 20px; text-align: center; }
         
+        /* 新增：表情按钮栏 */
+        .emoji-bar { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 320px; }
+        .btn-emoji { font-size: 1.5rem; background: #333; border: 1px solid #555; border-radius: 8px; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: transform 0.1s; }
+        .btn-emoji:active { transform: scale(0.9); background: #555; }
+
         .btn-wait { background: #1a1a1a !important; border-color: #333 !important; color: #555 !important; }
         .btn-mash { background: #fff !important; border-color: #ccc !important; color: #000 !important; box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; }
         .btn-start { background: #e65100 !important; border-color: #ffb300 !important; color: #fff !important; box-shadow: 0 0 50px rgba(255, 179, 0, 0.4) !important; }
@@ -398,7 +294,11 @@
                 <span class="control-label">Y OFFSET</span>
                 <input type="range" id="y-slider" min="-1200" max="1200" step="10" value="0">
                 <div class="input-wrapper">
-                    <input type="number" id="y-input" value="0" step="1">
+                    <div class="stepper">
+                        <button class="btn-step" onclick="adjustY(-50)">&lt;</button>
+                        <input type="number" id="y-input" value="0" step="1">
+                        <button class="btn-step" onclick="adjustY(50)">&gt;</button>
+                    </div>
                     <span class="unit-label">PX</span>
                 </div>
             </div>
@@ -408,7 +308,7 @@
         </div>
     </div>
 
-    <div id="modal-editor" class="hidden">
+    <div id="modal-editor">
         <div class="modal-content">
             <h2 class="vfd-glow" style="margin:0;">DESIGN RUNNER</h2>
             <input type="text" id="pc-name" placeholder="ENTER NAME" maxlength="8" value="PLAYER" style="background:#222; border:1px solid #444; color:white; padding:10px; text-align:center; font-size:1.5rem; border-radius:4px;">
@@ -444,6 +344,14 @@
         <div id="m-controller">
             <div id="m-info" class="controller-info">GET READY</div>
             <div id="m-btn" class="push-btn btn-wait" ontouchstart="btnAction(event)" onmousedown="btnAction(event)">WAIT</div>
+            
+            <div class="emoji-bar">
+                <div class="btn-emoji" onclick="sendEmoji('😂')">😂</div>
+                <div class="btn-emoji" onclick="sendEmoji('😡')">😡</div>
+                <div class="btn-emoji" onclick="sendEmoji('❤️')">❤️</div>
+                <div class="btn-emoji" onclick="sendEmoji('🐴')">🐴</div>
+                <div class="btn-emoji" onclick="sendEmoji('💩')">💩</div>
+            </div>
         </div>
     </div>
 
@@ -488,140 +396,74 @@
         let mySoundType = 'SAWTOOTH'; 
         const SOUND_TYPES = ['SAWTOOTH', 'LASER', 'SQUARE', 'FM'];
 
-        let layout = {
-            scale: 1.0,
-            x: 0,
-            y: 0
-        };
+        let layout = { scale: 1.0, x: 0, y: 0 };
 
         let currentBarText = '';
         let lastBroadcastText = '';
 
         const PEER_CONFIG = {
             debug: 2,
-            config: {
-                'iceServers': [
-                    { url: 'stun:stun.l.google.com:19302' },
-                    { url: 'stun:stun1.l.google.com:19302' }
-                ]
-            }
+            config: { 'iceServers': [ { url: 'stun:stun.l.google.com:19302' }, { url: 'stun:stun1.l.google.com:19302' } ] }
         };
 
         function updateBarText(text, color) {
             if (currentBarText === text) return;
             currentBarText = text;
-
             const container = document.getElementById('bar-text');
             let content = '';
-            for(let i=0; i<12; i++) {
-                content += `<span class="bar-text-item">${text}</span>`;
-            }
+            for(let i=0; i<12; i++) { content += `<span class="bar-text-item">${text}</span>`; }
             container.innerHTML = content;
-            
-            if(color) {
-                container.style.color = color;
-            } else {
-                container.style.color = '';
-            }
+            if(color) container.style.color = color; else container.style.color = '';
         }
 
         function setBarVisibility(show) {
             const bar = document.getElementById('track-display-bar');
-            if(show) {
-                bar.style.display = 'flex';
-            } else {
-                bar.style.display = 'none';
-                currentBarText = ''; 
-            }
+            if(show) bar.style.display = 'flex'; else { bar.style.display = 'none'; currentBarText = ''; }
         }
         
         function triggerFlash() {
             const screen = document.getElementById('track-wrapper');
-            screen.classList.remove('flash-active');
-            void screen.offsetWidth; 
-            screen.classList.add('flash-active');
+            screen.classList.remove('flash-active'); void screen.offsetWidth; screen.classList.add('flash-active');
         }
 
         function broadcast(data) {
             if(!peer || !peer.connections) return;
             Object.values(peer.connections).forEach(conns => {
-                conns.forEach(conn => {
-                    if(conn.open) conn.send(data);
-                });
+                conns.forEach(conn => { if(conn.open) conn.send(data); });
             });
         }
 
         window.onload = function() {
-            // 滑块逻辑与输入框绑定
             const zoomSlider = document.getElementById('zoom-slider');
             const zoomInput = document.getElementById('zoom-input');
             const ySlider = document.getElementById('y-slider');
             const yInput = document.getElementById('y-input');
 
-            // Zoom Sync
-            zoomSlider.oninput = function() {
-                zoomInput.value = this.value;
-                layout.scale = this.value / 100;
-                applyLayout(false);
-            };
-            zoomInput.oninput = function() {
-                let val = parseFloat(this.value);
-                if(val) {
-                    zoomSlider.value = val;
-                    layout.scale = val / 100;
-                    applyLayout(false);
-                }
-            };
+            zoomSlider.oninput = function() { zoomInput.value = this.value; layout.scale = this.value / 100; applyLayout(false); };
+            zoomInput.oninput = function() { let val = parseFloat(this.value); if(val) { zoomSlider.value = val; layout.scale = val / 100; applyLayout(false); } };
+            ySlider.oninput = function() { yInput.value = this.value; layout.y = parseFloat(this.value); applyLayout(false); };
+            yInput.oninput = function() { let val = parseFloat(this.value); if(!isNaN(val)) { ySlider.value = val; layout.y = val; applyLayout(false); } };
 
-            // Y Offset Sync
-            ySlider.oninput = function() {
-                yInput.value = this.value;
-                layout.y = parseFloat(this.value);
-                applyLayout(false);
-            };
-            yInput.oninput = function() {
-                let val = parseFloat(this.value);
-                if(!isNaN(val)) {
-                    ySlider.value = val;
-                    layout.y = val;
-                    applyLayout(false);
-                }
-            };
-
-            // 滚轮控制 (Zoom & Pan)
             const gameContainer = document.getElementById('desktop-view');
             gameContainer.addEventListener('wheel', (e) => {
                 e.preventDefault(); 
                 if (e.ctrlKey) {
-                    // Zoom
-                    const zoomSpeed = 0.001;
-                    const newScale = layout.scale - (e.deltaY * zoomSpeed);
+                    const zoomSpeed = 0.001; const newScale = layout.scale - (e.deltaY * zoomSpeed);
                     layout.scale = Math.min(Math.max(0.1, newScale), 5.0);
                 } else {
-                    // Pan Y
-                    const panSpeed = 1.0;
-                    layout.y -= e.deltaY * panSpeed;
+                    const panSpeed = 1.0; layout.y -= e.deltaY * panSpeed;
                 }
                 applyLayout(true);
             }, { passive: false });
 
             const vfdOverlay = document.getElementById('vfd-overlay');
-            for (let i = 0; i < 80; i++) {
-                const arrow = document.createElement('i');
-                arrow.style.setProperty('--d', i * 0.01); 
-                vfdOverlay.appendChild(arrow);
-            }
+            for (let i = 0; i < 80; i++) { const arrow = document.createElement('i'); arrow.style.setProperty('--d', i * 0.01); vfdOverlay.appendChild(arrow); }
 
-            requestAnimationFrame(gameLoop);
-            fitScreen();
+            requestAnimationFrame(gameLoop); fitScreen();
             
             window.addEventListener('keydown', (e) => {
                 if (e.target.tagName === 'INPUT') return;
-
-                const step = 20 / layout.scale; 
-                const zoomStep = 0.05;
-                let changed = false;
-
+                const step = 20 / layout.scale; const zoomStep = 0.05; let changed = false;
                 switch(e.key) {
                     case 'ArrowUp': layout.y -= step; changed = true; break;
                     case 'ArrowDown': layout.y += step; changed = true; break;
@@ -631,34 +473,20 @@
                     case '-': case '_': layout.scale = Math.max(0.1, layout.scale - zoomStep); changed = true; break;
                     case '0': fitScreen(); return; 
                 }
-                
-                if(changed) {
-                    applyLayout(true); 
-                }
+                if(changed) applyLayout(true); 
             });
 
             const isMobile = new URLSearchParams(window.location.search).has('host');
-            if(isMobile) {
-                document.getElementById('desktop-view').style.display = 'none';
-                document.getElementById('mobile-view').style.display = 'flex';
-                initMobile();
-            } else {
-                initDesktop();
-            }
+            if(isMobile) { document.getElementById('desktop-view').style.display = 'none'; document.getElementById('mobile-view').style.display = 'flex'; initMobile(); } else { initDesktop(); }
         };
 
-        function fitScreen() {
-            const availableW = window.innerWidth * 0.95;
-            layout.scale = Math.min(availableW / (GAME_W + GAME_H), 1);
-            layout.x = 0;
-            layout.y = 0;
-            applyLayout(true);
-        }
+        function adjustY(delta) { layout.y += delta; applyLayout(true); }
+
+        function fitScreen() { const availableW = window.innerWidth * 0.95; layout.scale = Math.min(availableW / (GAME_W + GAME_H), 1); layout.x = 0; layout.y = 0; applyLayout(true); }
 
         function applyLayout(updateInput = true) {
             const el = document.getElementById('track-wrapper');
             el.style.transform = `scale(${layout.scale}) translate(${layout.x}px, ${layout.y}px)`;
-            
             if(updateInput) {
                 document.getElementById('zoom-input').value = Math.round(layout.scale * 100);
                 document.getElementById('zoom-slider').value = Math.round(layout.scale * 100);
@@ -673,256 +501,132 @@
                 peer = new Peer(null, PEER_CONFIG);
                 peer.on('open', id => {
                     const url = `${location.href}?host=${id}`;
-                    new QRCode(document.getElementById("qrcode"), {
-                        text: url, width: 86, height: 86,
-                        colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L
-                    });
+                    new QRCode(document.getElementById("qrcode"), { text: url, width: 86, height: 86, colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L });
                 });
-                
                 peer.on('connection', c => {
                     c.on('data', data => {
                         if (data.type === 'check_reconnect') {
-                            const uuid = data.uuid;
-                            const exists = ponies.find(p => p.playerUUID === uuid) || ponyQueue.find(p => p.playerUUID === uuid);
-                            if (exists) {
-                                c.send({ type: 'reconnect_success' });
-                            }
+                            const uuid = data.uuid; const exists = ponies.find(p => p.playerUUID === uuid) || ponyQueue.find(p => p.playerUUID === uuid);
+                            if (exists) c.send({ type: 'reconnect_success' });
                         }
                         else if (data.type === 'spawn') {
                             const uuid = data.payload.uuid;
                             const exists = ponies.find(p => p.playerUUID === uuid) || ponyQueue.find(p => p.playerUUID === uuid);
-                            if (!exists) {
-                                requestSpawnPony(data.payload.name, data.payload.pixels, data.payload.color, uuid);
-                            }
+                            if (!exists) requestSpawnPony(data.payload.name, data.payload.pixels, data.payload.color, uuid);
                         } 
-                        else if (data.type === 'tap') {
-                            handleTap(data.uuid);
-                        }
-                        else if (data.type === 'force_start') {
-                            if (gameState === 'ROAMING' || gameState === 'WAITING_TO_START') {
-                                startCooldown();
-                            }
-                        }
+                        else if (data.type === 'tap') handleTap(data.uuid);
+                        else if (data.type === 'force_start') { if (gameState === 'ROAMING' || gameState === 'WAITING_TO_START') startCooldown(); }
+                        else if (data.type === 'emoji') showEmoji(data.uuid, data.emoji); // 新增：处理表情
                     });
                 });
-                peer.on('error', (err) => {
-                    console.error("PeerJS Error:", err);
-                    alert("Network Error: " + err.type + "\nTry refreshing.");
-                });
+                peer.on('error', (err) => { console.error("PeerJS Error:", err); alert("Network Error: " + err.type + "\nTry refreshing."); });
             } catch(e) { console.error(e); }
         }
 
         function spawnTestPony() {
             const names = ["SPEEDY", "THUNDER", "BOLT", "COMET", "DASH", "FLASH", "STORM", "SHADOW", "BLAZE", "SPIRIT"];
             const rName = names[Math.floor(Math.random() * names.length)] + " " + Math.floor(Math.random()*99);
-            const colorKeys = Object.keys(COLORS);
-            const rColorKey = colorKeys[Math.floor(Math.random() * colorKeys.length)];
-            const rColor = COLORS[rColorKey];
-            
+            const colorKeys = Object.keys(COLORS); const rColorKey = colorKeys[Math.floor(Math.random() * colorKeys.length)]; const rColor = COLORS[rColorKey];
             requestSpawnPony(rName, DEFAULT_PIXELS, rColor, null);
         }
 
-        function handleTap(uuid) {
-            if (!uuid) return;
+        // 新增：显示表情函数
+        function showEmoji(uuid, emoji) {
             const pony = ponies.find(p => p.playerUUID === uuid);
-            if (pony && pony.state === 'racing') {
-                pony.isManual = true;
-                pony.lastTapTime = Date.now(); 
-                pony.tapCount++;
-                pony.name = pony.name.replace(" (BOT)", "");
-                pony.manualSpeed = Math.min(pony.manualSpeed + 2.9, 22);
-
-                if (pony.manualAnimTimer === 0) {
-                    pony.manualAnimTimer = 10; 
+            if (pony) {
+                const el = document.getElementById(pony.id);
+                if (el) {
+                    const bubble = document.createElement('div'); bubble.className = 'emoji-bubble'; bubble.innerText = emoji;
+                    el.appendChild(bubble); setTimeout(() => bubble.remove(), 2000);
                 }
+            }
+        }
+
+        function handleTap(uuid) {
+            if (!uuid) return; const pony = ponies.find(p => p.playerUUID === uuid);
+            if (pony && pony.state === 'racing') {
+                pony.isManual = true; pony.lastTapTime = Date.now(); pony.tapCount++; pony.name = pony.name.replace(" (BOT)", "");
+                pony.manualSpeed = Math.min(pony.manualSpeed + 2.9, 22);
+                if (pony.manualAnimTimer === 0) pony.manualAnimTimer = 10; 
             }
         }
 
         function requestSpawnPony(name, pixels, color, uuid = null) {
             const newPony = {
-                id: Math.random().toString(36).substr(2, 9),
-                playerUUID: uuid, 
-                isManual: !!uuid, 
-                manualSpeed: 0,
-                tapCount: 0,
-                lastTapTime: Date.now(), 
-                name: name || 'PONY',
-                pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_PIXELS)),
-                color: color || COLORS.CYAN,
-                x: 20, 
-                y: 30 + Math.random() * (GAME_H - PONY_SIZE - 20),
-                speed: 3.0, 
-                state: 'racing',
-                hasCrown: false, isStreak: false, crownCount: 0,
-                timer: 0, frame: 0, finishedWalking: false,
-                targetX: null, targetY: null,
-                isWalkAnimating: false,
-                manualAnimTimer: 0,
-                roamSpeed: 0.5 
+                id: Math.random().toString(36).substr(2, 9), playerUUID: uuid, isManual: !!uuid, manualSpeed: 0, tapCount: 0, lastTapTime: Date.now(), 
+                name: name || 'PONY', pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_PIXELS)), color: color || COLORS.CYAN, x: 20, y: 30 + Math.random() * (GAME_H - PONY_SIZE - 20),
+                speed: 3.0, state: 'racing', hasCrown: false, isStreak: false, crownCount: 0, timer: 0, frame: 0, finishedWalking: false, targetX: null, targetY: null, isWalkAnimating: false, manualAnimTimer: 0, roamSpeed: 0.5 
             };
-
-            if (gameState === 'RACING' || gameState === 'COOLDOWN' || gameState === 'WAITING_TO_START') {
-                ponyQueue.push(newPony);
-                updateHUD();
-            } else {
-                ponies.push(newPony);
-                startCooldown(); 
-            }
+            if (gameState === 'RACING' || gameState === 'COOLDOWN' || gameState === 'WAITING_TO_START') { ponyQueue.push(newPony); updateHUD(); } 
+            else { ponies.push(newPony); startCooldown(); }
         }
 
         function updateHUD() {}
 
         function startCooldown() {
-            gameState = 'COOLDOWN';
-            cooldownTimer = 240; 
-            
-            if (ponyQueue.length > 0) {
-                ponies = ponies.concat(ponyQueue);
-                ponyQueue = [];
-            }
-
+            gameState = 'COOLDOWN'; cooldownTimer = 240; 
+            if (ponyQueue.length > 0) { ponies = ponies.concat(ponyQueue); ponyQueue = []; }
             ponies.forEach(p => {
-                p.x = 20;
-                p.y = 30 + Math.random() * (GAME_H - PONY_SIZE - 30);
-                p.targetX = null; p.targetY = null; 
-                p.facing = 1;
-                p.state = 'ready'; 
-                p.manualSpeed = 0;
-                p.tapCount = 0; 
-                p.isWalkAnimating = false;
-                p.manualAnimTimer = 0;
+                p.x = 20; p.y = 30 + Math.random() * (GAME_H - PONY_SIZE - 30);
+                p.targetX = null; p.targetY = null; p.facing = 1; p.state = 'ready'; 
+                p.manualSpeed = 0; p.tapCount = 0; p.isWalkAnimating = false; p.manualAnimTimer = 0;
             });
-
-            document.getElementById('hud').style.display = 'none';
-            document.getElementById('queue-text').style.display = 'none';
-            
-            setBarVisibility(true);
-            updateBarText("READY", "#ffffff");
-            
+            document.getElementById('hud').style.display = 'none'; document.getElementById('queue-text').style.display = 'none';
+            setBarVisibility(true); updateBarText("READY", "#ffffff");
             broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
         }
 
         function startRace() {
             updateBarText("RUN", "#ffffff");
-            
-            const hud = document.getElementById('hud');
-            hud.style.display = 'block';
-            hud.innerText = "STATUS: RACING!!!";
-
-            const vfdOverlay = document.getElementById('vfd-overlay');
-            vfdOverlay.classList.remove('vfd-active');
-            void vfdOverlay.offsetWidth; 
-            vfdOverlay.classList.add('vfd-active');
-
+            const hud = document.getElementById('hud'); hud.style.display = 'block'; hud.innerText = "STATUS: RACING!!!";
+            const vfdOverlay = document.getElementById('vfd-overlay'); vfdOverlay.classList.remove('vfd-active'); void vfdOverlay.offsetWidth; vfdOverlay.classList.add('vfd-active');
             const textItems = document.querySelectorAll('.bar-text-item');
-            
-            textItems.forEach((item, index) => {
-                const delay = 0.02 + (index * 0.06);
-                item.style.animation = `text-vanish 0.05s linear forwards ${delay}s`;
-            });
-
-            setTimeout(() => {
-                if (gameState === 'RACING') {
-                    setBarVisibility(false);
-                    vfdOverlay.classList.remove('vfd-active');
-                }
-            }, 1500);
-
+            textItems.forEach((item, index) => { const delay = 0.02 + (index * 0.06); item.style.animation = `text-vanish 0.05s linear forwards ${delay}s`; });
+            setTimeout(() => { if (gameState === 'RACING') { setBarVisibility(false); vfdOverlay.classList.remove('vfd-active'); } }, 1500);
             ponies.forEach(p => {
-                p.speed = 3.0 + Math.random() * 2.5; 
-                p.state = 'racing';
-                p.finishedWalking = false;
+                p.speed = 3.0 + Math.random() * 2.5; p.state = 'racing'; p.finishedWalking = false;
                 if(p.isManual) p.lastTapTime = Date.now();
             });
-
-            grass = [];
-            gameState = 'RACING';
-            
+            grass = []; gameState = 'RACING';
             broadcast({ type: 'sync_ui', label: 'RUN!', mode: 'mash' });
         }
 
-        function gameLoop() {
-            updateGameLogic();
-            draw();
-            requestAnimationFrame(gameLoop);
-        }
+        function gameLoop() { updateGameLogic(); draw(); requestAnimationFrame(gameLoop); }
 
         function updateGameLogic() {
-            const alert = document.getElementById('queue-text');
-            const hud = document.getElementById('hud');
-
+            const alert = document.getElementById('queue-text'); const hud = document.getElementById('hud');
             if (gameState === 'WAITING_TO_START') {
-                waitTimer--;
-                alert.style.display = 'block';
-                const sec = Math.ceil(waitTimer / 60);
-                alert.innerText = `NEXT ROUND IN ${sec}`; 
-                
-                if (sec > 0 && lastBroadcastText !== sec) {
-                    broadcast({ type: 'sync_ui', label: `STARTING ${sec}`, mode: 'wait' });
-                    lastBroadcastText = sec;
-                }
-
-                updatePoniesMovement(); 
-                if (waitTimer <= 0) startCooldown();
+                waitTimer--; alert.style.display = 'block'; const sec = Math.ceil(waitTimer / 60); alert.innerText = `NEXT ROUND IN ${sec}`; 
+                if (sec > 0 && lastBroadcastText !== sec) { broadcast({ type: 'sync_ui', label: `STARTING ${sec}`, mode: 'wait' }); lastBroadcastText = sec; }
+                updatePoniesMovement(); if (waitTimer <= 0) startCooldown();
             }
             else if (gameState === 'COOLDOWN') {
-                cooldownTimer--;
-                alert.style.display = 'none'; 
-                if (cooldownTimer > 180) {
-                    updateBarText("READY", "#ffffff");
-                } else {
-                    const sec = Math.ceil(cooldownTimer / 60);
-                    let color = '#ffffff'; 
-                    updateBarText(sec.toString(), color);
+                cooldownTimer--; alert.style.display = 'none'; 
+                if (cooldownTimer > 180) updateBarText("READY", "#ffffff");
+                else {
+                    const sec = Math.ceil(cooldownTimer / 60); updateBarText(sec.toString(), '#ffffff');
                     if (cooldownTimer % 60 === 59) triggerFlash();
-                    
-                    if (sec > 0 && lastBroadcastText !== sec) {
-                        broadcast({ type: 'sync_ui', label: sec.toString(), mode: 'wait' });
-                        lastBroadcastText = sec;
-                    }
+                    if (sec > 0 && lastBroadcastText !== sec) { broadcast({ type: 'sync_ui', label: sec.toString(), mode: 'wait' }); lastBroadcastText = sec; }
                 }
-                if (cooldownTimer <= 0) startRace();
-                updatePoniesMovement(); 
+                if (cooldownTimer <= 0) startRace(); updatePoniesMovement(); 
             }
             else if (gameState === 'RACING') {
-                if (ponyQueue.length > 0) {
-                    alert.style.display = 'block';
-                    alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`;
-                } else {
-                    alert.style.display = 'none';
-                }
-                updatePoniesMovement();
-                checkRaceEnd();
+                alert.style.display = ponyQueue.length > 0 ? 'block' : 'none'; if(ponyQueue.length > 0) alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`;
+                updatePoniesMovement(); checkRaceEnd();
             }
             else if (gameState === 'ROAMING') {
-                hud.style.display = 'block';
-                hud.innerText = "NOWHERE TO RUN";
-                if (ponyQueue.length > 0) {
-                    alert.style.display = 'block';
-                    alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`;
-                } else {
-                    alert.style.display = 'none';
-                }
+                hud.style.display = 'block'; hud.innerText = "NOWHERE TO RUN";
+                alert.style.display = ponyQueue.length > 0 ? 'block' : 'none'; if(ponyQueue.length > 0) alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`;
                 updatePoniesMovement();
             }
 
             const active = ponies.filter(p => p.state === 'racing');
-            
             if (active.length === 0 && Math.random() < 0.2) { 
-                const segmentSize = 500;
-                const totalSegments = Math.ceil(GAME_W / segmentSize);
-                
+                const segmentSize = 500; const totalSegments = Math.ceil(GAME_W / segmentSize);
                 for(let i=0; i<totalSegments; i++) {
-                    const startX = i * segmentSize;
-                    const endX = (i + 1) * segmentSize;
+                    const startX = i * segmentSize; const endX = (i + 1) * segmentSize;
                     const count = grass.filter(g => g.x >= startX && g.x < endX).length;
-                    
-                    if (count < 2 && Math.random() < 0.05) { 
-                        grass.push({ 
-                            x: startX + Math.random() * segmentSize, 
-                            y: 20 + Math.random() * (GAME_H - 40) 
-                        });
-                    }
+                    if (count < 2 && Math.random() < 0.05) { grass.push({ x: startX + Math.random() * segmentSize, y: 20 + Math.random() * (GAME_H - 40) }); }
                 }
             }
         }
@@ -930,40 +634,38 @@
         function checkRaceEnd() {
             const finished = ponies.filter(p => p.state === 'finished');
             let raceOverTrigger = false;
-            
-            if (ponies.length > 10) {
-                if (finished.length >= 10) raceOverTrigger = true;
-            } else {
-                if (ponies.length > 0 && finished.length === ponies.length) raceOverTrigger = true;
-            }
+            if (ponies.length > 10) { if (finished.length >= 10) raceOverTrigger = true; } 
+            else { if (ponies.length > 0 && finished.length === ponies.length) raceOverTrigger = true; }
 
-            if (raceOverTrigger) {
+            if (raceOverTrigger && gameState === 'RACING') {
+                const winner = finished.sort((a,b) => b.x - a.x)[0];
                 if (ponies.length > 10) {
                     const losers = ponies.filter(p => p.state === 'racing');
                     losers.forEach(p => explode(p));
                     ponies = ponies.filter(p => p.state === 'finished');
                 }
                 
-                ponies.forEach(p => { 
-                    p.state = 'roaming'; 
-                    p.timer = 0; 
-                    p.targetX = null; 
-                    p.targetY = null;
-                    p.isWalkAnimating = false;
+                // Mark Winner
+                ponies.forEach(o => {
+                    if(o.id === winner.id) { o.hasCrown = true; o.isStreak = false; }
                 });
+                
+                // 重置逻辑：不再调用 showVictory，直接延时后重置
+                setTimeout(resetToRoaming, 3000);
+            }
+        }
 
-                if (ponyQueue.length > 0) {
-                    gameState = 'WAITING_TO_START';
-                    waitTimer = 180; 
-                } else {
-                    gameState = 'ROAMING';
-                    broadcast({ type: 'sync_ui', label: 'DONE', mode: 'wait' });
-                    setTimeout(() => {
-                        if (gameState === 'ROAMING') {
-                            broadcast({ type: 'sync_ui', label: 'START RACE', mode: 'start' });
-                        }
-                    }, 3000);
-                }
+        function resetToRoaming() {
+            gameState = 'ROAMING';
+            ponies.forEach(p => { 
+                p.state = 'roaming'; p.timer = 0; p.targetX = null; p.targetY = null; p.isWalkAnimating = false;
+            });
+            // 修复：只要有人就允许重开
+            if (ponies.some(p => p.playerUUID) || ponyQueue.length > 0) {
+                if (ponyQueue.length > 0) { gameState = 'WAITING_TO_START'; waitTimer = 180; }
+                else { broadcast({ type: 'sync_ui', label: 'START RACE', mode: 'start' }); }
+            } else {
+                broadcast({ type: 'sync_ui', label: 'JOIN NOW', mode: 'wait' });
             }
         }
 
@@ -974,58 +676,61 @@
             ponies.forEach(p => {
                 p.frame++;
                 p.isWalkAnimating = false; 
-                
                 if (p.manualAnimTimer > 0) p.manualAnimTimer--;
-
                 if (p.state === 'ready') { p.x = 20; return; }
 
                 if (p.state === 'racing') {
-                    if (p.playerUUID) {
-                        if (p.isManual) {
-                            if (Date.now() - p.lastTapTime > 10000) { 
-                                p.isManual = false; 
-                                if (!p.name.includes("(BOT)")) p.name += " (BOT)";
-                            }
-                        }
+                    if (p.playerUUID && p.isManual) {
+                        if (Date.now() - p.lastTapTime > 10000) { p.isManual = false; if (!p.name.includes("(BOT)")) p.name += " (BOT)"; }
                     }
 
                     if (p.isManual) {
-                        p.manualSpeed *= 0.90; 
-                        if (p.manualSpeed < 0.1) p.manualSpeed = 0;
-                        p.x += p.manualSpeed;
-                        p.isWalkAnimating = p.manualSpeed > 0.1;
+                        p.manualSpeed *= 0.90; if (p.manualSpeed < 0.1) p.manualSpeed = 0;
+                        p.x += p.manualSpeed; p.isWalkAnimating = p.manualSpeed > 0.1;
+                        
+                        // 极速特效逻辑
+                        if (p.manualSpeed > 12.0 && p.frame % 3 === 0) createTrail(p); // 拖影
+                        else if (p.manualSpeed > 4.0 && p.frame % 5 === 0) createDust(p.x, p.y + 40); // 扬尘
+
                     } else {
-                        p.x += p.speed * (0.9 + Math.random() * 0.2);
-                        p.isWalkAnimating = true;
+                        p.x += p.speed * (0.9 + Math.random() * 0.2); p.isWalkAnimating = true;
+                        if (p.speed > 5.0 && p.frame % 5 === 0) createDust(p.x, p.y + 40); // AI扬尘
                     }
                     
                     p.facing = 1;
                     if (p.x >= FINISH_X) {
                         p.state = 'finished';
-                        if (finishedCount === 0 && !winnerFoundThisFrame && gameState === 'RACING') {
-                            winnerFoundThisFrame = true;
-                            if (p.hasCrown) p.isStreak = true;
-                            else { p.hasCrown = true; p.isStreak = false; }
-                            ponies.forEach(o => { if(o.id !== p.id) { o.hasCrown = false; o.isStreak = false; }});
-                        }
                     }
                 }
                 else if (p.state === 'finished') {
-                    if (p.x < GAME_W - 50) { 
-                        p.x += 0.8; 
-                        p.finishedWalking = true;
-                        p.isWalkAnimating = true;
-                    }
+                    if (p.x < GAME_W - 50) { p.x += 0.8; p.finishedWalking = true; p.isWalkAnimating = true; }
                     else { p.finishedWalking = false; aiBehavior(p, true); }
                 }
-                else {
-                    p.finishedWalking = false;
-                    aiBehavior(p, false);
+                else if (p.state === 'roaming' || p.state === 'eating') {
+                    p.finishedWalking = false; aiBehavior(p, false);
                 }
                 
                 p.x = Math.max(0, Math.min(GAME_W - 38, p.x));
                 p.y = Math.max(p.hasCrown ? 35 : 20, Math.min(GAME_H - 44 - 6, p.y));
             });
+        }
+        
+        // 新增：扬尘特效
+        function createDust(x, y) {
+            const fx = document.getElementById('layer-fx');
+            const d = document.createElement('div');
+            d.className = 'dust'; d.style.left = (x - 5 + Math.random()*10) + 'px'; d.style.top = (y + Math.random()*5) + 'px';
+            fx.appendChild(d); setTimeout(() => d.remove(), 500);
+        }
+
+        // 新增：光影拖影特效
+        function createTrail(p) {
+            const fx = document.getElementById('layer-fx');
+            const t = document.createElement('div');
+            t.className = 'trail-ghost';
+            t.style.left = p.x + 'px'; t.style.top = p.y + 'px'; t.style.background = p.color;
+            t.style.clipPath = "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)"; // 简单方块剪裁
+            fx.appendChild(t); setTimeout(() => t.remove(), 200);
         }
 
         function aiBehavior(p, restrictFinish) {
@@ -1038,51 +743,31 @@
                 for(let i=0; i<grass.length; i++) {
                     const g = grass[i];
                     if (Math.abs(g.x - p.x) < 50 && Math.abs(g.y - p.y) < 50) {
-                        p.state = 'eating'; p.timer = 50; 
-                        grass.splice(i, 1); p.targetX = null; p.targetY = null; return; 
+                        p.state = 'eating'; p.timer = 50; grass.splice(i, 1); p.targetX = null; p.targetY = null; return; 
                     }
                 }
                 if (p.timer-- <= 0) { 
                     const action = Math.random();
                     if (action < 0.3) { 
-                        if (p.x < GAME_W / 2) {
-                            p.targetX = GAME_W - 100 - Math.random() * 400; 
-                        } else {
-                            p.targetX = 50 + Math.random() * 400; 
-                        }
-                        p.targetY = minY + Math.random() * (maxY - minY);
-                        p.timer = 400 + Math.random() * 400; 
-                        p.roamSpeed = 2.0; 
+                        if (p.x < GAME_W / 2) p.targetX = GAME_W - 100 - Math.random() * 400; else p.targetX = 50 + Math.random() * 400; 
+                        p.targetY = minY + Math.random() * (maxY - minY); p.timer = 400 + Math.random() * 400; p.roamSpeed = 2.0; 
                     } else if (action < 0.8) {
-                        p.targetX = p.x + (Math.random() - 0.5) * 600; 
-                        p.targetY = minY + Math.random() * (maxY - minY);
-                        p.timer = 100 + Math.random() * 200;
-                        p.roamSpeed = 0.8; 
+                        p.targetX = p.x + (Math.random() - 0.5) * 600; p.targetY = minY + Math.random() * (maxY - minY);
+                        p.timer = 100 + Math.random() * 200; p.roamSpeed = 0.8; 
                     } else {
-                        p.targetX = null; 
-                        p.targetY = null;
-                        p.timer = 60 + Math.random() * 120; 
-                        p.roamSpeed = 0;
+                        p.targetX = null; p.targetY = null; p.timer = 60 + Math.random() * 120; p.roamSpeed = 0;
                     }
                 }
-                
                 if (p.targetX !== null && p.targetY !== null) {
                     const dx = p.targetX - p.x; const dy = p.targetY - p.y;
                     const dist = Math.sqrt(dx*dx + dy*dy);
-                    
-                    if (dist < 5) {
-                        p.targetX = null; p.targetY = null;
-                        p.timer = 0; 
-                    } else {
-                        const speed = p.roamSpeed || 0.5; 
-                        p.x += (dx / dist) * speed; p.y += (dy / dist) * speed;
-                        p.facing = Math.sign(dx) || 1; 
-                        p.isWalkAnimating = true;
+                    if (dist < 5) { p.targetX = null; p.targetY = null; p.timer = 0; } 
+                    else {
+                        const speed = p.roamSpeed || 0.5; p.x += (dx / dist) * speed; p.y += (dy / dist) * speed;
+                        p.facing = Math.sign(dx) || 1; p.isWalkAnimating = true;
                     }
                 }
-            } else if (p.state === 'eating') {
-                if (p.timer-- <= 0) p.state = 'roaming';
-            }
+            } else if (p.state === 'eating') { if (p.timer-- <= 0) p.state = 'roaming'; }
         }
 
         function explode(p) {
@@ -1090,17 +775,13 @@
             for(let i=0; i<20; i++) {
                 const el = document.createElement('div');
                 el.className = 'explosion';
-                el.style.left = (p.x + 19) + 'px';
-                el.style.top = (p.y + 19) + 'px';
-                el.style.background = p.color;
+                el.style.left = (p.x + 19) + 'px'; el.style.top = (p.y + 19) + 'px'; el.style.background = p.color;
                 fx.appendChild(el);
                 const angle = Math.random() * 6.28, spd = 3 + Math.random() * 5;
                 let vx = Math.cos(angle) * spd, vy = Math.sin(angle) * spd, life = 40;
                 const tick = () => {
                     if (life-- <= 0) return el.remove();
-                    el.style.left = (parseFloat(el.style.left) + vx) + 'px';
-                    el.style.top = (parseFloat(el.style.top) + vy) + 'px';
-                    el.style.opacity = life/40;
+                    el.style.left = (parseFloat(el.style.left) + vx) + 'px'; el.style.top = (parseFloat(el.style.top) + vy) + 'px'; el.style.opacity = life/40;
                     requestAnimationFrame(tick);
                 };
                 tick();
@@ -1112,7 +793,6 @@
         function draw() {
             const grassL = document.getElementById('layer-grass');
             grassL.innerHTML = grass.map(g => `<div class="grass" style="left:${g.x}px; top:${g.y}px"></div>`).join('');
-
             const ponyL = document.getElementById('layer-pony');
             const nodes = Array.from(ponyL.children);
             const ids = new Set(ponies.map(p => p.id));
@@ -1133,6 +813,10 @@
                     `;
                     ponyL.appendChild(el);
                 }
+                
+                // Add winner class for higher z-index
+                if(p.hasCrown) el.classList.add('winner'); else el.classList.remove('winner');
+
                 el.style.transform = `translate(${p.x}px, ${p.y}px) scale(1.1)`;
                 el.style.zIndex = Math.floor(p.y);
                 const crownC = el.querySelector('.crown-container');
@@ -1141,283 +825,131 @@
                 el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
 
                 let frameStep = 0;
-                if (p.isManual && p.state === 'racing') {
-                    frameStep = (p.manualAnimTimer > 0) ? 1 : 0;
-                } else if (p.isWalkAnimating) {
-                    frameStep = Math.floor(p.frame / 5) % 2;
-                }
+                if (p.isManual && p.state === 'racing') frameStep = (p.manualAnimTimer > 0) ? 1 : 0;
+                else if (p.isWalkAnimating) frameStep = Math.floor(p.frame / 5) % 2;
 
                 el.querySelector('.p-grid').style.transform = `scaleX(${p.facing || 1})`;
-
                 let html = '';
                 for(let y=0; y<11; y++) {
                     let row = p.pixels[y];
-                    if (p.state === 'eating') {
-                        if (y <= 5) {
-                            row = (y >= 2) ? p.pixels[y - 2] : [0,0,0,0,0,0,0,0,0,0,0];
-                        }
-                    } 
-                    else if (frameStep === 1 && y > 8) {
-                        row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[0]]; 
-                    }
-
+                    if (p.state === 'eating') { if (y <= 5) row = (y >= 2) ? p.pixels[y - 2] : [0,0,0,0,0,0,0,0,0,0,0]; } 
+                    else if (frameStep === 1 && y > 8) row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[0]]; 
                     for(let x=0; x<11; x++) { if (row[x]) html += `<div style="background:${p.color}; width:100%; height:100%; grid-column:${x+1}; grid-row:${y+1}"></div>`; }
                 }
                 el.querySelector('.p-grid').innerHTML = html;
             });
         }
-
-        function initMobile() {
-            playerUUID = localStorage.getItem('horse_uuid');
-            if (!playerUUID) {
-                playerUUID = 'user_' + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem('horse_uuid', playerUUID);
-            }
-
-            initEditor('m-grid', 'm-colors', mobileGrid);
+        
+        function initDesktop() {
+            initEditor('pc-grid', 'pc-colors', pcGrid);
             try {
                 peer = new Peer(null, PEER_CONFIG);
-                peer.on('open', () => {
-                    conn = peer.connect(new URLSearchParams(window.location.search).get('host'));
-                    conn.on('open', () => {
-                        document.getElementById('m-status').innerText = "CONNECTED";
-                        document.getElementById('m-status').style.color = "#69f0ae";
-                        conn.send({ type: 'check_reconnect', uuid: playerUUID });
-                    });
-                    
-                    conn.on('data', data => {
-                        if (data.type === 'reconnect_success') {
-                            document.getElementById('m-editor-ui').style.display = 'none';
-                            document.getElementById('m-controller').style.display = 'flex';
+                peer.on('open', id => {
+                    const url = `${location.href}?host=${id}`;
+                    new QRCode(document.getElementById("qrcode"), { text: url, width: 86, height: 86, colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L });
+                });
+                peer.on('connection', c => {
+                    c.on('data', data => {
+                        if (data.type === 'check_reconnect') {
+                            const uuid = data.uuid; const exists = ponies.find(p => p.playerUUID === uuid) || ponyQueue.find(p => p.playerUUID === uuid);
+                            if (exists) c.send({ type: 'reconnect_success' });
                         }
-                        else if (data.type === 'sync_ui') {
-                            const btn = document.getElementById('m-btn');
-                            const info = document.getElementById('m-info');
-                            mobileBtnState = data.mode;
-                            btn.innerText = data.label;
-                            btn.className = 'push-btn'; 
-                            if (data.mode === 'wait') {
-                                btn.classList.add('btn-wait');
-                                info.innerText = "GET READY...";
-                            } else if (data.mode === 'mash') {
-                                btn.classList.add('btn-mash');
-                                info.innerText = "TAP FAST!!!";
-                            } else if (data.mode === 'start') {
-                                btn.classList.add('btn-start');
-                                info.innerText = "RACE FINISHED";
-                            }
-                        }
+                        else if (data.type === 'spawn') {
+                            const uuid = data.payload.uuid;
+                            const exists = ponies.find(p => p.playerUUID === uuid) || ponyQueue.find(p => p.playerUUID === uuid);
+                            if (!exists) requestSpawnPony(data.payload.name, data.payload.pixels, data.payload.color, uuid);
+                        } 
+                        else if (data.type === 'tap') handleTap(data.uuid);
+                        else if (data.type === 'force_start') { if (gameState === 'ROAMING' || gameState === 'WAITING_TO_START') startCooldown(); }
+                        else if (data.type === 'emoji') showEmoji(data.uuid, data.emoji);
                     });
                 });
+                peer.on('error', (err) => { console.error("PeerJS Error:", err); alert("Network Error: " + err.type + "\nTry refreshing."); });
             } catch(e) { console.error(e); }
         }
-        
-        function sendMobile() {
-            if(!conn) return alert("Not Connected!");
-            
-            const nameInput = document.getElementById('m-name');
-            let name = nameInput.value.trim().replace(/[^a-zA-Z0-9]/g, '');
-            if (!name) name = "PLAYER";
-            name = name.toUpperCase();
 
-            let hasPixels = false;
-            for(let r=0; r<11; r++) { for(let c=0; c<11; c++) { if (mobileGrid[r][c] === 1) { hasPixels = true; break; } } if(hasPixels) break; }
-            if (!hasPixels) { alert("CANVAS IS EMPTY"); return; }
-
-            mySoundType = SOUND_TYPES[Math.floor(Math.random() * SOUND_TYPES.length)];
-            initAudio();
-
-            conn.send({ 
-                type: 'spawn', 
-                payload: { name: name, pixels: mobileGrid, color: selectedColor, uuid: playerUUID } 
-            });
-            
-            document.getElementById('m-editor-ui').style.display = 'none';
-            document.getElementById('m-controller').style.display = 'flex';
+        function spawnTestPony() {
+            const names = ["SPEEDY", "THUNDER", "BOLT", "COMET", "DASH", "FLASH", "STORM", "SHADOW", "BLAZE", "SPIRIT"];
+            const rName = names[Math.floor(Math.random() * names.length)] + " " + Math.floor(Math.random()*99);
+            const colorKeys = Object.keys(COLORS); const rColorKey = colorKeys[Math.floor(Math.random() * colorKeys.length)]; const rColor = COLORS[rColorKey];
+            requestSpawnPony(rName, DEFAULT_PIXELS, rColor, null);
         }
-
-        function initAudio() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+        function showEmoji(uuid, emoji) {
+            const pony = ponies.find(p => p.playerUUID === uuid);
+            if (pony) {
+                const el = document.getElementById(pony.id);
+                if (el) {
+                    const bubble = document.createElement('div'); bubble.className = 'emoji-bubble'; bubble.innerText = emoji;
+                    el.appendChild(bubble); setTimeout(() => bubble.remove(), 2000);
+                }
+            }
         }
-
+        function handleTap(uuid) {
+            if (!uuid) return; const pony = ponies.find(p => p.playerUUID === uuid);
+            if (pony && pony.state === 'racing') {
+                pony.isManual = true; pony.lastTapTime = Date.now(); pony.tapCount++; pony.name = pony.name.replace(" (BOT)", "");
+                pony.manualSpeed = Math.min(pony.manualSpeed + 2.9, 22);
+                if (pony.manualAnimTimer === 0) pony.manualAnimTimer = 10; 
+            }
+        }
+        function requestSpawnPony(name, pixels, color, uuid = null) {
+            const newPony = {
+                id: Math.random().toString(36).substr(2, 9), playerUUID: uuid, isManual: !!uuid, manualSpeed: 0, tapCount: 0, lastTapTime: Date.now(), 
+                name: name || 'PONY', pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_PIXELS)), color: color || COLORS.CYAN, x: 20, y: 30 + Math.random() * (GAME_H - PONY_SIZE - 20),
+                speed: 3.0, state: 'racing', hasCrown: false, isStreak: false, crownCount: 0, timer: 0, frame: 0, finishedWalking: false, targetX: null, targetY: null, isWalkAnimating: false, manualAnimTimer: 0, roamSpeed: 0.5 
+            };
+            if (gameState === 'RACING' || gameState === 'COOLDOWN' || gameState === 'WAITING_TO_START') { ponyQueue.push(newPony); updateHUD(); } 
+            else { ponies.push(newPony); startCooldown(); }
+        }
+        function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
         function playDynamicSound(interval) {
-            if (!audioCtx) return;
-            const now = audioCtx.currentTime;
-            let baseFreq = 150 + (30000 / Math.max(50, interval));
-            if (baseFreq > 800) baseFreq = 800;
-
-            const gain = audioCtx.createGain();
-            gain.connect(audioCtx.destination);
-            gain.gain.setValueAtTime(0.1, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-
-            if (mySoundType === 'SAWTOOTH') {
-                const osc = audioCtx.createOscillator();
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(baseFreq, now);
-                osc.connect(gain);
-                osc.start();
-                osc.stop(now + 0.15);
-            } 
-            else if (mySoundType === 'SQUARE') {
-                const osc = audioCtx.createOscillator();
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(baseFreq, now);
-                osc.connect(gain);
-                osc.start();
-                osc.stop(now + 0.1);
-            }
-            else if (mySoundType === 'LASER') {
-                const osc = audioCtx.createOscillator();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(baseFreq * 2, now);
-                osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.5, now + 0.1);
-                osc.connect(gain);
-                osc.start();
-                osc.stop(now + 0.15);
-            }
-            else if (mySoundType === 'FM') {
-                const carrier = audioCtx.createOscillator();
-                const modulator = audioCtx.createOscillator();
-                const modGain = audioCtx.createGain();
-                modulator.frequency.value = baseFreq * 1.4; 
-                modGain.gain.value = baseFreq * 0.5;
-                modulator.connect(modGain);
-                modGain.connect(carrier.frequency);
-                carrier.connect(gain);
-                carrier.frequency.setValueAtTime(baseFreq, now);
-                modulator.start(); carrier.start();
-                modulator.stop(now + 0.2); carrier.stop(now + 0.2);
-            }
+            if (!audioCtx) return; const now = audioCtx.currentTime; let baseFreq = 150 + (30000 / Math.max(50, interval)); if (baseFreq > 800) baseFreq = 800;
+            const gain = audioCtx.createGain(); gain.connect(audioCtx.destination); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+            if (mySoundType === 'SAWTOOTH') { const osc = audioCtx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(baseFreq, now); osc.connect(gain); osc.start(); osc.stop(now + 0.15); } 
+            else if (mySoundType === 'SQUARE') { const osc = audioCtx.createOscillator(); osc.type = 'square'; osc.frequency.setValueAtTime(baseFreq, now); osc.connect(gain); osc.start(); osc.stop(now + 0.1); }
+            else if (mySoundType === 'LASER') { const osc = audioCtx.createOscillator(); osc.type = 'sine'; osc.frequency.setValueAtTime(baseFreq * 2, now); osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.5, now + 0.1); osc.connect(gain); osc.start(); osc.stop(now + 0.15); }
+            else if (mySoundType === 'FM') { const carrier = audioCtx.createOscillator(); const modulator = audioCtx.createOscillator(); const modGain = audioCtx.createGain(); modulator.frequency.value = baseFreq * 1.4; modGain.gain.value = baseFreq * 0.5; modulator.connect(modGain); modGain.connect(carrier.frequency); carrier.connect(gain); carrier.frequency.setValueAtTime(baseFreq, now); modulator.start(); carrier.start(); modulator.stop(now + 0.2); carrier.stop(now + 0.2); }
         }
-
         function btnAction(e) {
-            e.preventDefault(); 
-            const btn = document.getElementById('m-btn');
-            btn.style.transform = 'scale(0.95)';
-            setTimeout(() => { btn.style.transform = 'scale(1)'; }, 50);
-
-            if (mobileBtnState === 'mash') {
-                if(conn) conn.send({ type: 'tap', uuid: playerUUID });
-                const now = Date.now();
-                const interval = now - lastTapTime;
-                lastTapTime = now;
-                playDynamicSound(interval);
-            } 
-            else if (mobileBtnState === 'start') {
-                if(conn) conn.send({ type: 'force_start' });
-            }
+            e.preventDefault(); const btn = document.getElementById('m-btn'); btn.style.transform = 'scale(0.95)'; setTimeout(() => { btn.style.transform = 'scale(1)'; }, 50);
+            if (mobileBtnState === 'mash') { if(conn) conn.send({ type: 'tap', uuid: playerUUID }); const now = Date.now(); const interval = now - lastTapTime; lastTapTime = now; playDynamicSound(interval); } 
+            else if (mobileBtnState === 'start') { if(conn) conn.send({ type: 'force_start' }); }
         }
-        
-        function resetMobile() {
-            document.getElementById('m-controller').style.display = 'none';
-            document.getElementById('m-editor-ui').style.display = 'block';
-            document.getElementById('m-name').value = '';
-            restoreGridData(mobileGrid);
-            renderGrid('m-grid', mobileGrid, selectedColor);
-        }
-
+        function resetMobile() { document.getElementById('m-controller').style.display = 'none'; document.getElementById('m-editor-ui').style.display = 'block'; document.getElementById('m-name').value = ''; restoreGridData(mobileGrid); renderGrid('m-grid', mobileGrid, selectedColor); }
         function clearMobile() { clearGridData(mobileGrid); renderGrid('m-grid', mobileGrid, selectedColor); }
         function clearDesktop() { clearGridData(pcGrid); renderGrid('pc-grid', pcGrid, selectedColor); }
         function clearGridData(grid) { for(let r=0; r<11; r++) for(let c=0; c<11; c++) grid[r][c] = 0; }
         function restoreGridData(grid) { for(let r=0; r<11; r++) for(let c=0; c<11; c++) grid[r][c] = DEFAULT_PIXELS[r][c]; }
-
-        function openDesktopEditor() {
-            renderGrid('pc-grid', pcGrid, selectedColor);
-            document.getElementById('modal-editor').style.display = 'flex';
+        
+        // 修复点：直接设置 display:flex 来显示画板，不再使用 classList.remove('hidden')
+        function openDesktopEditor() { 
+            renderGrid('pc-grid', pcGrid, selectedColor); 
+            document.getElementById('modal-editor').style.display = 'flex'; 
         }
-        function savePCPony() {
-            let name = document.getElementById('pc-name').value.trim().replace(/[^a-zA-Z0-9]/g, '');
-            if (!name) name = "PLAYER";
-            name = name.toUpperCase();
-            
-            requestSpawnPony(name, pcGrid, selectedColor);
-            document.getElementById('modal-editor').style.display = 'none';
-        }
-
+        
+        function savePCPony() { let name = document.getElementById('pc-name').value.trim().replace(/[^a-zA-Z0-9]/g, ''); if (!name) name = "PLAYER"; name = name.toUpperCase(); requestSpawnPony(name, pcGrid, selectedColor); document.getElementById('modal-editor').style.display = 'none'; }
+        
         function initEditor(gridId, colorId, dataGrid) {
-            const gridEl = document.getElementById(gridId);
-            const colorEl = document.getElementById(colorId);
-            colorEl.innerHTML = '';
+            const gridEl = document.getElementById(gridId); const colorEl = document.getElementById(colorId); colorEl.innerHTML = '';
             Object.values(COLORS).forEach(c => {
-                const dot = document.createElement('div');
-                dot.className = `c-dot ${c === selectedColor ? 'active' : ''}`;
-                dot.style.background = c;
-                dot.onclick = () => {
-                    selectedColor = c; renderGrid(gridId, dataGrid, selectedColor);
-                    Array.from(colorEl.children).forEach(d => d.classList.remove('active')); dot.classList.add('active');
-                };
+                const dot = document.createElement('div'); dot.className = `c-dot ${c === selectedColor ? 'active' : ''}`; dot.style.background = c;
+                dot.onclick = () => { selectedColor = c; renderGrid(gridId, dataGrid, selectedColor); Array.from(colorEl.children).forEach(d => d.classList.remove('active')); dot.classList.add('active'); };
                 colorEl.appendChild(dot);
             });
             renderGrid(gridId, dataGrid, selectedColor);
-
             let drawing = false, eraseMode = false;
-
-            const getCellCoords = (e) => {
-                const t = e.touches ? e.touches[0] : e;
-                const el = document.elementFromPoint(t.clientX, t.clientY);
-                if (el && el.classList.contains('editor-cell')) {
-                    return { r: parseInt(el.dataset.r), c: parseInt(el.dataset.c), el: el };
-                }
-                return null;
-            };
-
-            const startDraw = (e) => {
-                if(e.cancelable) e.preventDefault();
-                drawing = true;
-                const cell = getCellCoords(e);
-                if (cell) {
-                    eraseMode = dataGrid[cell.r][cell.c] === 1;
-                    updateCell(cell.r, cell.c, cell.el);
-                }
-            };
-
-            const moveDraw = (e) => {
-                if (!drawing) return;
-                if(e.cancelable) e.preventDefault();
-                const cell = getCellCoords(e);
-                if (cell) {
-                    updateCell(cell.r, cell.c, cell.el);
-                }
-            };
-
-            const endDraw = () => {
-                drawing = false;
-            };
-
-            const updateCell = (r, c, el) => {
-                const targetVal = eraseMode ? 0 : 1;
-                if (dataGrid[r][c] !== targetVal) {
-                    dataGrid[r][c] = targetVal;
-                    if (targetVal === 1) {
-                        el.style.background = selectedColor;
-                        el.style.boxShadow = `0 0 5px ${selectedColor}`;
-                    } else {
-                        el.style.background = '#000';
-                        el.style.boxShadow = 'none';
-                    }
-                }
-            };
-
-            gridEl.onmousedown = gridEl.ontouchstart = startDraw;
-            window.onmousemove = window.ontouchmove = moveDraw;
-            window.onmouseup = window.ontouchend = endDraw;
+            const getCellCoords = (e) => { const t = e.touches ? e.touches[0] : e; const el = document.elementFromPoint(t.clientX, t.clientY); if (el && el.classList.contains('editor-cell')) { return { r: parseInt(el.dataset.r), c: parseInt(el.dataset.c), el: el }; } return null; };
+            const startDraw = (e) => { if(e.cancelable) e.preventDefault(); drawing = true; const cell = getCellCoords(e); if (cell) { eraseMode = dataGrid[cell.r][cell.c] === 1; updateCell(cell.r, cell.c, cell.el); } };
+            const moveDraw = (e) => { if (!drawing) return; if(e.cancelable) e.preventDefault(); const cell = getCellCoords(e); if (cell) { updateCell(cell.r, cell.c, cell.el); } };
+            const endDraw = () => { drawing = false; };
+            const updateCell = (r, c, el) => { const targetVal = eraseMode ? 0 : 1; if (dataGrid[r][c] !== targetVal) { dataGrid[r][c] = targetVal; if (targetVal === 1) { el.style.background = selectedColor; el.style.boxShadow = `0 0 5px ${selectedColor}`; } else { el.style.background = '#000'; el.style.boxShadow = 'none'; } } };
+            gridEl.onmousedown = gridEl.ontouchstart = startDraw; window.onmousemove = window.ontouchmove = moveDraw; window.onmouseup = window.ontouchend = endDraw;
         }
-
         function renderGrid(id, data, color) {
             const el = document.getElementById(id); el.innerHTML = '';
             data.forEach((row, r) => row.forEach((val, c) => {
-                const cell = document.createElement('div');
-                cell.className = 'editor-cell'; 
-                cell.dataset.r = r; 
-                cell.dataset.c = c;
-                if(val) { 
-                    cell.style.background = color; 
-                    cell.style.boxShadow = `0 0 5px ${color}`; 
-                } else {
-                    cell.style.background = '#000';
-                }
+                const cell = document.createElement('div'); cell.className = 'editor-cell'; cell.dataset.r = r; cell.dataset.c = c;
+                if(val) { cell.style.background = color; cell.style.boxShadow = `0 0 5px ${color}`; } else { cell.style.background = '#000'; }
                 el.appendChild(cell);
             }));
         }
