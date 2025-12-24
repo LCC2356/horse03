@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v8.1 PIXEL EMOJI</title>
+    <title>HORSE RUNRUN - v8.3 PURE PIXEL ART</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -267,29 +267,52 @@
             transition: filter 0.1s ease-out, transform 0.1s ease-out;
         }
 
-        /* === 修改后：像素风表情气泡 === */
-        .pop-emoji {
+        /* === 纯CSS绘制的像素表情 === */
+        /* 使用 box-shadow 绘制技术，不依赖 emoji 字体 */
+        .pixel-emoji-container {
             position: absolute;
-            top: -20px; /* 修改高度 */
+            top: -20px;
             left: 50%;
             transform: translateX(-50%);
-            
-            font-size: 15px; /* 修改大小 */
-            
-            /* 像素风关键：使用硬边阴影 */
-            text-shadow: 1px 1px 0 #000; 
-            
-            /* 动画加入 steps 使其看起来更机械/像素化 */
-            animation: float-emoji 1.2s steps(10) forwards; 
             pointer-events: none;
             z-index: 200;
-            white-space: nowrap;
-            image-rendering: pixelated; 
+            /* 飘动动画：时长 2.5s，linear 保证不卡顿 */
+            animation: pixel-float-smooth 2.5s linear forwards;
         }
-        @keyframes float-emoji {
-            0% { transform: translate(-50%, 0); opacity: 0; }
-            15% { transform: translate(-50%, -10px); opacity: 1; }
-            100% { transform: translate(-50%, -40px); opacity: 0; }
+
+        /* 基础像素点样式 */
+        .pixel-icon-base {
+            width: 4px; /* 单个像素点大小 */
+            height: 4px;
+            background: transparent;
+            /* 阴影就是像素点的内容，由 JS 生成 */
+        }
+
+        /* === 丝滑飘动动画 (Sine Wave path) === */
+        @keyframes pixel-float-smooth {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, 10px) scale(0.5); 
+            }
+            10% {
+                opacity: 1;
+                transform: translate(-50%, -10px) scale(1);
+            }
+            /* 使用百分比控制左右摆动 */
+            25% {
+                transform: translate(calc(-50% + 20px), -40px) scale(1);
+            }
+            50% {
+                transform: translate(calc(-50% - 20px), -80px) scale(1);
+            }
+            75% {
+                transform: translate(calc(-50% + 15px), -120px) scale(1);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translate(-50%, -160px) scale(1);
+                opacity: 0;
+            }
         }
 
         /* === 手机端表情按钮栏 === */
@@ -306,6 +329,7 @@
             display: flex; justify-content: center; align-items: center;
             transition: transform 0.1s;
             -webkit-tap-highlight-color: transparent;
+            font-family: 'VT323', monospace;
         }
         .emoji-btn:active { transform: scale(0.8); background: #fff; color: #000; }
 
@@ -535,10 +559,10 @@
             <div id="m-btn" class="push-btn btn-wait" ontouchstart="btnAction(event)" onmousedown="btnAction(event)">WAIT</div>
             
             <div class="emoji-bar">
-                <div class="emoji-btn" onclick="sendEmoji('❤️')">❤️</div>
-                <div class="emoji-btn" onclick="sendEmoji('💩')">💩</div>
-                <div class="emoji-btn" onclick="sendEmoji('⚡')">⚡</div>
-                <div class="emoji-btn" onclick="sendEmoji('😂')">😂</div>
+                <div class="emoji-btn" onclick="sendEmoji('HEART')">❤️</div>
+                <div class="emoji-btn" onclick="sendEmoji('POOP')">💩</div>
+                <div class="emoji-btn" onclick="sendEmoji('BOLT')">⚡</div>
+                <div class="emoji-btn" onclick="sendEmoji('FACE')">😂</div>
             </div>
         </div>
     </div>
@@ -564,6 +588,42 @@
             [0,0,1,0,1,0,1,0,1,0,0],
             [0,0,1,0,1,0,1,0,1,0,0]
         ];
+
+        /* === 自定义 1-Bit 像素画数据 (0=空, 1=白像素) === */
+        /* 参考图片 Antithesis 和 Fiverr 风格绘制 */
+        const PIXEL_ART_MAPS = {
+            'HEART': [
+                [0,1,1,0,1,1,0],
+                [1,1,1,1,1,1,1],
+                [1,1,1,1,1,1,1],
+                [0,1,1,1,1,1,0],
+                [0,0,1,1,1,0,0],
+                [0,0,0,1,0,0,0]
+            ],
+            'POOP': [
+                [0,0,0,1,0,0,0],
+                [0,0,1,1,1,0,0],
+                [0,1,1,1,1,1,0],
+                [1,0,1,1,1,0,1],
+                [1,1,1,1,1,1,1]
+            ],
+            'BOLT': [
+                [0,0,1,1,1,0],
+                [0,1,1,1,0,0],
+                [1,1,1,1,1,0],
+                [0,0,0,1,1,0],
+                [0,0,1,1,0,0],
+                [0,0,1,0,0,0]
+            ],
+            'FACE': [
+                [0,1,1,1,1,1,0],
+                [1,0,1,0,1,0,1], /* 眼睛 */
+                [1,0,1,0,1,0,1],
+                [1,0,0,0,0,0,1],
+                [1,1,0,0,0,1,1], /* 嘴巴 (像参考图那样的方块嘴) */
+                [0,1,1,1,1,1,0]
+            ]
+        };
 
         let ponies = [];
         let ponyQueue = [];
@@ -1138,11 +1198,9 @@
                         p.isWalkAnimating = true;
                     }
 
-                    // 1. 中等热度：生成尘土 (阈值提高到 52)
                     if (p.turboCharge > 52 && Math.random() < 0.4) {
                         spawnDust(p.x, p.y);
                     }
-                    // 2. 高热度：极速残影
                     if (p.turboCharge > 30) {
                         p.isTurbo = true;
                     }
@@ -1491,18 +1549,44 @@
         }
 
         // === 新增：电脑端显示表情 ===
-        function triggerPonyEmoji(uuid, emojiChar) {
+        function triggerPonyEmoji(uuid, emojiType) {
             const pony = ponies.find(p => p.playerUUID === uuid);
             if (!pony) return;
             
             const pEl = document.getElementById(pony.id);
             if (!pEl) return;
 
-            const el = document.createElement('div');
-            el.className = 'pop-emoji';
-            el.innerText = emojiChar;
+            /* 创建表情容器 */
+            const container = document.createElement('div');
+            container.className = 'pixel-emoji-container';
+
+            /* 创建像素画 Base */
+            const pixelArt = document.createElement('div');
+            pixelArt.className = 'pixel-icon-base';
+
+            /* 获取对应的像素画数组 */
+            const map = PIXEL_ART_MAPS[emojiType] || PIXEL_ART_MAPS['HEART'];
             
-            pEl.appendChild(el);
+            /* 生成 box-shadow 字符串 */
+            let boxShadow = '';
+            for(let y=0; y<map.length; y++) {
+                for(let x=0; x<map[y].length; x++) {
+                    if (map[y][x] === 1) {
+                        /* 每个像素点是 4px 大小 */
+                        boxShadow += `${x*4}px ${y*4}px #fff,`;
+                    }
+                }
+            }
+            /* 去掉末尾逗号 */
+            boxShadow = boxShadow.slice(0, -1);
+            
+            /* 应用到 style */
+            pixelArt.style.boxShadow = boxShadow;
+            /* 居中偏移修正 (宽度大致是 7格*4px = 28px) */
+            pixelArt.style.transform = 'translateX(-14px)';
+
+            container.appendChild(pixelArt);
+            pEl.appendChild(container);
             
             if (audioCtx && audioCtx.state === 'running') {
                 const osc = audioCtx.createOscillator();
@@ -1516,13 +1600,14 @@
                 osc.start(); osc.stop(audioCtx.currentTime + 0.1);
             }
 
-            setTimeout(() => el.remove(), 1500);
+            // 修改这里：动画时长改为 2.5s，所以这里设置 2500ms 后移除
+            setTimeout(() => container.remove(), 2500);
         }
 
         // === 新增：手机端发送表情 ===
-        function sendEmoji(char) {
+        function sendEmoji(type) {
             if(!conn) return;
-            conn.send({ type: 'emoji', uuid: playerUUID, content: char });
+            conn.send({ type: 'emoji', uuid: playerUUID, content: type });
             
             const btn = event.currentTarget; 
             btn.style.transform = 'scale(0.8)';
