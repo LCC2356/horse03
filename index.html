@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.95 ULTIMATE</title>
+    <title>HORSE RUNRUN - v7.98 SNOW & TURBO</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -228,11 +228,29 @@
 
         /* ==================== 特效样式 ==================== */
         
+        /* 新增：雪花层 */
+        #layer-snow {
+            position: absolute; inset: 0; pointer-events: none; z-index: 1;
+        }
+        /* 新增：雪花粒子 */
+        .snowflake {
+            position: absolute; top: -10px;
+            background: #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 0 4px #ffffff;
+            animation-name: snowfall;
+            animation-timing-function: linear;
+            animation-fill-mode: forwards;
+        }
+        @keyframes snowfall {
+            to { transform: translateY(calc(var(--game-h) + 20px)); }
+        }
+
         .dust-particle {
             position: absolute;
             width: 7px; height: 7px;
             background: #ffffff; 
-            box-shadow: 0 0 8px #ffffff; /* 亮白色光晕 */
+            box-shadow: 0 0 8px #ffffff; 
             border-radius: 50%;
             pointer-events: none;
             opacity: 1.0; 
@@ -245,11 +263,10 @@
         }
 
         .trail-active .p-grid {
-            /* 强烈的残影滤镜 */
             filter: drop-shadow(-10px 0 2px var(--trail-c)) 
                     drop-shadow(-20px 0 5px var(--trail-c))
                     opacity(0.9);
-            transform: scaleX(1.2) skewX(-10deg); /* 更夸张的拉伸 */
+            transform: scaleX(1.2) skewX(-10deg); 
             transition: filter 0.1s ease-out, transform 0.1s ease-out;
         }
         
@@ -403,6 +420,8 @@
                     <div id="queue-text" class="queue-alert"></div>
                     
                     <div id="vfd-overlay"></div>
+
+                    <div id="layer-snow"></div>
 
                     <div id="layer-grass"></div>
                     <div id="layer-pony"></div>
@@ -890,6 +909,9 @@
         }
 
         function updateGameLogic() {
+            // === 持续下雪 ===
+            spawnSnow();
+
             const alert = document.getElementById('queue-text');
             const hud = document.getElementById('hud');
 
@@ -1013,22 +1035,41 @@
 
         function spawnDust(x, y) {
             const fxLayer = document.getElementById('layer-fx');
-            // 每次生成 4-7 个粒子
             const count = Math.floor(Math.random() * 4) + 4; 
             for (let i = 0; i < count; i++) {
                 const el = document.createElement('div');
                 el.className = 'dust-particle';
-                // 在马脚附近随机位置生成
                 el.style.left = (x + 5 + Math.random() * 30) + 'px';
                 el.style.top = (y + 40 + Math.random() * 8) + 'px';
-                // 随机大小变化
                 const sizeMod = Math.random() * 0.6 + 0.7;
-                // 随机旋转角度
                 const rotate = Math.random() * 360;
                 el.style.transform = `scale(${sizeMod}) rotate(${rotate}deg)`;
-
                 fxLayer.appendChild(el);
                 setTimeout(() => el.remove(), 700);
+            }
+        }
+
+        // === 新增：雪花生成函数 ===
+        function spawnSnow() {
+            const snowLayer = document.getElementById('layer-snow');
+            // 每次生成 1-2 片
+            const count = Math.random() < 0.5 ? 1 : 2;
+            for(let i=0; i<count; i++) {
+                const el = document.createElement('div');
+                el.className = 'snowflake';
+                // 随机横向位置
+                el.style.left = (Math.random() * GAME_W) + 'px';
+                // 随机大小
+                const size = 2 + Math.random() * 3;
+                el.style.width = size + 'px'; el.style.height = size + 'px';
+                // 随机不透明度
+                el.style.opacity = 0.4 + Math.random() * 0.6;
+                // 随机下落速度
+                const duration = 2000 + Math.random() * 2000;
+                el.style.animationDuration = duration + 'ms';
+                
+                snowLayer.appendChild(el);
+                setTimeout(() => el.remove(), duration + 100);
             }
         }
 
@@ -1074,12 +1115,12 @@
                     // ==================== 特效逻辑 (基于热度) ====================
                     // 不再看物理速度，只看你的手速热度
                     
-                    // 1. 中等热度 > 40：生成尘土 (容易触发)
+                    // 1. 中等热度 > 40：生成尘土
                     if (p.turboCharge > 40 && Math.random() < 0.4) {
                         spawnDust(p.x, p.y);
                     }
-                    // 2. 高热度 > 75：触发极速残影 (需要较快手速)
-                    if (p.turboCharge > 75) {
+                    // 2. 高热度 > 30：触发极速残影 ("白菜价"门槛)
+                    if (p.turboCharge > 30) {
                         p.isTurbo = true;
                     }
                     // ==================== 特效逻辑结束 ====================
