@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.73 IMMERSIVE VICTORY</title>
+    <title>HORSE RUNRUN - v7.74 SPEED TRAILS</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -56,35 +56,7 @@
             box-shadow: none;
             overflow: hidden; 
             flex-shrink: 0; 
-            transition: filter 0.5s; /* Smooth dimming */
         }
-        
-        /* New: Spotlight Mode */
-        #game-screen.spotlight-mode {
-            border-color: #facc15;
-            box-shadow: 0 0 50px #facc15;
-        }
-        
-        /* Global Dimmer Overlay */
-        #dimmer-overlay {
-            position: absolute; inset: 0;
-            background: rgba(0,0,0,0.85);
-            opacity: 0; transition: opacity 0.5s;
-            pointer-events: none; z-index: 80;
-        }
-        .dimmed #dimmer-overlay { opacity: 1; }
-
-        /* Spotlight Beam */
-        #spotlight {
-            position: absolute; 
-            left: 50%; top: 50%; transform: translate(-50%, -50%);
-            width: 300px; height: 300px;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
-            pointer-events: none; z-index: 85;
-            opacity: 0; transition: opacity 0.5s;
-            mix-blend-mode: overlay;
-        }
-        .dimmed #spotlight { opacity: 1; }
 
         #track-wrapper {
             display: flex;
@@ -92,7 +64,6 @@
             height: var(--game-h);
             box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
             flex-shrink: 0;
-            transition: transform 0.1s linear; /* Smooth camera pan */
         }
 
         #side-qr-box {
@@ -149,8 +120,6 @@
         .queue-alert {
             position: absolute; top: 10px; right: 20px; font-size: 24px; color: #ffb300; text-shadow: 0 0 5px #ffb300; display: none; z-index: 20;
         }
-
-        #scan-line { display: none; }
 
         /* VFD Overlay */
         #vfd-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: flex-start; overflow: hidden; opacity: 0; pointer-events: none; z-index: 95; padding-left: 0; }
@@ -230,8 +199,17 @@
 
         #modal-editor { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; display: none; justify-content: center; align-items: center; }
         .modal-content { background: #1a1c20; border: 2px solid var(--primary); padding: 30px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
-        .editor-grid { display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr); gap: 2px; background: #333; border: 2px solid #555; touch-action: none; }
+        
+        /* 修复点：强制 Editor Grid 尺寸，确保画板不消失 */
+        .editor-grid { 
+            display: grid; 
+            grid-template-columns: repeat(11, 28px); 
+            grid-template-rows: repeat(11, 28px); 
+            gap: 2px; background: #333; border: 2px solid #555; 
+            touch-action: none; margin: 0 auto;
+        }
         .editor-cell { width: 28px; height: 28px; background: #000; }
+        
         .color-picker { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
         .c-dot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #333; }
         .c-dot.active { border-color: white; transform: scale(1.1); }
@@ -269,9 +247,6 @@
         <div id="game-container">
             <div id="track-wrapper">
                 <div id="game-screen">
-                    <div id="dimmer-overlay"></div>
-                    <div id="spotlight"></div>
-
                     <div class="grid-bg"></div>
                     <div class="finish-line"></div>
                     
@@ -510,392 +485,6 @@
             }
         }
 
-        function initDesktop() {
-            initEditor('pc-grid', 'pc-colors', pcGrid);
-            try {
-                peer = new Peer(null, PEER_CONFIG);
-                peer.on('open', id => {
-                    const url = `${location.href}?host=${id}`;
-                    new QRCode(document.getElementById("qrcode"), { text: url, width: 86, height: 86, colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L });
-                });
-                peer.on('connection', c => {
-                    c.on('data', data => {
-                        if (data.type === 'check_reconnect') {
-                            const uuid = data.uuid; const exists = ponies.find(p => p.playerUUID === uuid) || ponyQueue.find(p => p.playerUUID === uuid);
-                            if (exists) c.send({ type: 'reconnect_success' });
-                        }
-                        else if (data.type === 'spawn') {
-                            const uuid = data.payload.uuid; const exists = ponies.find(p => p.playerUUID === uuid) || ponyQueue.find(p => p.playerUUID === uuid);
-                            if (!exists) requestSpawnPony(data.payload.name, data.payload.pixels, data.payload.color, uuid);
-                        } 
-                        else if (data.type === 'tap') handleTap(data.uuid);
-                        else if (data.type === 'force_start') { if (gameState === 'ROAMING' || gameState === 'WAITING_TO_START') startCooldown(); }
-                        else if (data.type === 'emoji') showEmoji(data.uuid, data.emoji);
-                    });
-                });
-                peer.on('error', (err) => { console.error("PeerJS Error:", err); alert("Network Error: " + err.type + "\nTry refreshing."); });
-            } catch(e) { console.error(e); }
-        }
-
-        function spawnTestPony() {
-            const names = ["SPEEDY", "THUNDER", "BOLT", "COMET", "DASH", "FLASH", "STORM", "SHADOW", "BLAZE", "SPIRIT"];
-            const rName = names[Math.floor(Math.random() * names.length)] + " " + Math.floor(Math.random()*99);
-            const colorKeys = Object.keys(COLORS); const rColorKey = colorKeys[Math.floor(Math.random() * colorKeys.length)]; const rColor = COLORS[rColorKey];
-            requestSpawnPony(rName, DEFAULT_PIXELS, rColor, null);
-        }
-
-        function showEmoji(uuid, emoji) {
-            const pony = ponies.find(p => p.playerUUID === uuid);
-            if (pony) {
-                const el = document.getElementById(pony.id);
-                if (el) {
-                    const bubble = document.createElement('div'); bubble.className = 'emoji-bubble'; bubble.innerText = emoji;
-                    el.appendChild(bubble); setTimeout(() => bubble.remove(), 2000);
-                }
-            }
-        }
-
-        function handleTap(uuid) {
-            if (!uuid) return;
-            const pony = ponies.find(p => p.playerUUID === uuid);
-            if (pony && pony.state === 'racing') {
-                pony.isManual = true; pony.lastTapTime = Date.now(); pony.tapCount++; pony.name = pony.name.replace(" (BOT)", "");
-                pony.manualSpeed = Math.min(pony.manualSpeed + 2.9, 22);
-                if (pony.manualAnimTimer === 0) pony.manualAnimTimer = 10; 
-            }
-        }
-
-        function requestSpawnPony(name, pixels, color, uuid = null) {
-            const newPony = {
-                id: Math.random().toString(36).substr(2, 9),
-                playerUUID: uuid, isManual: !!uuid, manualSpeed: 0, tapCount: 0, lastTapTime: Date.now(), 
-                name: name || 'PONY', pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_PIXELS)),
-                color: color || COLORS.CYAN, x: 20, y: 30 + Math.random() * (GAME_H - PONY_SIZE - 20),
-                speed: 3.0, state: 'racing', hasCrown: false, isStreak: false, crownCount: 0,
-                timer: 0, frame: 0, finishedWalking: false, targetX: null, targetY: null,
-                isWalkAnimating: false, manualAnimTimer: 0, roamSpeed: 0.5 
-            };
-            if (gameState === 'RACING' || gameState === 'COOLDOWN' || gameState === 'WAITING_TO_START') {
-                ponyQueue.push(newPony); updateHUD();
-            } else {
-                ponies.push(newPony); startCooldown(); 
-            }
-        }
-
-        function updateHUD() {}
-
-        function startCooldown() {
-            gameState = 'COOLDOWN'; cooldownTimer = 240; 
-            if (ponyQueue.length > 0) { ponies = ponies.concat(ponyQueue); ponyQueue = []; }
-            ponies.forEach(p => {
-                p.x = 20; p.y = 30 + Math.random() * (GAME_H - PONY_SIZE - 30);
-                p.targetX = null; p.targetY = null; p.facing = 1; p.state = 'ready'; 
-                p.manualSpeed = 0; p.tapCount = 0; p.isWalkAnimating = false; p.manualAnimTimer = 0;
-            });
-            document.getElementById('hud').style.display = 'none'; document.getElementById('queue-text').style.display = 'none';
-            setBarVisibility(true); updateBarText("READY", "#ffffff");
-            // Fix: Wait mode
-            broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
-        }
-
-        function startRace() {
-            updateBarText("RUN", "#ffffff");
-            const hud = document.getElementById('hud'); hud.style.display = 'block'; hud.innerText = "STATUS: RACING!!!";
-            const vfdOverlay = document.getElementById('vfd-overlay'); vfdOverlay.classList.remove('vfd-active'); void vfdOverlay.offsetWidth; vfdOverlay.classList.add('vfd-active');
-            const textItems = document.querySelectorAll('.bar-text-item');
-            textItems.forEach((item, index) => { const delay = 0.02 + (index * 0.06); item.style.animation = `text-vanish 0.05s linear forwards ${delay}s`; });
-            setTimeout(() => { if (gameState === 'RACING') { setBarVisibility(false); vfdOverlay.classList.remove('vfd-active'); } }, 1500);
-            ponies.forEach(p => {
-                p.speed = 3.0 + Math.random() * 2.5; p.state = 'racing'; p.finishedWalking = false;
-                if(p.isManual) p.lastTapTime = Date.now();
-            });
-            grass = []; gameState = 'RACING';
-            broadcast({ type: 'sync_ui', label: 'RUN!', mode: 'mash' });
-        }
-
-        function gameLoop() { updateGameLogic(); draw(); requestAnimationFrame(gameLoop); }
-
-        function updateGameLogic() {
-            const alert = document.getElementById('queue-text'); const hud = document.getElementById('hud');
-            if (gameState === 'WAITING_TO_START') {
-                waitTimer--; alert.style.display = 'block'; const sec = Math.ceil(waitTimer / 60); alert.innerText = `NEXT ROUND IN ${sec}`; 
-                if (sec > 0 && lastBroadcastText !== sec) { broadcast({ type: 'sync_ui', label: `STARTING ${sec}`, mode: 'wait' }); lastBroadcastText = sec; }
-                updatePoniesMovement(); if (waitTimer <= 0) startCooldown();
-            }
-            else if (gameState === 'COOLDOWN') {
-                cooldownTimer--; alert.style.display = 'none'; 
-                if (cooldownTimer > 180) updateBarText("READY", "#ffffff");
-                else {
-                    const sec = Math.ceil(cooldownTimer / 60); updateBarText(sec.toString(), '#ffffff');
-                    if (cooldownTimer % 60 === 59) triggerFlash();
-                    if (sec > 0 && lastBroadcastText !== sec) { broadcast({ type: 'sync_ui', label: sec.toString(), mode: 'wait' }); lastBroadcastText = sec; }
-                }
-                if (cooldownTimer <= 0) startRace(); updatePoniesMovement(); 
-            }
-            else if (gameState === 'RACING') {
-                alert.style.display = ponyQueue.length > 0 ? 'block' : 'none'; if(ponyQueue.length > 0) alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`;
-                updatePoniesMovement(); checkRaceEnd();
-            }
-            else if (gameState === 'ROAMING') {
-                hud.style.display = 'block'; hud.innerText = "NOWHERE TO RUN";
-                alert.style.display = ponyQueue.length > 0 ? 'block' : 'none'; if(ponyQueue.length > 0) alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`;
-                updatePoniesMovement();
-            }
-            // Victory State handling inside game loop
-            else if (gameState === 'VICTORY_LAP') {
-                const winner = ponies.find(p => p.hasCrown);
-                if(winner) {
-                    const dx = (GAME_W/2 - 22) - winner.x;
-                    const dy = (GAME_H/2 - 22) - winner.y;
-                    const dist = Math.sqrt(dx*dx + dy*dy);
-                    if(dist > 5) {
-                        winner.x += dx * 0.05; // Smooth move to center
-                        winner.y += dy * 0.05;
-                        winner.facing = Math.sign(dx) || 1;
-                        winner.isWalkAnimating = true;
-                        winner.frame++;
-                    } else {
-                        winner.isWalkAnimating = false;
-                        winner.facing = 1;
-                    }
-                    
-                    // Camera follow center
-                    layout.x += ((window.innerWidth/2 - (GAME_W/2)) - layout.x) * 0.05;
-                }
-            }
-
-            const active = ponies.filter(p => p.state === 'racing');
-            if (active.length === 0 && Math.random() < 0.2) { 
-                const segmentSize = 500; const totalSegments = Math.ceil(GAME_W / segmentSize);
-                for(let i=0; i<totalSegments; i++) {
-                    const startX = i * segmentSize; const endX = (i + 1) * segmentSize;
-                    const count = grass.filter(g => g.x >= startX && g.x < endX).length;
-                    if (count < 2 && Math.random() < 0.05) { grass.push({ x: startX + Math.random() * segmentSize, y: 20 + Math.random() * (GAME_H - 40) }); }
-                }
-            }
-        }
-
-        function checkRaceEnd() {
-            const finished = ponies.filter(p => p.state === 'finished');
-            let raceOverTrigger = false;
-            if (ponies.length > 10) { if (finished.length >= 10) raceOverTrigger = true; } 
-            else { if (ponies.length > 0 && finished.length === ponies.length) raceOverTrigger = true; }
-
-            if (raceOverTrigger && gameState === 'RACING') {
-                const winner = finished.sort((a,b) => b.x - a.x)[0];
-                if (ponies.length > 10) {
-                    const losers = ponies.filter(p => p.state === 'racing');
-                    losers.forEach(p => explode(p));
-                    ponies = ponies.filter(p => p.state === 'finished');
-                }
-                triggerVictorySequence(winner);
-            }
-        }
-        
-        function triggerVictorySequence(winner) {
-            gameState = 'VICTORY_LAP';
-            // Mark winner
-            ponies.forEach(p => { p.hasCrown = (p.id === winner.id); p.isStreak = false; });
-            // Visuals
-            document.getElementById('game-screen').classList.add('spotlight-mode');
-            document.body.classList.add('dimmed');
-            
-            // Broadcast start capability for next round
-            broadcast({ type: 'sync_ui', label: 'START RACE', mode: 'start' });
-
-            setTimeout(() => {
-                resetToRoaming();
-            }, 6000); // 6 seconds victory moment
-        }
-
-        function resetToRoaming() {
-            gameState = 'ROAMING';
-            document.getElementById('game-screen').classList.remove('spotlight-mode');
-            document.body.classList.remove('dimmed');
-            layout.x = 0; // Reset camera
-            
-            ponies.forEach(p => { 
-                p.state = 'roaming'; p.timer = 0; p.targetX = null; p.targetY = null; p.isWalkAnimating = false;
-            });
-            
-            // Allow restart if people are here
-            if (ponies.length > 0) {
-                broadcast({ type: 'sync_ui', label: 'START RACE', mode: 'start' });
-            } else {
-                broadcast({ type: 'sync_ui', label: 'JOIN NOW', mode: 'wait' });
-            }
-        }
-
-        function updatePoniesMovement() {
-            ponies.forEach(p => {
-                if (gameState === 'VICTORY_LAP') return; // Handled in gameLogic
-
-                p.frame++;
-                p.isWalkAnimating = false; 
-                if (p.manualAnimTimer > 0) p.manualAnimTimer--;
-                if (p.state === 'ready') { p.x = 20; return; }
-
-                if (p.state === 'racing') {
-                    if (p.playerUUID && p.isManual) {
-                        if (Date.now() - p.lastTapTime > 10000) { p.isManual = false; if (!p.name.includes("(BOT)")) p.name += " (BOT)"; }
-                    }
-
-                    if (p.isManual) {
-                        p.manualSpeed *= 0.90; if (p.manualSpeed < 0.1) p.manualSpeed = 0;
-                        p.x += p.manualSpeed; p.isWalkAnimating = p.manualSpeed > 0.1;
-                        if (p.manualSpeed > 4.0 && p.frame % 5 === 0) createDust(p.x, p.y + 40);
-                        if (p.manualSpeed > 12.0 && p.frame % 3 === 0) createTrail(p); // Trail
-                    } else {
-                        p.x += p.speed * (0.9 + Math.random() * 0.2); p.isWalkAnimating = true;
-                        if (p.speed > 5.0 && p.frame % 5 === 0) createDust(p.x, p.y + 40);
-                    }
-                    
-                    p.facing = 1;
-                    if (p.x >= FINISH_X) {
-                        p.state = 'finished';
-                        // Check logic in main loop
-                    }
-                }
-                else if (p.state === 'finished') {
-                    if (p.x < GAME_W - 50) { p.x += 0.8; p.finishedWalking = true; p.isWalkAnimating = true; }
-                    else { p.finishedWalking = false; aiBehavior(p, true); }
-                }
-                else if (p.state === 'roaming' || p.state === 'eating') {
-                    p.finishedWalking = false; aiBehavior(p, false);
-                }
-                
-                p.x = Math.max(0, Math.min(GAME_W - 38, p.x));
-                p.y = Math.max(p.hasCrown ? 35 : 20, Math.min(GAME_H - 44 - 6, p.y));
-            });
-        }
-
-        function createDust(x, y) {
-            const fx = document.getElementById('layer-fx');
-            const d = document.createElement('div');
-            d.className = 'dust'; d.style.left = (x - 5 + Math.random()*10) + 'px'; d.style.top = (y + Math.random()*5) + 'px';
-            fx.appendChild(d); setTimeout(() => d.remove(), 500);
-        }
-
-        function createTrail(p) {
-            const fx = document.getElementById('layer-fx');
-            const t = document.createElement('div');
-            t.className = 'trail-ghost';
-            t.style.left = p.x + 'px'; t.style.top = p.y + 'px'; t.style.background = p.color;
-            // Create simplified shape
-            t.style.clipPath = "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)"; // Blocky
-            fx.appendChild(t); setTimeout(() => t.remove(), 300);
-        }
-
-        // ... [Rest of AI Behavior, Explode, Draw, Mobile Init, etc. remains the same] ...
-        
-        function aiBehavior(p, restrictFinish) {
-            const minX = restrictFinish ? FINISH_X : 0;
-            const maxX = GAME_W - 38;
-            const maxY = GAME_H - 44;
-            const minY = p.hasCrown ? 35 : 20;
-
-            if (p.state === 'roaming' || p.state === 'finished') {
-                for(let i=0; i<grass.length; i++) {
-                    const g = grass[i];
-                    if (Math.abs(g.x - p.x) < 50 && Math.abs(g.y - p.y) < 50) {
-                        p.state = 'eating'; p.timer = 50; grass.splice(i, 1); p.targetX = null; p.targetY = null; return; 
-                    }
-                }
-                if (p.timer-- <= 0) { 
-                    const action = Math.random();
-                    if (action < 0.3) { 
-                        if (p.x < GAME_W / 2) p.targetX = GAME_W - 100 - Math.random() * 400; else p.targetX = 50 + Math.random() * 400; 
-                        p.targetY = minY + Math.random() * (maxY - minY); p.timer = 400 + Math.random() * 400; p.roamSpeed = 2.0; 
-                    } else if (action < 0.8) {
-                        p.targetX = p.x + (Math.random() - 0.5) * 600; p.targetY = minY + Math.random() * (maxY - minY);
-                        p.timer = 100 + Math.random() * 200; p.roamSpeed = 0.8; 
-                    } else {
-                        p.targetX = null; p.targetY = null; p.timer = 60 + Math.random() * 120; p.roamSpeed = 0;
-                    }
-                }
-                if (p.targetX !== null && p.targetY !== null) {
-                    const dx = p.targetX - p.x; const dy = p.targetY - p.y;
-                    const dist = Math.sqrt(dx*dx + dy*dy);
-                    if (dist < 5) { p.targetX = null; p.targetY = null; p.timer = 0; } 
-                    else {
-                        const speed = p.roamSpeed || 0.5; p.x += (dx / dist) * speed; p.y += (dy / dist) * speed;
-                        p.facing = Math.sign(dx) || 1; p.isWalkAnimating = true;
-                    }
-                }
-            } else if (p.state === 'eating') { if (p.timer-- <= 0) p.state = 'roaming'; }
-        }
-
-        function explode(p) {
-            const fx = document.getElementById('layer-fx');
-            for(let i=0; i<20; i++) {
-                const el = document.createElement('div');
-                el.className = 'explosion';
-                el.style.left = (p.x + 19) + 'px'; el.style.top = (p.y + 19) + 'px'; el.style.background = p.color;
-                fx.appendChild(el);
-                const angle = Math.random() * 6.28, spd = 3 + Math.random() * 5;
-                let vx = Math.cos(angle) * spd, vy = Math.sin(angle) * spd, life = 40;
-                const tick = () => {
-                    if (life-- <= 0) return el.remove();
-                    el.style.left = (parseFloat(el.style.left) + vx) + 'px'; el.style.top = (parseFloat(el.style.top) + vy) + 'px'; el.style.opacity = life/40;
-                    requestAnimationFrame(tick);
-                };
-                tick();
-            }
-            const grassCount = Math.floor(Math.random() * 3) + 1;
-            for(let i=0; i<grassCount; i++) { grass.push({ x: p.x + (Math.random()-0.5) * 60, y: p.y + (Math.random()-0.5) * 40 }); }
-        }
-
-        function draw() {
-            const grassL = document.getElementById('layer-grass');
-            grassL.innerHTML = grass.map(g => `<div class="grass" style="left:${g.x}px; top:${g.y}px"></div>`).join('');
-            const ponyL = document.getElementById('layer-pony');
-            const nodes = Array.from(ponyL.children);
-            const ids = new Set(ponies.map(p => p.id));
-            nodes.forEach(n => { if(!ids.has(n.id)) n.remove(); });
-
-            ponies.forEach(p => {
-                let el = document.getElementById(p.id);
-                if (!el) {
-                    el = document.createElement('div');
-                    el.id = p.id; el.className = 'entity';
-                    el.innerHTML = `
-                        <div class="aura"></div>
-                        <div class="crown-container" style="display: none;">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path></svg>
-                        </div>
-                        <div class="name-tag">${p.name}</div>
-                        <div class="p-grid" style="display:grid; grid-template-columns:repeat(11,1fr); width:100%; height:100%;"></div>
-                    `;
-                    ponyL.appendChild(el);
-                }
-                
-                // Add winner class for higher z-index
-                if(p.hasCrown) el.classList.add('winner'); else el.classList.remove('winner');
-
-                el.style.transform = `translate(${p.x}px, ${p.y}px) scale(1.1)`;
-                el.style.zIndex = Math.floor(p.y);
-                const crownC = el.querySelector('.crown-container');
-                if (p.hasCrown) { crownC.style.display = 'flex'; } else { crownC.style.display = 'none'; }
-                el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none';
-                el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
-
-                let frameStep = 0;
-                if (p.isManual && p.state === 'racing') frameStep = (p.manualAnimTimer > 0) ? 1 : 0;
-                else if (p.isWalkAnimating) frameStep = Math.floor(p.frame / 5) % 2;
-
-                el.querySelector('.p-grid').style.transform = `scaleX(${p.facing || 1})`;
-                let html = '';
-                for(let y=0; y<11; y++) {
-                    let row = p.pixels[y];
-                    if (p.state === 'eating') { if (y <= 5) row = (y >= 2) ? p.pixels[y - 2] : [0,0,0,0,0,0,0,0,0,0,0]; } 
-                    else if (frameStep === 1 && y > 8) row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[0]]; 
-                    for(let x=0; x<11; x++) { if (row[x]) html += `<div style="background:${p.color}; width:100%; height:100%; grid-column:${x+1}; grid-row:${y+1}"></div>`; }
-                }
-                el.querySelector('.p-grid').innerHTML = html;
-            });
-        }
-        
-        // ... [Init, Spawn, HandleTap, RenderGrid as before] ...
         function initDesktop() {
             initEditor('pc-grid', 'pc-colors', pcGrid);
             try {
