@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.61 ROAMING AI FIX</title>
+    <title>HORSE RUNRUN - v7.62 SEGMENTED GRASS & SMART AI</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -829,12 +829,25 @@
             }
 
             const active = ponies.filter(p => p.state === 'racing');
-            // 修改点 3：草从全地图 0~3400 生成，促进小马散开
-            const maxGrass = 5 + ponies.length * 2;
-            const growthRate = 0.02 + ponies.length * 0.005;
-            if (active.length === 0 && Math.random() < growthRate && grass.length < maxGrass) {
-                // 修改：范围改为 50 到 GAME_W-100
-                grass.push({ x: 50 + Math.random() * (GAME_W - 100), y: 20 + Math.random() * (GAME_H - 40) });
+            
+            // 修改点 1：分区生成草
+            if (active.length === 0 && Math.random() < 0.2) { // 稍微提高检测频率，但控制每区草数量
+                const segmentSize = 500;
+                const totalSegments = Math.ceil(GAME_W / segmentSize);
+                
+                for(let i=0; i<totalSegments; i++) {
+                    const startX = i * segmentSize;
+                    const endX = (i + 1) * segmentSize;
+                    // 统计当前区域的草数量
+                    const count = grass.filter(g => g.x >= startX && g.x < endX).length;
+                    
+                    if (count < 2 && Math.random() < 0.05) { // 每個區域上限2棵，低幾率生成
+                        grass.push({ 
+                            x: startX + Math.random() * segmentSize, 
+                            y: 20 + Math.random() * (GAME_H - 40) 
+                        });
+                    }
+                }
             }
         }
 
@@ -948,7 +961,6 @@
             if (p.state === 'roaming' || p.state === 'finished') {
                 for(let i=0; i<grass.length; i++) {
                     const g = grass[i];
-                    // 修改点 1：吃草检测范围从 20 扩大到 50
                     if (Math.abs(g.x - p.x) < 50 && Math.abs(g.y - p.y) < 50) {
                         p.state = 'eating'; p.timer = 100; 
                         grass.splice(i, 1); p.targetX = null; p.targetY = null; return; 
@@ -956,14 +968,27 @@
                 }
                 if (p.timer-- <= 0) { 
                     const action = Math.random();
-                    if (action > 0.4) {
-                        // 修改点 2：走路持续时间从 60+80 改为 200~500，让小马能走更远
-                        p.timer = 200 + Math.random() * 300; 
-                        p.targetX = minX + Math.random() * (maxX - minX);
+                    // 修改点 2：AI 行为三态切换
+                    if (action < 0.3) { 
+                        // 长途迁徙 (Travel) - 30%
+                        // 如果在左半边，往最右边走；在右半边，往最左边走
+                        if (p.x < GAME_W / 2) {
+                            p.targetX = GAME_W - 100 - Math.random() * 400; // 去右边
+                        } else {
+                            p.targetX = 50 + Math.random() * 400; // 去左边
+                        }
                         p.targetY = minY + Math.random() * (maxY - minY);
+                        p.timer = 400 + Math.random() * 400; // 长时间行走
+                    } else if (action < 0.8) {
+                        // 短途溜达 (Meander) - 50%
+                        p.targetX = p.x + (Math.random() - 0.5) * 600; // 左右300px
+                        p.targetY = minY + Math.random() * (maxY - minY);
+                        p.timer = 100 + Math.random() * 200;
                     } else {
-                        p.timer = 40 + Math.random() * 60; 
-                        p.targetX = null; p.targetY = null;
+                        // 原地发呆 (Idle) - 20%
+                        p.targetX = null; 
+                        p.targetY = null;
+                        p.timer = 60 + Math.random() * 120; // 休息1-3秒
                     }
                 }
                 if (p.targetX !== null && p.targetY !== null) {
@@ -1104,9 +1129,8 @@
             if(!conn) return alert("Not Connected!");
             
             const nameInput = document.getElementById('m-name');
-            let name = nameInput.value.trim().replace(/[^a-zA-Z0-9]/g, '');
-            if (!name) name = "PLAYER"; 
-            name = name.toUpperCase();
+            const name = nameInput.value.trim();
+            if (!name) { alert("PLEASE ENTER A NAME"); nameInput.focus(); return; }
 
             let hasPixels = false;
             for(let r=0; r<11; r++) { for(let c=0; c<11; c++) { if (mobileGrid[r][c] === 1) { hasPixels = true; break; } } if(hasPixels) break; }
@@ -1117,7 +1141,7 @@
 
             conn.send({ 
                 type: 'spawn', 
-                payload: { name: name, pixels: mobileGrid, color: selectedColor, uuid: playerUUID } 
+                payload: { name: name.toUpperCase(), pixels: mobileGrid, color: selectedColor, uuid: playerUUID } 
             });
             
             document.getElementById('m-editor-ui').style.display = 'none';
@@ -1216,11 +1240,7 @@
             document.getElementById('modal-editor').style.display = 'flex';
         }
         function savePCPony() {
-            let name = document.getElementById('pc-name').value.trim().replace(/[^a-zA-Z0-9]/g, '');
-            if (!name) name = "PLAYER";
-            name = name.toUpperCase();
-            
-            requestSpawnPony(name, pcGrid, selectedColor);
+            requestSpawnPony(document.getElementById('pc-name').value.toUpperCase(), pcGrid, selectedColor);
             document.getElementById('modal-editor').style.display = 'none';
         }
 
@@ -1241,71 +1261,27 @@
             renderGrid(gridId, dataGrid, selectedColor);
 
             let drawing = false, eraseMode = false;
-
-            const getCellCoords = (e) => {
+            const update = (e) => {
+                if(e.cancelable) e.preventDefault();
                 const t = e.touches ? e.touches[0] : e;
                 const el = document.elementFromPoint(t.clientX, t.clientY);
-                if (el && el.classList.contains('editor-cell')) {
-                    return { r: parseInt(el.dataset.r), c: parseInt(el.dataset.c), el: el };
-                }
-                return null;
-            };
-
-            const startDraw = (e) => {
-                if(e.cancelable) e.preventDefault();
-                drawing = true;
-                const cell = getCellCoords(e);
-                if (cell) {
-                    eraseMode = dataGrid[cell.r][cell.c] === 1;
-                    updateCell(cell.r, cell.c, cell.el);
+                if(el && el.dataset.r) {
+                    const r = parseInt(el.dataset.r), c = parseInt(el.dataset.c);
+                    if(e.type === 'mousedown' || e.type === 'touchstart') eraseMode = dataGrid[r][c] === 1;
+                    if(dataGrid[r][c] !== (eraseMode?0:1)) { dataGrid[r][c] = eraseMode?0:1; renderGrid(gridId, dataGrid, selectedColor); }
                 }
             };
-
-            const moveDraw = (e) => {
-                if (!drawing) return;
-                if(e.cancelable) e.preventDefault();
-                const cell = getCellCoords(e);
-                if (cell) {
-                    updateCell(cell.r, cell.c, cell.el);
-                }
-            };
-
-            const endDraw = () => {
-                drawing = false;
-            };
-
-            const updateCell = (r, c, el) => {
-                const targetVal = eraseMode ? 0 : 1;
-                if (dataGrid[r][c] !== targetVal) {
-                    dataGrid[r][c] = targetVal;
-                    if (targetVal === 1) {
-                        el.style.background = selectedColor;
-                        el.style.boxShadow = `0 0 5px ${selectedColor}`;
-                    } else {
-                        el.style.background = '#000';
-                        el.style.boxShadow = 'none';
-                    }
-                }
-            };
-
-            gridEl.onmousedown = gridEl.ontouchstart = startDraw;
-            window.onmousemove = window.ontouchmove = moveDraw;
-            window.onmouseup = window.ontouchend = endDraw;
+            gridEl.onmousedown = gridEl.ontouchstart = (e) => { drawing = true; update(e); };
+            window.onmousemove = window.ontouchmove = (e) => { if(drawing) update(e); };
+            window.onmouseup = window.ontouchend = () => { drawing = false; };
         }
 
         function renderGrid(id, data, color) {
             const el = document.getElementById(id); el.innerHTML = '';
             data.forEach((row, r) => row.forEach((val, c) => {
                 const cell = document.createElement('div');
-                cell.className = 'editor-cell'; 
-                cell.dataset.r = r; 
-                cell.dataset.c = c;
-                if(val) { 
-                    cell.style.background = color; 
-                    cell.style.boxShadow = `0 0 5px ${color}`; 
-                } else {
-                    cell.style.background = '#000';
-                }
+                cell.className = 'editor-cell'; cell.dataset.r = r; cell.dataset.c = c;
+                if(val) { cell.style.background = color; cell.style.boxShadow = `0 0 5px ${color}`; }
                 el.appendChild(cell);
             }));
         }
