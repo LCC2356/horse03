@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.51 FINAL POLISH</title>
+    <title>HORSE RUNRUN - v7.52 CUSTOM SPRITE</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -134,10 +134,7 @@
             letter-spacing: 2px;
             text-shadow: 0 0 20px currentColor; 
             font-weight: bold;
-            
-            /* 修改点 3：字宽改为 260px 以适配 3400px 跑道 */
             width: 260px; 
-            
             display: flex; 
             justify-content: center; 
             flex-shrink: 0; 
@@ -428,19 +425,19 @@
 
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#ffffff', BLUE:'#2979ff' };
         
-        // 修改点 1：基于参考图精确复刻的 11x11 小马
+        // 修改点 1：严格按照用户提供的图片复刻的 11x11 像素马
         const DEFAULT_PIXELS = [
-            [0,0,0,0,0,0,0,0,0,0,0], 
-            [0,0,0,0,0,0,0,1,1,0,0], // Ear / Top Mane
-            [0,0,0,0,0,0,1,1,1,1,0], // Head Top
-            [0,0,0,0,0,0,1,0,1,1,0], // Head/Eye
-            [0,0,0,0,0,1,1,1,1,1,0], // Neck
-            [0,0,0,0,0,1,1,1,0,0,0], // Neck base
-            [0,0,0,1,1,1,1,1,1,0,0], // Body Top
-            [0,0,1,1,1,1,1,1,1,1,0], // Body Mid / Tail Start
-            [0,0,1,1,1,1,1,1,1,1,1], // Body Bot / Tail
-            [0,0,1,0,1,0,0,1,0,1,0], // Legs Top (Index 9)
-            [0,0,1,0,1,0,0,1,0,1,0]  // Legs Bot (Index 10)
+            [0,0,0,0,0,0,0,0,0,0,0], // R0
+            [0,0,0,0,0,0,0,0,1,0,0], // R1
+            [0,0,0,0,0,0,0,1,1,0,0], // R2
+            [0,0,0,0,0,0,1,1,1,1,1], // R3
+            [0,0,0,0,0,0,1,1,1,1,0], // R4
+            [0,0,0,0,0,1,1,1,1,0,0], // R5
+            [0,1,0,0,1,1,1,1,1,1,0], // R6
+            [1,1,0,0,1,1,1,1,1,1,0], // R7
+            [1,1,0,0,1,1,1,1,1,1,0], // R8
+            [0,0,0,0,1,0,1,0,1,0,0], // R9 (Legs)
+            [0,0,0,0,1,0,1,0,1,0,0]  // R10 (Feet)
         ];
 
         let ponies = [];
@@ -890,7 +887,7 @@
                     }
 
                     if (p.isManual) {
-                        p.manualSpeed *= 0.90; // 修改：增加摩擦力 (0.96 -> 0.90)，停得更快
+                        p.manualSpeed *= 0.90; 
                         if (p.manualSpeed < 0.1) p.manualSpeed = 0;
                         p.x += p.manualSpeed;
                     } else {
@@ -1017,17 +1014,14 @@
                 el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none';
                 el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
 
-                // 修改点 2：动画逻辑修正
                 let frameStep = 0;
                 if (p.isManual) {
-                    // 手动挡：点击后 150ms 内显示“迈步”姿态，之后自动恢复站立
                     if (Date.now() - p.lastTapTime < 150) {
-                        frameStep = 1; // 迈步
+                        frameStep = 1; 
                     } else {
-                        frameStep = 0; // 站立
+                        frameStep = 0; 
                     }
                 } else {
-                    // 自动挡：只要有 targetX (正在移动)，就一直播放动画
                     const isMoving = p.state === 'racing' || p.finishedWalking || (p.state === 'roaming' && p.targetX !== null);
                     frameStep = isMoving ? Math.floor(p.frame / 5) % 2 : 0;
                 }
@@ -1035,7 +1029,6 @@
                 let html = '';
                 for(let y=0; y<11; y++) {
                     let row = p.pixels[y];
-                    // 动画逻辑：只动最底下的两行 (index 9, 10)
                     if (frameStep === 1 && y > 8) row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[0]]; 
                     if (p.state === 'eating') { if(y===3) row = [0,0,0,0,0,0,0,0,0,0,0]; }
                     for(let x=0; x<11; x++) { if (row[x]) html += `<div style="background:${p.color}; width:100%; height:100%; grid-column:${x+1}; grid-row:${y+1}"></div>`; }
