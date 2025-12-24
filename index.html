@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.69 SLIDER CONTROLS</title>
+    <title>HORSE RUNRUN - v7.70 INFINITE SCROLL</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -16,7 +16,7 @@
             --border: #444444;
             --game-w: 3400px; 
             --game-h: 100px;
-            --accent: #40e0d0; /* Cyan accent for sliders */
+            --accent: #40e0d0;
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
@@ -247,46 +247,42 @@
         .control-group {
             display: flex; flex-direction: column; 
             gap: 5px; border-left: 1px solid #333; padding-left: 15px;
-            width: 140px; /* 固定宽度保证滑块显示 */
+            width: 140px; 
         }
         .control-label { font-size: 0.8rem; color: #888; letter-spacing: 1px; }
         .input-wrapper { display: flex; align-items: center; gap: 5px; width: 100%; }
         
-        /* 样式化滑块 */
+        /* 步进器容器 */
+        .stepper { display: flex; align-items: center; gap: 5px; width: 100%; }
+        
+        /* 左右箭头按钮 */
+        .btn-step {
+            background: #222; border: 1px solid var(--primary);
+            color: var(--primary); width: 30px; height: 30px;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; font-family: 'VT323', monospace; font-size: 1.2rem;
+            transition: all 0.1s;
+        }
+        .btn-step:hover { background: #333; }
+        .btn-step:active { background: var(--primary); color: #000; transform: scale(0.95); }
+
+        /* Zoom Slider */
         input[type=range] {
-            -webkit-appearance: none;
-            width: 100%;
-            background: transparent;
-            margin: 5px 0;
+            -webkit-appearance: none; width: 100%; background: transparent; margin: 5px 0;
         }
         input[type=range]:focus { outline: none; }
         input[type=range]::-webkit-slider-runnable-track {
-            width: 100%; height: 6px;
-            cursor: pointer; background: #333;
-            border-radius: 3px; border: 1px solid #555;
+            width: 100%; height: 6px; cursor: pointer; background: #333; border-radius: 3px; border: 1px solid #555;
         }
         input[type=range]::-webkit-slider-thumb {
-            height: 16px; width: 16px;
-            border-radius: 2px; background: var(--accent);
-            cursor: pointer; -webkit-appearance: none;
-            margin-top: -6px; box-shadow: 0 0 5px var(--accent);
-        }
-        /* Firefox */
-        input[type=range]::-moz-range-track {
-            width: 100%; height: 6px;
-            cursor: pointer; background: #333;
-            border-radius: 3px; border: 1px solid #555;
-        }
-        input[type=range]::-moz-range-thumb {
-            height: 16px; width: 16px;
-            border: none; border-radius: 2px;
-            background: var(--accent); cursor: pointer;
+            height: 16px; width: 16px; border-radius: 2px; background: var(--accent);
+            cursor: pointer; -webkit-appearance: none; margin-top: -6px; box-shadow: 0 0 5px var(--accent);
         }
 
         input[type="number"] {
             background: #222; border: 1px solid var(--border);
             color: var(--primary); font-family: 'VT323', monospace;
-            font-size: 1.4rem; width: 60px; text-align: center;
+            font-size: 1.4rem; flex: 1; text-align: center;
             padding: 2px; border-radius: 4px;
         }
         .unit-label { font-size: 1.2rem; color: #555; }
@@ -408,11 +404,12 @@
 
             <div class="control-group">
                 <span class="control-label">Y OFFSET</span>
-                <input type="range" id="y-slider" min="-600" max="600" step="1" value="0">
-                <div class="input-wrapper">
+                <div class="stepper">
+                    <button class="btn-step" onclick="adjustY(-50)">&lt;</button>
                     <input type="number" id="y-input" value="0" step="1">
-                    <span class="unit-label">PX</span>
+                    <button class="btn-step" onclick="adjustY(50)">&gt;</button>
                 </div>
+                <div style="text-align:center; font-size:0.8rem; color:#555;">PX</div>
             </div>
 
             <button class="btn" onclick="spawnTestPony()">+ BOT</button>
@@ -564,13 +561,10 @@
         }
 
         window.onload = function() {
-            // 滑块逻辑与输入框绑定
+            // Zoom 滑块逻辑
             const zoomSlider = document.getElementById('zoom-slider');
             const zoomInput = document.getElementById('zoom-input');
-            const ySlider = document.getElementById('y-slider');
-            const yInput = document.getElementById('y-input');
-
-            // Zoom Sync
+            
             zoomSlider.oninput = function() {
                 zoomInput.value = this.value;
                 layout.scale = this.value / 100;
@@ -585,20 +579,32 @@
                 }
             };
 
-            // Y Offset Sync
-            ySlider.oninput = function() {
-                yInput.value = this.value;
-                layout.y = parseFloat(this.value);
-                applyLayout(false);
-            };
+            // Y Offset 输入框逻辑 (去除限制)
+            const yInput = document.getElementById('y-input');
             yInput.oninput = function() {
                 let val = parseFloat(this.value);
                 if(!isNaN(val)) {
-                    ySlider.value = val;
                     layout.y = val;
                     applyLayout(false);
                 }
             };
+
+            // 滚轮控制 (Zoom & Pan)
+            const gameContainer = document.getElementById('desktop-view');
+            gameContainer.addEventListener('wheel', (e) => {
+                e.preventDefault(); 
+                if (e.ctrlKey) {
+                    // Zoom
+                    const zoomSpeed = 0.001;
+                    const newScale = layout.scale - (e.deltaY * zoomSpeed);
+                    layout.scale = Math.min(Math.max(0.1, newScale), 5.0);
+                } else {
+                    // Pan Y
+                    const panSpeed = 1.0;
+                    layout.y -= e.deltaY * panSpeed;
+                }
+                applyLayout(true);
+            }, { passive: false });
 
             const vfdOverlay = document.getElementById('vfd-overlay');
             for (let i = 0; i < 80; i++) {
@@ -642,6 +648,12 @@
             }
         };
 
+        // 新增：调整 Y Offset 的辅助函数
+        function adjustY(delta) {
+            layout.y += delta;
+            applyLayout(true);
+        }
+
         function fitScreen() {
             const availableW = window.innerWidth * 0.95;
             layout.scale = Math.min(availableW / (GAME_W + GAME_H), 1);
@@ -658,7 +670,6 @@
                 document.getElementById('zoom-input').value = Math.round(layout.scale * 100);
                 document.getElementById('zoom-slider').value = Math.round(layout.scale * 100);
                 document.getElementById('y-input').value = Math.round(layout.y);
-                document.getElementById('y-slider').value = Math.round(layout.y);
             }
         }
 
