@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.98 SNOW & TURBO</title>
+    <title>HORSE RUNRUN - v7.99 SQUARE DUST</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -228,11 +228,11 @@
 
         /* ==================== 特效样式 ==================== */
         
-        /* 新增：雪花层 */
+        /* 雪花层 */
         #layer-snow {
             position: absolute; inset: 0; pointer-events: none; z-index: 1;
         }
-        /* 新增：雪花粒子 */
+        /* 雪花粒子 */
         .snowflake {
             position: absolute; top: -10px;
             background: #ffffff;
@@ -246,20 +246,25 @@
             to { transform: translateY(calc(var(--game-h) + 20px)); }
         }
 
+        /* 修改点：尘土粒子改为纯粹的小方块 
+           - 去掉 border-radius (变成方形)
+           - 去掉 box-shadow (去掉发光)
+           - 尺寸调整为 6px
+        */
         .dust-particle {
             position: absolute;
-            width: 7px; height: 7px;
+            width: 6px; height: 6px;
             background: #ffffff; 
-            box-shadow: 0 0 8px #ffffff; 
-            border-radius: 50%;
+            box-shadow: none; 
+            border-radius: 0; 
             pointer-events: none;
-            opacity: 1.0; 
-            animation: dust-fade 0.7s ease-out forwards;
+            opacity: 0.8; 
+            animation: dust-fade 0.6s ease-out forwards;
             z-index: 1;
         }
         @keyframes dust-fade {
-            0% { opacity: 1.0; transform: scale(0.8); }
-            100% { transform: translate(-35px, -12px) scale(2.2); opacity: 0; } 
+            0% { opacity: 0.8; transform: scale(1); }
+            100% { transform: translate(-30px, -12px) scale(0); opacity: 0; } 
         }
 
         .trail-active .p-grid {
@@ -903,12 +908,6 @@
         }
 
         function gameLoop() {
-            updateGameLogic();
-            draw();
-            requestAnimationFrame(gameLoop);
-        }
-
-        function updateGameLogic() {
             // === 持续下雪 ===
             spawnSnow();
 
@@ -1033,19 +1032,25 @@
             }
         }
 
+        // === 修改后：方块像素尘土生成 ===
         function spawnDust(x, y) {
             const fxLayer = document.getElementById('layer-fx');
+            // 每次生成 4-7 个粒子
             const count = Math.floor(Math.random() * 4) + 4; 
             for (let i = 0; i < count; i++) {
                 const el = document.createElement('div');
                 el.className = 'dust-particle';
+                // 在马脚附近随机位置生成
                 el.style.left = (x + 5 + Math.random() * 30) + 'px';
                 el.style.top = (y + 40 + Math.random() * 8) + 'px';
-                const sizeMod = Math.random() * 0.6 + 0.7;
-                const rotate = Math.random() * 360;
-                el.style.transform = `scale(${sizeMod}) rotate(${rotate}deg)`;
+                // 随机大小变化
+                const sizeMod = Math.random() * 0.5 + 0.5;
+                // 移除旋转，只做缩放
+                el.style.transform = `scale(${sizeMod})`;
+
                 fxLayer.appendChild(el);
-                setTimeout(() => el.remove(), 700);
+                // 动画结束后移除 DOM
+                setTimeout(() => el.remove(), 600);
             }
         }
 
