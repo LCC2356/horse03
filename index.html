@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v8.5 POLISHED PIXELS</title>
+    <title>HORSE RUNRUN - v8.6 ORIGINAL PIXELS BACK</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -282,7 +282,6 @@
         .pixel-icon-base {
             background: transparent;
             position: relative;
-            /* 移除手动偏移，依靠父级flex居中 */
         }
 
         @keyframes pixel-float-smooth {
@@ -299,14 +298,14 @@
             display: flex; gap: 15px; margin-top: 40px;
             pointer-events: auto;
             z-index: 22001;
-            justify-content: center; /* 确保按钮栏本身居中 */
+            justify-content: center;
         }
         .emoji-btn {
             background: #222; border: 2px solid #555;
             color: #fff;
             width: 60px; height: 60px;
             border-radius: 12px; cursor: pointer;
-            /* Flexbox 完美居中内部的像素图标 */
+            /* Flexbox 居中 */
             display: flex; justify-content: center; align-items: center;
             transition: transform 0.1s;
             -webkit-tap-highlight-color: transparent;
@@ -404,7 +403,7 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #111; display: flex; flex-direction: column; z-index: 20000;
             padding: 20px;
-            align-items: center; /* 确保手机端整体内容居中 */
+            align-items: center;
         }
         .m-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; flex-shrink: 0; width: 100%; max-width: 400px; }
         .m-title { font-size: 1.5rem; color: #fff; }
@@ -572,7 +571,7 @@
             [0,0,1,0,1,0,1,0,1,0,0]
         ];
 
-        /* === 修改后：标准化为 7x7 网格的像素画数据 === */
+        /* === 修改后：恢复到原始的非对称像素画数据 === */
         const PIXEL_ART_MAPS = {
             'HEART': [
                 [0,1,1,0,1,1,0],
@@ -580,35 +579,30 @@
                 [1,1,1,1,1,1,1],
                 [0,1,1,1,1,1,0],
                 [0,0,1,1,1,0,0],
-                [0,0,0,1,0,0,0],
-                [0,0,0,0,0,0,0]
+                [0,0,0,1,0,0,0]
             ],
             'POOP': [
                 [0,0,0,1,0,0,0],
                 [0,0,1,1,1,0,0],
                 [0,1,1,1,1,1,0],
                 [1,0,1,1,1,0,1],
-                [1,1,1,1,1,1,1],
-                [0,0,0,0,0,0,0],
-                [0,0,0,0,0,0,0]
+                [1,1,1,1,1,1,1]
             ],
-            'BOLT': [ /* 上下对称的闪电 */
-                [0,0,1,1,1,0,0],
-                [0,1,1,1,0,0,0],
-                [1,1,1,0,0,0,0],
+            'BOLT': [
+                [0,0,1,1,1,0],
+                [0,1,1,1,0,0],
+                [1,1,1,1,1,0],
+                [0,0,0,1,1,0],
+                [0,0,1,1,0,0],
+                [0,0,1,0,0,0]
+            ],
+            'FACE': [
                 [0,1,1,1,1,1,0],
-                [0,0,0,0,1,1,1],
-                [0,0,0,1,1,1,0],
-                [0,0,1,1,1,0,0]
-            ],
-            'FACE': [ /* 简化的笑脸（只有眼睛和嘴巴） */
-                [0,0,0,0,0,0,0],
-                [0,1,0,0,0,1,0], /* 眼睛 */
-                [0,1,0,0,0,1,0],
-                [0,0,0,0,0,0,0],
-                [1,0,0,0,0,0,1], /* 嘴角 */
-                [0,1,1,1,1,1,0], /* 嘴底 */
-                [0,0,0,0,0,0,0]
+                [1,0,1,0,1,0,1],
+                [1,0,1,0,1,0,1],
+                [1,0,0,0,0,0,1],
+                [1,1,0,0,0,1,1],
+                [0,1,1,1,1,1,0]
             ]
         };
 
@@ -645,22 +639,22 @@
             }
         };
 
-        /* === 修改后：支持颜色的像素图标创建函数 === */
+        /* === 修改后：适配非标准尺寸的像素图标创建函数，保留颜色支持 === */
         function createPixelIcon(type, pixelSize = 2, color = '#fff') {
             const container = document.createElement('div');
             container.className = 'pixel-icon-base';
             
-            // 设置容器大小为 7x7 网格的总尺寸，确保 Flexbox 能居中它
-            const gridSize = 7 * pixelSize;
-            container.style.width = gridSize + 'px';
-            container.style.height = gridSize + 'px';
+            // 设置基础像素点大小
+            container.style.width = pixelSize + 'px';
+            container.style.height = pixelSize + 'px';
 
             const map = PIXEL_ART_MAPS[type] || PIXEL_ART_MAPS['HEART'];
             
             let boxShadow = '';
-            for(let y=0; y<7; y++) { // 确保遍历 7x7
-                for(let x=0; x<7; x++) {
-                    if (map[y] && map[y][x] === 1) {
+            // 根据实际地图数据动态遍历
+            for(let y=0; y<map.length; y++) {
+                for(let x=0; x<map[y].length; x++) {
+                    if (map[y][x] === 1) {
                         // 使用传入的颜色
                         boxShadow += `${x*pixelSize}px ${y*pixelSize}px ${color},`;
                     }
@@ -668,7 +662,11 @@
             }
             container.style.boxShadow = boxShadow.slice(0, -1);
             
-            // 移除之前的 transform 偏移，现在靠父级 Flexbox 居中
+            // 重新加入 translateX 以在气泡和按钮中居中
+            // 假设最大宽度大约是 7 个像素点宽
+            const widthOffset = (7 * pixelSize) / 2;
+            container.style.transform = `translateX(-${widthOffset}px)`;
+            
             return container;
         }
 
