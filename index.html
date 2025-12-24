@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.90 TURBO FIX</title>
+    <title>HORSE RUNRUN - v7.95 ULTIMATE</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -232,7 +232,7 @@
             position: absolute;
             width: 7px; height: 7px;
             background: #ffffff; 
-            box-shadow: 0 0 6px #ffffff; 
+            box-shadow: 0 0 8px #ffffff; /* 亮白色光晕 */
             border-radius: 50%;
             pointer-events: none;
             opacity: 1.0; 
@@ -245,10 +245,11 @@
         }
 
         .trail-active .p-grid {
-            filter: drop-shadow(-8px 0 1px var(--trail-c)) 
-                    drop-shadow(-16px 0 3px var(--trail-c))
+            /* 强烈的残影滤镜 */
+            filter: drop-shadow(-10px 0 2px var(--trail-c)) 
+                    drop-shadow(-20px 0 5px var(--trail-c))
                     opacity(0.9);
-            transform: scaleX(1.1) skewX(-5deg);
+            transform: scaleX(1.2) skewX(-10deg); /* 更夸张的拉伸 */
             transition: filter 0.1s ease-out, transform 0.1s ease-out;
         }
         
@@ -371,7 +372,7 @@
             transition: all 0.2s; user-select: none;
             cursor: pointer; -webkit-tap-highlight-color: transparent;
             text-align: center; line-height: 1; padding: 20px;
-            touch-action: manipulation; /* 允许更快的点击处理 */
+            touch-action: manipulation; 
         }
         .push-btn:active { transform: scale(0.95); }
         .controller-info { font-size: 1.5rem; color: #888; margin-bottom: 30px; text-align: center; }
@@ -379,6 +380,7 @@
         .btn-wait { background: #1a1a1a !important; border-color: #333 !important; color: #555 !important; }
         .btn-mash { background: #fff !important; border-color: #ccc !important; color: #000 !important; box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; }
         .btn-start { background: #e65100 !important; border-color: #ffb300 !important; color: #fff !important; box-shadow: 0 0 50px rgba(255, 179, 0, 0.4) !important; }
+        .btn-dead { background: #b71c1c !important; border-color: #f44336 !important; color: #fff !important; box-shadow: 0 0 50px rgba(244, 67, 54, 0.4) !important; font-size: 3rem !important; }
 
         #m-success-modal { display: none; } 
     </style>
@@ -760,9 +762,13 @@
                 pony.tapCount++;
                 pony.name = pony.name.replace(" (BOT)", "");
                 
-                // === 调整：更强力的点击加速 ===
-                // 原来加 3.5，现在加 5.0，让你点一下顶两下
-                pony.manualSpeed = Math.min(pony.manualSpeed + 5.0, 25);
+                // === 1. 速度参数修正 (适中) ===
+                // 每次增加 3.0，上限 22 (比疯狗版慢，比原始版快)
+                pony.manualSpeed = Math.min(pony.manualSpeed + 3.0, 22);
+
+                // === 2. 增加连击热度 (Turbo Charge) ===
+                // 不管跑多快，只要点的快，热度就满
+                pony.turboCharge = Math.min(pony.turboCharge + 20, 100);
 
                 if (pony.manualAnimTimer === 0) {
                     pony.manualAnimTimer = 10; 
@@ -791,7 +797,8 @@
                 isWalkAnimating: false,
                 manualAnimTimer: 0,
                 roamSpeed: 0.5,
-                isTurbo: false 
+                isTurbo: false,
+                turboCharge: 0 // 初始化热度
             };
 
             if (gameState === 'RACING' || gameState === 'COOLDOWN' || gameState === 'WAITING_TO_START') {
@@ -825,6 +832,7 @@
                 p.isWalkAnimating = false;
                 p.manualAnimTimer = 0;
                 p.isTurbo = false;
+                p.turboCharge = 0;
             });
 
             document.getElementById('hud').style.display = 'none';
@@ -985,6 +993,7 @@
                     p.targetY = null;
                     p.isWalkAnimating = false;
                     p.isTurbo = false; 
+                    p.turboCharge = 0;
                 });
 
                 if (ponyQueue.length > 0) {
@@ -1033,6 +1042,10 @@
                 p.isTurbo = false; 
                 
                 if (p.manualAnimTimer > 0) p.manualAnimTimer--;
+                
+                // === 热度自然衰减 ===
+                // 每帧减 1，如果玩家停手，热度很快归零
+                p.turboCharge = Math.max(0, p.turboCharge - 1);
 
                 if (p.state === 'ready') { p.x = 20; return; }
 
@@ -1046,31 +1059,30 @@
                         }
                     }
 
-                    let currentSpeed = 0; 
                     if (p.isManual) {
-                        // === 调整：降低阻力 ===
-                        // 衰减系数 0.93 -> 0.97，速度流失更慢
-                        p.manualSpeed *= 0.97; 
+                        // === 1. 速度参数修正 ===
+                        // 衰减系数 0.95 (中庸之道)
+                        p.manualSpeed *= 0.95; 
                         if (p.manualSpeed < 0.1) p.manualSpeed = 0;
                         p.x += p.manualSpeed;
                         p.isWalkAnimating = p.manualSpeed > 0.1;
-                        currentSpeed = p.manualSpeed;
                     } else {
-                        currentSpeed = p.speed * (0.9 + Math.random() * 0.2);
-                        p.x += currentSpeed;
+                        p.x += p.speed * (0.9 + Math.random() * 0.2);
                         p.isWalkAnimating = true;
                     }
 
-                    // ==================== 特效逻辑判断 START ====================
-                    // 1. 中等速度 > 7
-                    if (currentSpeed > 7 && Math.random() < 0.4) {
+                    // ==================== 特效逻辑 (基于热度) ====================
+                    // 不再看物理速度，只看你的手速热度
+                    
+                    // 1. 中等热度 > 40：生成尘土 (容易触发)
+                    if (p.turboCharge > 40 && Math.random() < 0.4) {
                         spawnDust(p.x, p.y);
                     }
-                    // 2. 极快速度 > 9 (门槛再次降低)
-                    if (currentSpeed > 9) {
+                    // 2. 高热度 > 75：触发极速残影 (需要较快手速)
+                    if (p.turboCharge > 75) {
                         p.isTurbo = true;
                     }
-                    // ==================== 特效逻辑判断 END ====================
+                    // ==================== 特效逻辑结束 ====================
                     
                     p.facing = 1;
                     if (p.x >= FINISH_X) {
@@ -1181,6 +1193,12 @@
             }
             const grassCount = Math.floor(Math.random() * 3) + 1;
             for(let i=0; i<grassCount; i++) { grass.push({ x: p.x + (Math.random()-0.5) * 60, y: p.y + (Math.random()-0.5) * 40 }); }
+            
+            // === 3. 淘汰消息广播 ===
+            // 通知所有客户端，有人挂了
+            if (p.playerUUID) {
+                broadcast({ type: 'eliminated', uuid: p.playerUUID });
+            }
         }
 
         function draw() {
@@ -1214,18 +1232,14 @@
                 el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none';
                 el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
 
-                // ==================== 特效渲染应用 START ====================
                 const gridEl = el.querySelector('.p-grid');
                 if (p.isTurbo) {
-                    // 如果是极速状态，添加 CSS 类，并设置 CSS 变量以匹配马的颜色
                     gridEl.classList.add('trail-active');
                     gridEl.style.setProperty('--trail-c', p.color);
                 } else {
-                    // 否则移除特效
                     gridEl.classList.remove('trail-active');
                     gridEl.style.removeProperty('--trail-c');
                 }
-                // ==================== 特效渲染应用 END ====================
 
                 let frameStep = 0;
                 if (p.isManual && p.state === 'racing') {
@@ -1280,19 +1294,34 @@
                         else if (data.type === 'sync_ui') {
                             const btn = document.getElementById('m-btn');
                             const info = document.getElementById('m-info');
+                            
+                            // 重置可能被淘汰状态污染的按钮
                             mobileBtnState = data.mode;
-                            btn.innerText = data.label;
                             btn.className = 'push-btn'; 
+                            btn.onclick = null; // 清除可能存在的点击跳转事件
+                            
                             if (data.mode === 'wait') {
                                 btn.classList.add('btn-wait');
+                                btn.innerText = data.label;
                                 info.innerText = "GET READY...";
                             } else if (data.mode === 'mash') {
                                 btn.classList.add('btn-mash');
+                                btn.innerText = data.label;
                                 info.innerText = "TAP FAST!!!";
                             } else if (data.mode === 'start') {
                                 btn.classList.add('btn-start');
+                                btn.innerText = data.label;
                                 info.innerText = "RACE FINISHED";
                             }
+                        }
+                        else if (data.type === 'eliminated' && data.uuid === playerUUID) {
+                            // === 玩家被淘汰逻辑 ===
+                            const btn = document.getElementById('m-btn');
+                            const info = document.getElementById('m-info');
+                            mobileBtnState = 'dead';
+                            btn.className = 'push-btn btn-dead';
+                            btn.innerText = "YOU DIED\nAGAIN?";
+                            info.innerText = "ELIMINATED";
                         }
                     });
                 });
@@ -1385,6 +1414,12 @@
             btn.style.transform = 'scale(0.95)';
             setTimeout(() => { btn.style.transform = 'scale(1)'; }, 50);
 
+            // 如果已经挂了，点击直接重置UI
+            if (mobileBtnState === 'dead') {
+                resetMobile();
+                return;
+            }
+
             if (mobileBtnState === 'mash') {
                 if(conn) conn.send({ type: 'tap', uuid: playerUUID });
                 const now = Date.now();
@@ -1403,6 +1438,7 @@
             document.getElementById('m-name').value = '';
             restoreGridData(mobileGrid);
             renderGrid('m-grid', mobileGrid, selectedColor);
+            mobileBtnState = 'wait'; // 重置状态
         }
 
         function clearMobile() { clearGridData(mobileGrid); renderGrid('m-grid', mobileGrid, selectedColor); }
