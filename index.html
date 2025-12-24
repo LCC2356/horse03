@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.60 NAME FIX</title>
+    <title>HORSE RUNRUN - v7.61 ROAMING AI FIX</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -425,7 +425,6 @@
 
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#ffffff', BLUE:'#2979ff' };
         
-        // 修改点 1：完全替换默认小马数据为用户指定像素
         const DEFAULT_PIXELS = [
             [0,0,0,0,0,0,0,0,0,0,0], 
             [0,0,0,0,0,0,0,0,1,0,0], 
@@ -830,10 +829,12 @@
             }
 
             const active = ponies.filter(p => p.state === 'racing');
+            // 修改点 3：草从全地图 0~3400 生成，促进小马散开
             const maxGrass = 5 + ponies.length * 2;
             const growthRate = 0.02 + ponies.length * 0.005;
             if (active.length === 0 && Math.random() < growthRate && grass.length < maxGrass) {
-                grass.push({ x: 300 + Math.random() * (GAME_W - 600), y: 20 + Math.random() * (GAME_H - 40) });
+                // 修改：范围改为 50 到 GAME_W-100
+                grass.push({ x: 50 + Math.random() * (GAME_W - 100), y: 20 + Math.random() * (GAME_H - 40) });
             }
         }
 
@@ -947,7 +948,8 @@
             if (p.state === 'roaming' || p.state === 'finished') {
                 for(let i=0; i<grass.length; i++) {
                     const g = grass[i];
-                    if (Math.abs(g.x - p.x) < 20 && Math.abs(g.y - p.y) < 20) {
+                    // 修改点 1：吃草检测范围从 20 扩大到 50
+                    if (Math.abs(g.x - p.x) < 50 && Math.abs(g.y - p.y) < 50) {
                         p.state = 'eating'; p.timer = 100; 
                         grass.splice(i, 1); p.targetX = null; p.targetY = null; return; 
                     }
@@ -955,7 +957,8 @@
                 if (p.timer-- <= 0) { 
                     const action = Math.random();
                     if (action > 0.4) {
-                        p.timer = 60 + Math.random() * 80; 
+                        // 修改点 2：走路持续时间从 60+80 改为 200~500，让小马能走更远
+                        p.timer = 200 + Math.random() * 300; 
                         p.targetX = minX + Math.random() * (maxX - minX);
                         p.targetY = minY + Math.random() * (maxY - minY);
                     } else {
@@ -1101,7 +1104,6 @@
             if(!conn) return alert("Not Connected!");
             
             const nameInput = document.getElementById('m-name');
-            // 修改点 2：添加名字过滤逻辑
             let name = nameInput.value.trim().replace(/[^a-zA-Z0-9]/g, '');
             if (!name) name = "PLAYER"; 
             name = name.toUpperCase();
@@ -1213,7 +1215,6 @@
             renderGrid('pc-grid', pcGrid, selectedColor);
             document.getElementById('modal-editor').style.display = 'flex';
         }
-        // 修改点 3：PC端也添加名字过滤
         function savePCPony() {
             let name = document.getElementById('pc-name').value.trim().replace(/[^a-zA-Z0-9]/g, '');
             if (!name) name = "PLAYER";
