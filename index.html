@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.68 FASTER GRAZING</title>
+    <title>HORSE RUNRUN - v7.69 SLIDER CONTROLS</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -16,6 +16,7 @@
             --border: #444444;
             --game-w: 3400px; 
             --game-h: 100px;
+            --accent: #40e0d0; /* Cyan accent for sliders */
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
@@ -194,7 +195,13 @@
         }
 
         .entity { position: absolute; width: 44px; height: 44px; will-change: transform; }
-        .pixel-grid { display: grid; grid-template-columns: repeat(11, 1fr); width: 100%; height: 100%; }
+        .pixel-grid { 
+            display: grid; 
+            grid-template-columns: repeat(11, 1fr); 
+            width: 100%; height: 100%; 
+            transform-origin: bottom center;
+            transition: transform 0.2s;
+        }
         
         .crown-container {
             position: absolute; top: -31px; left: 50%; transform: translateX(-50%);
@@ -239,16 +246,48 @@
 
         .control-group {
             display: flex; flex-direction: column; 
-            gap: 2px; border-left: 1px solid #333; padding-left: 15px;
+            gap: 5px; border-left: 1px solid #333; padding-left: 15px;
+            width: 140px; /* 固定宽度保证滑块显示 */
         }
         .control-label { font-size: 0.8rem; color: #888; letter-spacing: 1px; }
-        .input-wrapper { display: flex; align-items: center; gap: 5px; }
+        .input-wrapper { display: flex; align-items: center; gap: 5px; width: 100%; }
         
+        /* 样式化滑块 */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            margin: 5px 0;
+        }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 6px;
+            cursor: pointer; background: #333;
+            border-radius: 3px; border: 1px solid #555;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px; width: 16px;
+            border-radius: 2px; background: var(--accent);
+            cursor: pointer; -webkit-appearance: none;
+            margin-top: -6px; box-shadow: 0 0 5px var(--accent);
+        }
+        /* Firefox */
+        input[type=range]::-moz-range-track {
+            width: 100%; height: 6px;
+            cursor: pointer; background: #333;
+            border-radius: 3px; border: 1px solid #555;
+        }
+        input[type=range]::-moz-range-thumb {
+            height: 16px; width: 16px;
+            border: none; border-radius: 2px;
+            background: var(--accent); cursor: pointer;
+        }
+
         input[type="number"] {
             background: #222; border: 1px solid var(--border);
             color: var(--primary); font-family: 'VT323', monospace;
-            font-size: 1.4rem; width: 80px; text-align: center;
-            padding: 4px; border-radius: 4px;
+            font-size: 1.4rem; width: 60px; text-align: center;
+            padding: 2px; border-radius: 4px;
         }
         .unit-label { font-size: 1.2rem; color: #555; }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -360,6 +399,7 @@
         <div id="bottom-controls">
             <div class="control-group" style="border-left: none;">
                 <span class="control-label">ZOOM</span>
+                <input type="range" id="zoom-slider" min="1" max="500" step="1" value="100">
                 <div class="input-wrapper">
                     <input type="number" id="zoom-input" value="100" min="1" max="500">
                     <span class="unit-label">%</span>
@@ -368,8 +408,9 @@
 
             <div class="control-group">
                 <span class="control-label">Y OFFSET</span>
+                <input type="range" id="y-slider" min="-600" max="600" step="1" value="0">
                 <div class="input-wrapper">
-                    <input type="number" id="y-input" value="0" step="10">
+                    <input type="number" id="y-input" value="0" step="1">
                     <span class="unit-label">PX</span>
                 </div>
             </div>
@@ -523,6 +564,42 @@
         }
 
         window.onload = function() {
+            // 滑块逻辑与输入框绑定
+            const zoomSlider = document.getElementById('zoom-slider');
+            const zoomInput = document.getElementById('zoom-input');
+            const ySlider = document.getElementById('y-slider');
+            const yInput = document.getElementById('y-input');
+
+            // Zoom Sync
+            zoomSlider.oninput = function() {
+                zoomInput.value = this.value;
+                layout.scale = this.value / 100;
+                applyLayout(false);
+            };
+            zoomInput.oninput = function() {
+                let val = parseFloat(this.value);
+                if(val) {
+                    zoomSlider.value = val;
+                    layout.scale = val / 100;
+                    applyLayout(false);
+                }
+            };
+
+            // Y Offset Sync
+            ySlider.oninput = function() {
+                yInput.value = this.value;
+                layout.y = parseFloat(this.value);
+                applyLayout(false);
+            };
+            yInput.oninput = function() {
+                let val = parseFloat(this.value);
+                if(!isNaN(val)) {
+                    ySlider.value = val;
+                    layout.y = val;
+                    applyLayout(false);
+                }
+            };
+
             const vfdOverlay = document.getElementById('vfd-overlay');
             for (let i = 0; i < 80; i++) {
                 const arrow = document.createElement('i');
@@ -533,24 +610,6 @@
             requestAnimationFrame(gameLoop);
             fitScreen();
             
-            const zoomInput = document.getElementById('zoom-input');
-            zoomInput.addEventListener('input', (e) => {
-                const val = parseFloat(e.target.value);
-                if(val && val > 0) {
-                    layout.scale = val / 100;
-                    applyLayout(false); 
-                }
-            });
-
-            const yInput = document.getElementById('y-input');
-            yInput.addEventListener('input', (e) => {
-                const val = parseFloat(e.target.value);
-                if(!isNaN(val)) {
-                    layout.y = val;
-                    applyLayout(false); 
-                }
-            });
-
             window.addEventListener('keydown', (e) => {
                 if (e.target.tagName === 'INPUT') return;
 
@@ -597,7 +656,9 @@
             
             if(updateInput) {
                 document.getElementById('zoom-input').value = Math.round(layout.scale * 100);
+                document.getElementById('zoom-slider').value = Math.round(layout.scale * 100);
                 document.getElementById('y-input').value = Math.round(layout.y);
+                document.getElementById('y-slider').value = Math.round(layout.y);
             }
         }
 
@@ -972,9 +1033,7 @@
                 for(let i=0; i<grass.length; i++) {
                     const g = grass[i];
                     if (Math.abs(g.x - p.x) < 50 && Math.abs(g.y - p.y) < 50) {
-                        p.state = 'eating'; 
-                        // 修改点：缩短吃草时间，从 100 减到 50
-                        p.timer = 50; 
+                        p.state = 'eating'; p.timer = 50; 
                         grass.splice(i, 1); p.targetX = null; p.targetY = null; return; 
                     }
                 }
