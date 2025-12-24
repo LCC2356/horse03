@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.52 CUSTOM SPRITE</title>
+    <title>HORSE RUNRUN - v7.53 SPRITE & ANIM FIX</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -1015,15 +1015,17 @@
                 el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
 
                 let frameStep = 0;
-                if (p.isManual) {
-                    if (Date.now() - p.lastTapTime < 150) {
-                        frameStep = 1; 
+                // 修改点 2：通用移动判断。只要在移动（比赛中/走过终点/散步时有目标/有手动速度），就应该有动画。
+                const isMoving = p.state === 'racing' || p.finishedWalking || (p.state === 'roaming' && p.targetX !== null) || p.manualSpeed > 0.1;
+
+                if (isMoving) {
+                    if (p.isManual && p.state === 'racing') {
+                        // 比赛中手动玩家的特殊“蹬腿”动画
+                        frameStep = (Date.now() - p.lastTapTime < 150) ? 1 : 0;
                     } else {
-                        frameStep = 0; 
+                        // 其他情况（散步时的手动玩家、所有AI）使用标准循环动画
+                        frameStep = Math.floor(p.frame / 5) % 2;
                     }
-                } else {
-                    const isMoving = p.state === 'racing' || p.finishedWalking || (p.state === 'roaming' && p.targetX !== null);
-                    frameStep = isMoving ? Math.floor(p.frame / 5) % 2 : 0;
                 }
 
                 let html = '';
