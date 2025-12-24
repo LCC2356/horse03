@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.67 PIXEL GRAZING</title>
+    <title>HORSE RUNRUN - v7.68 FASTER GRAZING</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -972,7 +972,9 @@
                 for(let i=0; i<grass.length; i++) {
                     const g = grass[i];
                     if (Math.abs(g.x - p.x) < 50 && Math.abs(g.y - p.y) < 50) {
-                        p.state = 'eating'; p.timer = 100; 
+                        p.state = 'eating'; 
+                        // 修改点：缩短吃草时间，从 100 减到 50
+                        p.timer = 50; 
                         grass.splice(i, 1); p.targetX = null; p.targetY = null; return; 
                     }
                 }
@@ -1081,21 +1083,16 @@
                     frameStep = Math.floor(p.frame / 5) % 2;
                 }
 
-                // 修改点 1：移除CSS旋转
                 el.querySelector('.p-grid').style.transform = `scaleX(${p.facing || 1})`;
 
                 let html = '';
                 for(let y=0; y<11; y++) {
                     let row = p.pixels[y];
-                    // 修改点 2：在吃草状态下，将脖子以上(0-5行)向下平移2格。
-                    // 逻辑：如果处于吃草状态，且当前行是y，则尝试读取 pixels[y-2] 的数据。
-                    // 身体部分(y>5)保持不变。
                     if (p.state === 'eating') {
                         if (y <= 5) {
                             row = (y >= 2) ? p.pixels[y - 2] : [0,0,0,0,0,0,0,0,0,0,0];
                         }
                     } 
-                    // 跑步动画：抬腿逻辑
                     else if (frameStep === 1 && y > 8) {
                         row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[0]]; 
                     }
