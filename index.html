@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.58 SPEED TWEAKS</title>
+    <title>HORSE RUNRUN - v7.59 SMOOTH DRAW</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -653,7 +653,6 @@
                 pony.lastTapTime = Date.now(); 
                 pony.tapCount++;
                 pony.name = pony.name.replace(" (BOT)", "");
-                // 修改点 1：手动速度增加值从 2.4 提升到 2.9 (+20%)，最大速度提升到 22
                 pony.manualSpeed = Math.min(pony.manualSpeed + 2.9, 22);
 
                 if (pony.manualAnimTimer === 0) {
@@ -675,7 +674,6 @@
                 color: color || COLORS.CYAN,
                 x: 20, 
                 y: 30 + Math.random() * (GAME_H - PONY_SIZE - 20),
-                // 修改点 2：初始基础速度从 3.5 降低到 3.0
                 speed: 3.0, 
                 state: 'racing',
                 hasCrown: false, isStreak: false, crownCount: 0,
@@ -753,7 +751,6 @@
             }, 1500);
 
             ponies.forEach(p => {
-                // 修改点 2：AI速度范围从 [3.5, 6.5] 调整为 [3.0, 5.5] (平均速度降低约15%)
                 p.speed = 3.0 + Math.random() * 2.5; 
                 p.state = 'racing';
                 p.finishedWalking = false;
@@ -1234,28 +1231,77 @@
             });
             renderGrid(gridId, dataGrid, selectedColor);
 
-            let drawing = false, eraseMode = false;
-            const update = (e) => {
-                if(e.cancelable) e.preventDefault();
+            // 修改：优化绘图逻辑，支持滑动绘制，只更新颜色不重建DOM
+            let drawing = false;
+            let eraseMode = false;
+
+            const getCellCoords = (e) => {
                 const t = e.touches ? e.touches[0] : e;
                 const el = document.elementFromPoint(t.clientX, t.clientY);
-                if(el && el.dataset.r) {
-                    const r = parseInt(el.dataset.r), c = parseInt(el.dataset.c);
-                    if(e.type === 'mousedown' || e.type === 'touchstart') eraseMode = dataGrid[r][c] === 1;
-                    if(dataGrid[r][c] !== (eraseMode?0:1)) { dataGrid[r][c] = eraseMode?0:1; renderGrid(gridId, dataGrid, selectedColor); }
+                if (el && el.classList.contains('editor-cell')) {
+                    return { r: parseInt(el.dataset.r), c: parseInt(el.dataset.c), el: el };
+                }
+                return null;
+            };
+
+            const startDraw = (e) => {
+                if(e.cancelable) e.preventDefault();
+                drawing = true;
+                const cell = getCellCoords(e);
+                if (cell) {
+                    // 确定这笔是画还是擦：如果起笔点有颜色则为擦除模式
+                    eraseMode = dataGrid[cell.r][cell.c] === 1;
+                    updateCell(cell.r, cell.c, cell.el);
                 }
             };
-            gridEl.onmousedown = gridEl.ontouchstart = (e) => { drawing = true; update(e); };
-            window.onmousemove = window.ontouchmove = (e) => { if(drawing) update(e); };
-            window.onmouseup = window.ontouchend = () => { drawing = false; };
+
+            const moveDraw = (e) => {
+                if (!drawing) return;
+                if(e.cancelable) e.preventDefault();
+                const cell = getCellCoords(e);
+                if (cell) {
+                    updateCell(cell.r, cell.c, cell.el);
+                }
+            };
+
+            const endDraw = () => {
+                drawing = false;
+            };
+
+            const updateCell = (r, c, el) => {
+                const targetVal = eraseMode ? 0 : 1;
+                if (dataGrid[r][c] !== targetVal) {
+                    dataGrid[r][c] = targetVal;
+                    // 直接更新DOM样式，不重绘整个网格
+                    if (targetVal === 1) {
+                        el.style.background = selectedColor;
+                        el.style.boxShadow = `0 0 5px ${selectedColor}`;
+                    } else {
+                        el.style.background = '#000';
+                        el.style.boxShadow = 'none';
+                    }
+                }
+            };
+
+            gridEl.onmousedown = gridEl.ontouchstart = startDraw;
+            window.onmousemove = window.ontouchmove = moveDraw;
+            window.onmouseup = window.ontouchend = endDraw;
         }
 
+        // 修改：renderGrid改为只负责创建/重置DOM，不再负责实时更新
         function renderGrid(id, data, color) {
             const el = document.getElementById(id); el.innerHTML = '';
             data.forEach((row, r) => row.forEach((val, c) => {
                 const cell = document.createElement('div');
-                cell.className = 'editor-cell'; cell.dataset.r = r; cell.dataset.c = c;
-                if(val) { cell.style.background = color; cell.style.boxShadow = `0 0 5px ${color}`; }
+                cell.className = 'editor-cell'; 
+                cell.dataset.r = r; 
+                cell.dataset.c = c;
+                if(val) { 
+                    cell.style.background = color; 
+                    cell.style.boxShadow = `0 0 5px ${color}`; 
+                } else {
+                    cell.style.background = '#000';
+                }
                 el.appendChild(cell);
             }));
         }
