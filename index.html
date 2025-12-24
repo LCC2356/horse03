@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.54 FINAL FIXES</title>
+    <title>HORSE RUNRUN - v7.56 USER SPRITE</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -425,19 +425,19 @@
 
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#ffffff', BLUE:'#2979ff' };
         
-        // 修改点 1：严格按照参考图 image_7.png 精确复刻的 11x11 像素数据
+        // 修改点 1：使用用户提供的全新 11x11 像素数据
         const DEFAULT_PIXELS = [
+            [0,0,0,0,0,0,0,0,0,0,0], 
             [0,0,0,0,0,0,0,0,1,0,0], 
             [0,0,0,0,0,0,0,1,1,1,0], 
             [0,0,0,0,0,0,0,1,1,1,1], 
-            [0,0,0,0,0,0,1,1,1,1,0], 
-            [0,1,0,0,0,1,1,1,1,0,0], 
-            [1,1,0,0,1,1,1,1,1,0,0], 
-            [1,1,0,1,1,1,1,1,1,0,0], 
-            [0,0,0,1,1,1,1,1,1,0,0], 
-            [0,0,0,1,1,1,1,1,1,0,0], 
-            [0,0,0,1,0,1,0,1,0,0,0], 
-            [0,0,0,1,0,1,0,1,0,0,0] 
+            [0,1,0,0,0,0,1,1,1,0,0], 
+            [1,0,1,1,1,1,1,1,1,0,0], 
+            [1,0,1,1,1,1,1,1,1,0,0], 
+            [0,0,1,1,1,1,1,1,1,0,0], 
+            [0,0,1,0,1,0,1,0,1,0,0], 
+            [0,0,1,0,1,0,1,0,1,0,0], 
+            [0,0,1,0,1,0,1,0,1,0,0]  
         ];
 
         let ponies = [];
@@ -654,7 +654,6 @@
                 pony.lastTapTime = Date.now(); 
                 pony.tapCount++;
                 pony.name = pony.name.replace(" (BOT)", "");
-                // 修改点 3：将手动点击增加的速度从 2.0 提升到 2.4 (增加20%)，最大速度也略微提升到 18
                 pony.manualSpeed = Math.min(pony.manualSpeed + 2.4, 18);
             }
         }
@@ -677,7 +676,7 @@
                 hasCrown: false, isStreak: false, crownCount: 0,
                 timer: 0, frame: 0, finishedWalking: false,
                 targetX: null, targetY: null,
-                isWalkAnimating: false // 新增属性：用于精确控制走路动画的播放
+                isWalkAnimating: false
             };
 
             if (gameState === 'RACING' || gameState === 'COOLDOWN' || gameState === 'WAITING_TO_START') {
@@ -878,7 +877,7 @@
 
             ponies.forEach(p => {
                 p.frame++;
-                p.isWalkAnimating = false; // 默认重置动画状态
+                p.isWalkAnimating = false; 
 
                 if (p.state === 'ready') { p.x = 20; return; }
 
@@ -896,10 +895,10 @@
                         p.manualSpeed *= 0.90; 
                         if (p.manualSpeed < 0.1) p.manualSpeed = 0;
                         p.x += p.manualSpeed;
-                        p.isWalkAnimating = p.manualSpeed > 0.1; // 修改点 2：手动模式下有速度才算动
+                        p.isWalkAnimating = p.manualSpeed > 0.1;
                     } else {
                         p.x += p.speed * (0.9 + Math.random() * 0.2);
-                        p.isWalkAnimating = true; // 修改点 2：比赛中AI一直处于运动状态
+                        p.isWalkAnimating = true;
                     }
                     
                     p.facing = 1;
@@ -917,7 +916,7 @@
                     if (p.x < GAME_W - 50) { 
                         p.x += 0.8; 
                         p.finishedWalking = true;
-                        p.isWalkAnimating = true; // 修改点 2：冲过终点后继续走
+                        p.isWalkAnimating = true;
                     }
                     else { p.finishedWalking = false; aiBehavior(p, true); }
                 }
@@ -963,7 +962,7 @@
                         const speed = 0.5 + Math.random() * 0.3; 
                         p.x += (dx / dist) * speed; p.y += (dy / dist) * speed;
                         p.facing = Math.sign(dx) || 1; 
-                        p.isWalkAnimating = true; // 修改点 2：只有在真正向目标移动时才设置动画标志
+                        p.isWalkAnimating = true;
                     } else { p.targetX = null; p.targetY = null; }
                 }
             } else if (p.state === 'eating') {
@@ -1028,12 +1027,9 @@
                 el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
 
                 let frameStep = 0;
-                // 修改点 2：动画逻辑重构，基于 isWalkAnimating 标志位
                 if (p.isManual && p.state === 'racing') {
-                    // 比赛中手动玩家的特殊动画：点击后短暂显示迈步姿态
                     frameStep = (Date.now() - p.lastTapTime < 150) ? 1 : 0;
                 } else if (p.isWalkAnimating) {
-                    // 其他所有情况（AI比赛、AI散步、手动玩家散步）：只要在移动就播放循环动画
                     frameStep = Math.floor(p.frame / 5) % 2;
                 }
 
