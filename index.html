@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.77 STABLE FIX</title>
+    <title>HORSE RUNRUN - v7.78 FIXED</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -32,7 +32,7 @@
             position: relative;
         }
 
-        .hidden { display: none; }
+        .hidden { display: none !important; }
 
         #desktop-view {
             position: absolute; inset: 0;
@@ -75,10 +75,10 @@
             justify-content: center;
             align-items: center;
             position: relative;
-            flex-shrink: 0; /* 关键：防止二维码盒子被压缩 */
+            flex-shrink: 0;
         }
         
-        /* 删除了 .join-label 样式 */
+        /* Removed .join-label style */
         
         .flash-active { animation: track-flash 0.2s ease-out; }
         @keyframes track-flash {
@@ -168,13 +168,10 @@
         /* Controls */
         #bottom-controls { position: fixed; bottom: 20px; left: 20px; display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(0, 0, 0, 0.85); border: 1px solid var(--border); border-radius: 8px; z-index: 1000; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
         
-        /* 修复二维码样式 */
         #qrcode { 
-            background: white; padding: 3px; 
-            width: 90px; height: 90px; 
+            background: white; padding: 3px; width: 90px; height: 90px; 
             display: flex; justify-content: center; align-items: center; 
-            border-radius: 2px;
-            flex-shrink: 0; /* 防止被挤压 */
+            border-radius: 2px; flex-shrink: 0; 
         }
         #qrcode img { display: block; width: 100%; height: 100%; }
 
@@ -198,14 +195,10 @@
         .btn:hover { background: var(--primary); color: #000; }
         .btn:active { transform: translateY(2px); }
 
-        #modal-editor { 
-            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; 
-            display: none; justify-content: center; align-items: center; 
-        }
-        
+        #modal-editor { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; display: none; justify-content: center; align-items: center; }
         .modal-content { background: #1a1c20; border: 2px solid var(--primary); padding: 30px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
         
-        /* 强制画板尺寸 */
+        /* 桌面端编辑器样式 */
         .editor-grid { 
             display: grid; 
             grid-template-columns: repeat(11, 28px); 
@@ -229,6 +222,20 @@
         input[type="text"] { background: #222; border: 1px solid #444; color: white; padding: 12px; font-family: inherit; text-align: center; font-size: 1.5rem; width: 100%; border-radius: 4px; }
         .m-canvas-container { flex: 1; display: flex; justify-content: center; align-items: center; background: #1a1a1a; border-radius: 8px; margin-bottom: 20px; overflow: hidden; }
         .m-footer { display: flex; gap: 15px; height: 60px; flex-shrink: 0; width: 100%; }
+
+        /* 修复 1：手机端专用网格样式 */
+        #mobile-view .editor-grid {
+            grid-template-columns: repeat(11, 1fr) !important;
+            grid-template-rows: repeat(11, 1fr) !important;
+            width: 85vw; /* 使用屏幕宽度的85% */
+            height: 85vw; /* 保持正方形 */
+            max-width: 350px;
+            max-height: 350px;
+        }
+        #mobile-view .editor-cell {
+            width: auto !important;
+            height: auto !important;
+        }
 
         #m-controller { position: fixed; inset: 0; background: #111; z-index: 22000; display: none; flex-direction: column; align-items: center; justify-content: center; }
         .push-btn { width: 250px; height: 250px; border-radius: 50%; background: #222; border: 8px solid #444; color: #888; font-size: 4rem; font-family: 'VT323', monospace; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 50px rgba(0,0,0, 0.4); transition: all 0.2s; user-select: none; cursor: pointer; -webkit-tap-highlight-color: transparent; text-align: center; line-height: 1; padding: 20px; margin-bottom: 30px; }
@@ -271,7 +278,7 @@
                 </div>
                 <div id="side-qr-box">
                     <div id="qrcode"></div>
-                    </div>
+                </div>
             </div>
         </div>
 
@@ -392,7 +399,6 @@
         const SOUND_TYPES = ['SAWTOOTH', 'LASER', 'SQUARE', 'FM'];
 
         let layout = { scale: 1.0, x: 0, y: 0 };
-
         let currentBarText = '';
         let lastBroadcastText = '';
 
@@ -418,9 +424,7 @@
         
         function triggerFlash() {
             const screen = document.getElementById('track-wrapper');
-            screen.classList.remove('flash-active');
-            void screen.offsetWidth; 
-            screen.classList.add('flash-active');
+            screen.classList.remove('flash-active'); void screen.offsetWidth; screen.classList.add('flash-active');
         }
 
         function broadcast(data) {
@@ -498,9 +502,9 @@
                 peer = new Peer(null, PEER_CONFIG);
                 peer.on('open', id => {
                     const url = `${location.href}?host=${id}`;
-                    // 修复点：清空容器，确保 flex-shrink
+                    // 修复 1：清空容器，确保正确生成二维码
                     const qrContainer = document.getElementById("qrcode");
-                    qrContainer.innerHTML = ''; 
+                    qrContainer.innerHTML = '';
                     new QRCode(qrContainer, { text: url, width: 86, height: 86, colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L });
                 });
                 peer.on('connection', c => {
@@ -644,9 +648,362 @@
                     ponies = ponies.filter(p => p.state === 'finished');
                 }
                 
-                // Set Winner
+                // 修复 3：皇冠逻辑统一，只在此处设置，且排他性
                 ponies.forEach(o => {
                     if(o.id === winner.id) { o.hasCrown = true; o.isStreak = false; }
+                    else { o.hasCrown = false; o.isStreak = false; }
+                });
+                
+                setTimeout(resetToRoaming, 3000);
+            }
+        }
+
+        function resetToRoaming() {
+            gameState = 'ROAMING';
+            ponies.forEach(p => { 
+                p.state = 'roaming'; p.timer = 0; p.targetX = null; p.targetY = null; p.isWalkAnimating = false;
+            });
+            if (ponies.some(p => p.playerUUID) || ponyQueue.length > 0) {
+                if (ponyQueue.length > 0) { gameState = 'WAITING_TO_START'; waitTimer = 180; }
+                else { broadcast({ type: 'sync_ui', label: 'START RACE', mode: 'start' }); }
+            } else {
+                broadcast({ type: 'sync_ui', label: 'JOIN NOW', mode: 'wait' });
+            }
+        }
+
+        function updatePoniesMovement() {
+            let winnerFoundThisFrame = false;
+            const finishedCount = ponies.filter(p => p.state === 'finished').length;
+
+            ponies.forEach(p => {
+                p.frame++;
+                p.isWalkAnimating = false; 
+                if (p.manualAnimTimer > 0) p.manualAnimTimer--;
+                if (p.state === 'ready') { p.x = 20; return; }
+
+                if (p.state === 'racing') {
+                    if (p.playerUUID && p.isManual) {
+                        if (Date.now() - p.lastTapTime > 10000) { p.isManual = false; if (!p.name.includes("(BOT)")) p.name += " (BOT)"; }
+                    }
+
+                    if (p.isManual) {
+                        p.manualSpeed *= 0.90; if (p.manualSpeed < 0.1) p.manualSpeed = 0;
+                        p.x += p.manualSpeed; p.isWalkAnimating = p.manualSpeed > 0.1;
+                        
+                        // New: Speed Effects (Manual)
+                        if (p.manualSpeed > 12.0 && p.frame % 3 === 0) createTrail(p);
+                        else if (p.manualSpeed > 4.0 && p.frame % 5 === 0) createDust(p.x, p.y + 40);
+
+                    } else {
+                        p.x += p.speed * (0.9 + Math.random() * 0.2); p.isWalkAnimating = true;
+                        // New: Speed Effects (AI)
+                        if (p.speed > 5.0 && p.frame % 5 === 0) createDust(p.x, p.y + 40);
+                    }
+                    
+                    p.facing = 1;
+                    if (p.x >= FINISH_X) {
+                        p.state = 'finished';
+                    }
+                }
+                else if (p.state === 'finished') {
+                    if (p.x < GAME_W - 50) { p.x += 0.8; p.finishedWalking = true; p.isWalkAnimating = true; }
+                    else { p.finishedWalking = false; aiBehavior(p, true); }
+                }
+                else if (p.state === 'roaming' || p.state === 'eating') {
+                    p.finishedWalking = false; aiBehavior(p, false);
+                }
+                
+                p.x = Math.max(0, Math.min(GAME_W - 38, p.x));
+                p.y = Math.max(p.hasCrown ? 35 : 20, Math.min(GAME_H - 44 - 6, p.y));
+            });
+        }
+        
+        // New: Dust FX
+        function createDust(x, y) {
+            const fx = document.getElementById('layer-fx');
+            const d = document.createElement('div');
+            d.className = 'dust'; d.style.left = (x - 5 + Math.random()*10) + 'px'; d.style.top = (y + Math.random()*5) + 'px';
+            fx.appendChild(d); setTimeout(() => d.remove(), 500);
+        }
+
+        // New: Trail FX
+        function createTrail(p) {
+            const fx = document.getElementById('layer-fx');
+            const t = document.createElement('div');
+            t.className = 'trail-ghost';
+            t.style.left = p.x + 'px'; t.style.top = p.y + 'px'; t.style.background = p.color;
+            t.style.clipPath = "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)";
+            fx.appendChild(t); setTimeout(() => t.remove(), 200);
+        }
+
+        function aiBehavior(p, restrictFinish) {
+            const minX = restrictFinish ? FINISH_X : 0;
+            const maxX = GAME_W - 38;
+            const maxY = GAME_H - 44;
+            const minY = p.hasCrown ? 35 : 20;
+
+            if (p.state === 'roaming' || p.state === 'finished') {
+                for(let i=0; i<grass.length; i++) {
+                    const g = grass[i];
+                    if (Math.abs(g.x - p.x) < 50 && Math.abs(g.y - p.y) < 50) {
+                        p.state = 'eating'; p.timer = 50; grass.splice(i, 1); p.targetX = null; p.targetY = null; return; 
+                    }
+                }
+                if (p.timer-- <= 0) { 
+                    const action = Math.random();
+                    if (action < 0.3) { 
+                        if (p.x < GAME_W / 2) p.targetX = GAME_W - 100 - Math.random() * 400; else p.targetX = 50 + Math.random() * 400; 
+                        p.targetY = minY + Math.random() * (maxY - minY); p.timer = 400 + Math.random() * 400; p.roamSpeed = 2.0; 
+                    } else if (action < 0.8) {
+                        p.targetX = p.x + (Math.random() - 0.5) * 600; p.targetY = minY + Math.random() * (maxY - minY);
+                        p.timer = 100 + Math.random() * 200; p.roamSpeed = 0.8; 
+                    } else {
+                        p.targetX = null; p.targetY = null; p.timer = 60 + Math.random() * 120; p.roamSpeed = 0;
+                    }
+                }
+                if (p.targetX !== null && p.targetY !== null) {
+                    const dx = p.targetX - p.x; const dy = p.targetY - p.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 5) { p.targetX = null; p.targetY = null; p.timer = 0; } 
+                    else {
+                        const speed = p.roamSpeed || 0.5; p.x += (dx / dist) * speed; p.y += (dy / dist) * speed;
+                        
+                        // 修复 2：增加朝向判定阈值，防止摇头
+                        if (Math.abs(dx) > 2.0) {
+                            p.facing = Math.sign(dx); 
+                        }
+                        p.isWalkAnimating = true;
+                    }
+                }
+            } else if (p.state === 'eating') { if (p.timer-- <= 0) p.state = 'roaming'; }
+        }
+
+        function explode(p) {
+            const fx = document.getElementById('layer-fx');
+            for(let i=0; i<20; i++) {
+                const el = document.createElement('div');
+                el.className = 'explosion';
+                el.style.left = (p.x + 19) + 'px'; el.style.top = (p.y + 19) + 'px'; el.style.background = p.color;
+                fx.appendChild(el);
+                const angle = Math.random() * 6.28, spd = 3 + Math.random() * 5;
+                let vx = Math.cos(angle) * spd, vy = Math.sin(angle) * spd, life = 40;
+                const tick = () => {
+                    if (life-- <= 0) return el.remove();
+                    el.style.left = (parseFloat(el.style.left) + vx) + 'px'; el.style.top = (parseFloat(el.style.top) + vy) + 'px'; el.style.opacity = life/40;
+                    requestAnimationFrame(tick);
+                };
+                tick();
+            }
+            const grassCount = Math.floor(Math.random() * 3) + 1;
+            for(let i=0; i<grassCount; i++) { grass.push({ x: p.x + (Math.random()-0.5) * 60, y: p.y + (Math.random()-0.5) * 40 }); }
+        }
+
+        function draw() {
+            const grassL = document.getElementById('layer-grass');
+            grassL.innerHTML = grass.map(g => `<div class="grass" style="left:${g.x}px; top:${g.y}px"></div>`).join('');
+            const ponyL = document.getElementById('layer-pony');
+            const nodes = Array.from(ponyL.children);
+            const ids = new Set(ponies.map(p => p.id));
+            nodes.forEach(n => { if(!ids.has(n.id)) n.remove(); });
+
+            ponies.forEach(p => {
+                let el = document.getElementById(p.id);
+                if (!el) {
+                    el = document.createElement('div');
+                    el.id = p.id; el.className = 'entity';
+                    el.innerHTML = `
+                        <div class="aura"></div>
+                        <div class="crown-container" style="display: none;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path></svg>
+                        </div>
+                        <div class="name-tag">${p.name}</div>
+                        <div class="p-grid" style="display:grid; grid-template-columns:repeat(11,1fr); width:100%; height:100%;"></div>
+                    `;
+                    ponyL.appendChild(el);
+                }
+                
+                // Add winner class for higher z-index
+                if(p.hasCrown) el.classList.add('winner'); else el.classList.remove('winner');
+
+                el.style.transform = `translate(${p.x}px, ${p.y}px) scale(1.1)`;
+                el.style.zIndex = Math.floor(p.y);
+                const crownC = el.querySelector('.crown-container');
+                if (p.hasCrown) { crownC.style.display = 'flex'; } else { crownC.style.display = 'none'; }
+                el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none';
+                el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
+
+                let frameStep = 0;
+                if (p.isManual && p.state === 'racing') frameStep = (p.manualAnimTimer > 0) ? 1 : 0;
+                else if (p.isWalkAnimating) frameStep = Math.floor(p.frame / 5) % 2;
+
+                el.querySelector('.p-grid').style.transform = `scaleX(${p.facing || 1})`;
+                let html = '';
+                for(let y=0; y<11; y++) {
+                    let row = p.pixels[y];
+                    if (p.state === 'eating') { if (y <= 5) row = (y >= 2) ? p.pixels[y - 2] : [0,0,0,0,0,0,0,0,0,0,0]; } 
+                    else if (frameStep === 1 && y > 8) row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[0]]; 
+                    for(let x=0; x<11; x++) { if (row[x]) html += `<div style="background:${p.color}; width:100%; height:100%; grid-column:${x+1}; grid-row:${y+1}"></div>`; }
+                }
+                el.querySelector('.p-grid').innerHTML = html;
+            });
+        }
+        
+        function initDesktop() {
+            initEditor('pc-grid', 'pc-colors', pcGrid);
+            try {
+                peer = new Peer(null, PEER_CONFIG);
+                peer.on('open', id => {
+                    const url = `${location.href}?host=${id}`;
+                    // 修复 1：清空容器，确保正确生成二维码
+                    const qrContainer = document.getElementById("qrcode");
+                    qrContainer.innerHTML = '';
+                    new QRCode(qrContainer, { text: url, width: 86, height: 86, colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L });
+                });
+                peer.on('connection', c => {
+                    c.on('data', data => {
+                        if (data.type === 'check_reconnect') {
+                            const uuid = data.uuid; const exists = ponies.find(p => p.playerUUID === uuid) || ponyQueue.find(p => p.playerUUID === uuid);
+                            if (exists) c.send({ type: 'reconnect_success' });
+                        }
+                        else if (data.type === 'spawn') {
+                            const uuid = data.payload.uuid;
+                            const exists = ponies.find(p => p.playerUUID === uuid) || ponyQueue.find(p => p.playerUUID === uuid);
+                            if (!exists) requestSpawnPony(data.payload.name, data.payload.pixels, data.payload.color, uuid);
+                        } 
+                        else if (data.type === 'tap') handleTap(data.uuid);
+                        else if (data.type === 'force_start') { if (gameState === 'ROAMING' || gameState === 'WAITING_TO_START') startCooldown(); }
+                        else if (data.type === 'emoji') showEmoji(data.uuid, data.emoji);
+                    });
+                });
+                peer.on('error', (err) => { console.error("PeerJS Error:", err); alert("Network Error: " + err.type + "\nTry refreshing."); });
+            } catch(e) { console.error(e); }
+        }
+
+        function spawnTestPony() {
+            const names = ["SPEEDY", "THUNDER", "BOLT", "COMET", "DASH", "FLASH", "STORM", "SHADOW", "BLAZE", "SPIRIT"];
+            const rName = names[Math.floor(Math.random() * names.length)] + " " + Math.floor(Math.random()*99);
+            const colorKeys = Object.keys(COLORS); const rColorKey = colorKeys[Math.floor(Math.random() * colorKeys.length)]; const rColor = COLORS[rColorKey];
+            requestSpawnPony(rName, DEFAULT_PIXELS, rColor, null);
+        }
+
+        function showEmoji(uuid, emoji) {
+            const pony = ponies.find(p => p.playerUUID === uuid);
+            if (pony) {
+                const el = document.getElementById(pony.id);
+                if (el) {
+                    const bubble = document.createElement('div'); bubble.className = 'emoji-bubble'; bubble.innerText = emoji;
+                    el.appendChild(bubble); setTimeout(() => bubble.remove(), 2000);
+                }
+            }
+        }
+
+        function handleTap(uuid) {
+            if (!uuid) return; const pony = ponies.find(p => p.playerUUID === uuid);
+            if (pony && pony.state === 'racing') {
+                pony.isManual = true; pony.lastTapTime = Date.now(); pony.tapCount++; pony.name = pony.name.replace(" (BOT)", "");
+                pony.manualSpeed = Math.min(pony.manualSpeed + 2.9, 22);
+                if (pony.manualAnimTimer === 0) pony.manualAnimTimer = 10; 
+            }
+        }
+
+        function requestSpawnPony(name, pixels, color, uuid = null) {
+            const newPony = {
+                id: Math.random().toString(36).substr(2, 9), playerUUID: uuid, isManual: !!uuid, manualSpeed: 0, tapCount: 0, lastTapTime: Date.now(), 
+                name: name || 'PONY', pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_PIXELS)), color: color || COLORS.CYAN, x: 20, y: 30 + Math.random() * (GAME_H - PONY_SIZE - 20),
+                speed: 3.0, state: 'racing', hasCrown: false, isStreak: false, crownCount: 0, timer: 0, frame: 0, finishedWalking: false, targetX: null, targetY: null, isWalkAnimating: false, manualAnimTimer: 0, roamSpeed: 0.5 
+            };
+            if (gameState === 'RACING' || gameState === 'COOLDOWN' || gameState === 'WAITING_TO_START') { ponyQueue.push(newPony); updateHUD(); } 
+            else { ponies.push(newPony); startCooldown(); }
+        }
+
+        function updateHUD() {}
+
+        function startCooldown() {
+            gameState = 'COOLDOWN'; cooldownTimer = 240; 
+            if (ponyQueue.length > 0) { ponies = ponies.concat(ponyQueue); ponyQueue = []; }
+            ponies.forEach(p => {
+                p.x = 20; p.y = 30 + Math.random() * (GAME_H - PONY_SIZE - 30);
+                p.targetX = null; p.targetY = null; p.facing = 1; p.state = 'ready'; 
+                p.manualSpeed = 0; p.tapCount = 0; p.isWalkAnimating = false; p.manualAnimTimer = 0;
+            });
+            document.getElementById('hud').style.display = 'none'; document.getElementById('queue-text').style.display = 'none';
+            setBarVisibility(true); updateBarText("READY", "#ffffff");
+            broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
+        }
+
+        function startRace() {
+            updateBarText("RUN", "#ffffff");
+            const hud = document.getElementById('hud'); hud.style.display = 'block'; hud.innerText = "STATUS: RACING!!!";
+            const vfdOverlay = document.getElementById('vfd-overlay'); vfdOverlay.classList.remove('vfd-active'); void vfdOverlay.offsetWidth; vfdOverlay.classList.add('vfd-active');
+            const textItems = document.querySelectorAll('.bar-text-item');
+            textItems.forEach((item, index) => { const delay = 0.02 + (index * 0.06); item.style.animation = `text-vanish 0.05s linear forwards ${delay}s`; });
+            setTimeout(() => { if (gameState === 'RACING') { setBarVisibility(false); vfdOverlay.classList.remove('vfd-active'); } }, 1500);
+            ponies.forEach(p => {
+                p.speed = 3.0 + Math.random() * 2.5; p.state = 'racing'; p.finishedWalking = false;
+                if(p.isManual) p.lastTapTime = Date.now();
+            });
+            grass = []; gameState = 'RACING';
+            broadcast({ type: 'sync_ui', label: 'RUN!', mode: 'mash' });
+        }
+
+        function gameLoop() { updateGameLogic(); draw(); requestAnimationFrame(gameLoop); }
+
+        function updateGameLogic() {
+            const alert = document.getElementById('queue-text'); const hud = document.getElementById('hud');
+            if (gameState === 'WAITING_TO_START') {
+                waitTimer--; alert.style.display = 'block'; const sec = Math.ceil(waitTimer / 60); alert.innerText = `NEXT ROUND IN ${sec}`; 
+                if (sec > 0 && lastBroadcastText !== sec) { broadcast({ type: 'sync_ui', label: `STARTING ${sec}`, mode: 'wait' }); lastBroadcastText = sec; }
+                updatePoniesMovement(); if (waitTimer <= 0) startCooldown();
+            }
+            else if (gameState === 'COOLDOWN') {
+                cooldownTimer--; alert.style.display = 'none'; 
+                if (cooldownTimer > 180) updateBarText("READY", "#ffffff");
+                else {
+                    const sec = Math.ceil(cooldownTimer / 60); updateBarText(sec.toString(), '#ffffff');
+                    if (cooldownTimer % 60 === 59) triggerFlash();
+                    if (sec > 0 && lastBroadcastText !== sec) { broadcast({ type: 'sync_ui', label: sec.toString(), mode: 'wait' }); lastBroadcastText = sec; }
+                }
+                if (cooldownTimer <= 0) startRace(); updatePoniesMovement(); 
+            }
+            else if (gameState === 'RACING') {
+                alert.style.display = ponyQueue.length > 0 ? 'block' : 'none'; if(ponyQueue.length > 0) alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`;
+                updatePoniesMovement(); checkRaceEnd();
+            }
+            else if (gameState === 'ROAMING') {
+                hud.style.display = 'block'; hud.innerText = "NOWHERE TO RUN";
+                alert.style.display = ponyQueue.length > 0 ? 'block' : 'none'; if(ponyQueue.length > 0) alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`;
+                updatePoniesMovement();
+            }
+
+            const active = ponies.filter(p => p.state === 'racing');
+            if (active.length === 0 && Math.random() < 0.2) { 
+                const segmentSize = 500; const totalSegments = Math.ceil(GAME_W / segmentSize);
+                for(let i=0; i<totalSegments; i++) {
+                    const startX = i * segmentSize; const endX = (i + 1) * segmentSize;
+                    const count = grass.filter(g => g.x >= startX && g.x < endX).length;
+                    if (count < 2 && Math.random() < 0.05) { grass.push({ x: startX + Math.random() * segmentSize, y: 20 + Math.random() * (GAME_H - 40) }); }
+                }
+            }
+        }
+
+        function checkRaceEnd() {
+            const finished = ponies.filter(p => p.state === 'finished');
+            let raceOverTrigger = false;
+            if (ponies.length > 10) { if (finished.length >= 10) raceOverTrigger = true; } 
+            else { if (ponies.length > 0 && finished.length === ponies.length) raceOverTrigger = true; }
+
+            if (raceOverTrigger && gameState === 'RACING') {
+                const winner = finished.sort((a,b) => b.x - a.x)[0];
+                if (ponies.length > 10) {
+                    const losers = ponies.filter(p => p.state === 'racing');
+                    losers.forEach(p => explode(p));
+                    ponies = ponies.filter(p => p.state === 'finished');
+                }
+                
+                // 修复 3：皇冠逻辑统一，只在此处设置，且排他性
+                ponies.forEach(o => {
+                    if(o.id === winner.id) { o.hasCrown = true; o.isStreak = false; }
+                    else { o.hasCrown = false; o.isStreak = false; }
                 });
                 
                 setTimeout(resetToRoaming, 3000);
@@ -763,8 +1120,11 @@
                     if (dist < 5) { p.targetX = null; p.targetY = null; p.timer = 0; } 
                     else {
                         const speed = p.roamSpeed || 0.5; p.x += (dx / dist) * speed; p.y += (dy / dist) * speed;
-                        // 修复点：添加阈值防止抽搐
-                        if (Math.abs(dx) > 0.5) p.facing = Math.sign(dx); 
+                        
+                        // 修复 2：增加朝向判定阈值，防止摇头
+                        if (Math.abs(dx) > 2.0) {
+                            p.facing = Math.sign(dx); 
+                        }
                         p.isWalkAnimating = true;
                     }
                 }
@@ -847,7 +1207,7 @@
                 peer = new Peer(null, PEER_CONFIG);
                 peer.on('open', id => {
                     const url = `${location.href}?host=${id}`;
-                    // 修复：清空容器，确保正确生成
+                    // 修复 1：清空容器，确保正确生成二维码
                     const qrContainer = document.getElementById("qrcode");
                     qrContainer.innerHTML = '';
                     new QRCode(qrContainer, { text: url, width: 86, height: 86, colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L });
