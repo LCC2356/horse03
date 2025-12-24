@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.65 PERFECT GRAZING</title>
+    <title>HORSE RUNRUN - v7.67 PIXEL GRAZING</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -194,14 +194,7 @@
         }
 
         .entity { position: absolute; width: 44px; height: 44px; will-change: transform; }
-        .pixel-grid { 
-            display: grid; 
-            grid-template-columns: repeat(11, 1fr); 
-            width: 100%; height: 100%; 
-            /* 修改：设置旋转中心在底部，方便做低头吃草动画 */
-            transform-origin: bottom center;
-            transition: transform 0.2s;
-        }
+        .pixel-grid { display: grid; grid-template-columns: repeat(11, 1fr); width: 100%; height: 100%; }
         
         .crown-container {
             position: absolute; top: -31px; left: 50%; transform: translateX(-50%);
@@ -433,7 +426,6 @@
 
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#ffffff', BLUE:'#2979ff' };
         
-        // 修改点 1：完全复刻用户提供的 11x11 矩阵
         const DEFAULT_PIXELS = [
             [0,0,0,0,0,0,0,0,0,0,0], 
             [0,0,0,0,0,0,0,0,1,0,0], 
@@ -1089,17 +1081,25 @@
                     frameStep = Math.floor(p.frame / 5) % 2;
                 }
 
-                // 修改点 1：吃草时使用 CSS 旋转 (15度) 并微调位置，不再破坏像素数据
-                let transform = `scaleX(${p.facing || 1})`;
-                if (p.state === 'eating') {
-                    transform += ` rotate(${p.facing * 15}deg) translateY(6px)`;
-                }
-                el.querySelector('.p-grid').style.transform = transform;
+                // 修改点 1：移除CSS旋转
+                el.querySelector('.p-grid').style.transform = `scaleX(${p.facing || 1})`;
 
                 let html = '';
                 for(let y=0; y<11; y++) {
                     let row = p.pixels[y];
-                    if (frameStep === 1 && y > 8) row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[0]]; 
+                    // 修改点 2：在吃草状态下，将脖子以上(0-5行)向下平移2格。
+                    // 逻辑：如果处于吃草状态，且当前行是y，则尝试读取 pixels[y-2] 的数据。
+                    // 身体部分(y>5)保持不变。
+                    if (p.state === 'eating') {
+                        if (y <= 5) {
+                            row = (y >= 2) ? p.pixels[y - 2] : [0,0,0,0,0,0,0,0,0,0,0];
+                        }
+                    } 
+                    // 跑步动画：抬腿逻辑
+                    else if (frameStep === 1 && y > 8) {
+                        row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[0]]; 
+                    }
+
                     for(let x=0; x<11; x++) { if (row[x]) html += `<div style="background:${p.color}; width:100%; height:100%; grid-column:${x+1}; grid-row:${y+1}"></div>`; }
                 }
                 el.querySelector('.p-grid').innerHTML = html;
@@ -1266,7 +1266,6 @@
             renderGrid('pc-grid', pcGrid, selectedColor);
             document.getElementById('modal-editor').style.display = 'flex';
         }
-        // 修改点 3：PC端也添加名字过滤
         function savePCPony() {
             let name = document.getElementById('pc-name').value.trim().replace(/[^a-zA-Z0-9]/g, '');
             if (!name) name = "PLAYER";
