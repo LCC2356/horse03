@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v8.0 EMOJI & HARDER DUST</title>
+    <title>HORSE RUNRUN - v8.1 PIXEL EMOJI</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -246,7 +246,7 @@
 
         .dust-particle {
             position: absolute;
-            width: 4px; height: 4px; 
+            width: 4px; height: 4px;
             background: #ffffff;
             box-shadow: 0 0 4px #ffffff;
             pointer-events: none;
@@ -267,25 +267,32 @@
             transition: filter 0.1s ease-out, transform 0.1s ease-out;
         }
 
-        /* === 新增：表情气泡动画 === */
+        /* === 修改后：像素风表情气泡 === */
         .pop-emoji {
             position: absolute;
-            top: -50px; left: 50%;
+            top: -20px; /* 修改高度 */
+            left: 50%;
             transform: translateX(-50%);
-            font-size: 30px;
-            text-shadow: 2px 2px 0 #000;
-            animation: float-emoji 1.5s ease-out forwards;
+            
+            font-size: 15px; /* 修改大小 */
+            
+            /* 像素风关键：使用硬边阴影 */
+            text-shadow: 1px 1px 0 #000; 
+            
+            /* 动画加入 steps 使其看起来更机械/像素化 */
+            animation: float-emoji 1.2s steps(10) forwards; 
             pointer-events: none;
             z-index: 200;
             white-space: nowrap;
+            image-rendering: pixelated; 
         }
         @keyframes float-emoji {
-            0% { transform: translate(-50%, 0) scale(0.5); opacity: 0; }
-            20% { transform: translate(-50%, -20px) scale(1.2); opacity: 1; }
-            100% { transform: translate(-50%, -80px) scale(1.0); opacity: 0; }
+            0% { transform: translate(-50%, 0); opacity: 0; }
+            15% { transform: translate(-50%, -10px); opacity: 1; }
+            100% { transform: translate(-50%, -40px); opacity: 0; }
         }
 
-        /* === 新增：手机端表情按钮栏 === */
+        /* === 手机端表情按钮栏 === */
         .emoji-bar {
             display: flex; gap: 15px; margin-top: 40px;
             pointer-events: auto;
