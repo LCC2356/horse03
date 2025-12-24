@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v8.4 MINI PIXELS</title>
+    <title>HORSE RUNRUN - v8.5 POLISHED PIXELS</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -278,11 +278,11 @@
             animation: pixel-float-smooth 2.5s linear forwards;
         }
 
-        /* 基础像素点样式：动态修改 width/height 来改变大小 */
+        /* 基础像素点样式 */
         .pixel-icon-base {
             background: transparent;
-            /* 居中辅助 */
             position: relative;
+            /* 移除手动偏移，依靠父级flex居中 */
         }
 
         @keyframes pixel-float-smooth {
@@ -299,19 +299,21 @@
             display: flex; gap: 15px; margin-top: 40px;
             pointer-events: auto;
             z-index: 22001;
+            justify-content: center; /* 确保按钮栏本身居中 */
         }
         .emoji-btn {
             background: #222; border: 2px solid #555;
             color: #fff;
             width: 60px; height: 60px;
             border-radius: 12px; cursor: pointer;
+            /* Flexbox 完美居中内部的像素图标 */
             display: flex; justify-content: center; align-items: center;
             transition: transform 0.1s;
             -webkit-tap-highlight-color: transparent;
-            overflow: hidden; /* 防止像素溢出 */
+            overflow: hidden;
         }
         .emoji-btn:active { transform: scale(0.8); background: #fff; border-color: #fff; }
-        .emoji-btn:active .pixel-icon-base { filter: invert(1); } /* 点击时反色 */
+        .emoji-btn:active .pixel-icon-base { filter: invert(1); }
 
         /* ==================== 样式结束 ==================== */
 
@@ -402,11 +404,12 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #111; display: flex; flex-direction: column; z-index: 20000;
             padding: 20px;
+            align-items: center; /* 确保手机端整体内容居中 */
         }
-        .m-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; flex-shrink: 0; }
+        .m-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; flex-shrink: 0; width: 100%; max-width: 400px; }
         .m-title { font-size: 1.5rem; color: #fff; }
         .m-status { background: #222; padding: 4px 8px; border-radius: 4px; font-size: 1rem; color: #fff; border: 1px solid #444; }
-        .m-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; flex-shrink: 0; }
+        .m-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; flex-shrink: 0; width: 100%; max-width: 400px; }
         input[type="text"] {
             background: #222; border: 1px solid #444; color: white; padding: 12px;
             font-family: inherit; text-align: center; font-size: 1.5rem; width: 100%; border-radius: 4px;
@@ -414,9 +417,9 @@
         .m-canvas-container {
             flex: 1; display: flex; justify-content: center; align-items: center;
             background: #1a1a1a; border-radius: 8px; margin-bottom: 20px;
-            overflow: hidden;
+            overflow: hidden; width: 100%; max-width: 400px;
         }
-        .m-footer { display: flex; gap: 15px; height: 60px; flex-shrink: 0; width: 100%; }
+        .m-footer { display: flex; gap: 15px; height: 60px; flex-shrink: 0; width: 100%; max-width: 400px; }
 
         #m-controller {
             position: fixed; inset: 0; background: #111; z-index: 22000;
@@ -569,6 +572,7 @@
             [0,0,1,0,1,0,1,0,1,0,0]
         ];
 
+        /* === 修改后：标准化为 7x7 网格的像素画数据 === */
         const PIXEL_ART_MAPS = {
             'HEART': [
                 [0,1,1,0,1,1,0],
@@ -576,30 +580,35 @@
                 [1,1,1,1,1,1,1],
                 [0,1,1,1,1,1,0],
                 [0,0,1,1,1,0,0],
-                [0,0,0,1,0,0,0]
+                [0,0,0,1,0,0,0],
+                [0,0,0,0,0,0,0]
             ],
             'POOP': [
                 [0,0,0,1,0,0,0],
                 [0,0,1,1,1,0,0],
                 [0,1,1,1,1,1,0],
                 [1,0,1,1,1,0,1],
-                [1,1,1,1,1,1,1]
+                [1,1,1,1,1,1,1],
+                [0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0]
             ],
-            'BOLT': [
-                [0,0,1,1,1,0],
-                [0,1,1,1,0,0],
-                [1,1,1,1,1,0],
-                [0,0,0,1,1,0],
-                [0,0,1,1,0,0],
-                [0,0,1,0,0,0]
-            ],
-            'FACE': [
+            'BOLT': [ /* 上下对称的闪电 */
+                [0,0,1,1,1,0,0],
+                [0,1,1,1,0,0,0],
+                [1,1,1,0,0,0,0],
                 [0,1,1,1,1,1,0],
-                [1,0,1,0,1,0,1],
-                [1,0,1,0,1,0,1],
-                [1,0,0,0,0,0,1],
-                [1,1,0,0,0,1,1],
-                [0,1,1,1,1,1,0]
+                [0,0,0,0,1,1,1],
+                [0,0,0,1,1,1,0],
+                [0,0,1,1,1,0,0]
+            ],
+            'FACE': [ /* 简化的笑脸（只有眼睛和嘴巴） */
+                [0,0,0,0,0,0,0],
+                [0,1,0,0,0,1,0], /* 眼睛 */
+                [0,1,0,0,0,1,0],
+                [0,0,0,0,0,0,0],
+                [1,0,0,0,0,0,1], /* 嘴角 */
+                [0,1,1,1,1,1,0], /* 嘴底 */
+                [0,0,0,0,0,0,0]
             ]
         };
 
@@ -636,40 +645,40 @@
             }
         };
 
-        function createPixelIcon(type, pixelSize = 2) {
+        /* === 修改后：支持颜色的像素图标创建函数 === */
+        function createPixelIcon(type, pixelSize = 2, color = '#fff') {
             const container = document.createElement('div');
             container.className = 'pixel-icon-base';
             
-            // 设置基础像素点大小
-            container.style.width = pixelSize + 'px';
-            container.style.height = pixelSize + 'px';
+            // 设置容器大小为 7x7 网格的总尺寸，确保 Flexbox 能居中它
+            const gridSize = 7 * pixelSize;
+            container.style.width = gridSize + 'px';
+            container.style.height = gridSize + 'px';
 
             const map = PIXEL_ART_MAPS[type] || PIXEL_ART_MAPS['HEART'];
             
             let boxShadow = '';
-            for(let y=0; y<map.length; y++) {
-                for(let x=0; x<map[y].length; x++) {
-                    if (map[y][x] === 1) {
-                        boxShadow += `${x*pixelSize}px ${y*pixelSize}px #fff,`;
+            for(let y=0; y<7; y++) { // 确保遍历 7x7
+                for(let x=0; x<7; x++) {
+                    if (map[y] && map[y][x] === 1) {
+                        // 使用传入的颜色
+                        boxShadow += `${x*pixelSize}px ${y*pixelSize}px ${color},`;
                     }
                 }
             }
             container.style.boxShadow = boxShadow.slice(0, -1);
             
-            // 居中偏移修正 (宽度约为 7格 * pixelSize)
-            const widthOffset = (7 * pixelSize) / 2;
-            container.style.transform = `translateX(-${widthOffset}px)`;
-            
+            // 移除之前的 transform 偏移，现在靠父级 Flexbox 居中
             return container;
         }
 
         window.onload = function() {
-            // 初始化移动端按钮图标 (同步替换)
+            // 初始化移动端按钮图标 (使用白色)
             const btns = document.querySelectorAll('.emoji-btn');
             btns.forEach(btn => {
                 const type = btn.getAttribute('data-icon');
-                // 手机端使用 3px 的像素点，保证清晰可见
-                btn.appendChild(createPixelIcon(type, 3));
+                // 手机端使用 3px 大小，颜色默认为白色
+                btn.appendChild(createPixelIcon(type, 3, '#fff'));
             });
 
             // ... 原有初始化逻辑 ...
@@ -1070,8 +1079,8 @@
             const pony = ponies.find(p => p.playerUUID === uuid); if (!pony) return;
             const pEl = document.getElementById(pony.id); if (!pEl) return;
             const container = document.createElement('div'); container.className = 'pixel-emoji-container';
-            /* 使用 2px 作为表情的像素大小 (缩小50%) */
-            container.appendChild(createPixelIcon(emojiType, 2));
+            /* 使用 2px 大小，并传入小马的颜色 */
+            container.appendChild(createPixelIcon(emojiType, 2, pony.color));
             pEl.appendChild(container);
             if (audioCtx && audioCtx.state === 'running') {
                 const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'triangle'; osc.frequency.setValueAtTime(800, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.1);
