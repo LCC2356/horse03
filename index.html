@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.82 FX UPDATE</title>
+    <title>HORSE RUNRUN - v7.85 FX TUNED</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -226,35 +226,36 @@
         .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
         @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
 
-        /* ==================== 新增特效样式 START ==================== */
+        /* ==================== 特效样式优化 START ==================== */
         
-        /* 尘土粒子 */
+        /* 尘土粒子 - 加大、加浓、动画时间延长 */
         .dust-particle {
             position: absolute;
-            width: 5px; height: 5px;
-            background: #8d6e63; /* 泥土色 */
+            width: 8px; height: 8px; /* 变大 */
+            background: #8d6e63; 
             border-radius: 50%;
             pointer-events: none;
-            opacity: 0.7;
-            animation: dust-fade 0.5s ease-out forwards;
+            opacity: 0.9; /* 初始不透明度提高 */
+            /* 动画时间从 0.5s 增加到 0.8s */
+            animation: dust-fade 0.8s ease-out forwards;
             z-index: 1;
         }
         @keyframes dust-fade {
-            0% { transform: translate(0, 0) scale(1); opacity: 0.7; }
-            100% { transform: translate(-25px, -8px) scale(1.5); opacity: 0; } /* 向后上方飘散变大 */
+            /* 这里的 transform 会被 JS 中的随机旋转覆盖一部分，但不影响位移 */
+            0% { opacity: 0.9; }
+            /* 向后上方飘散得更远，变得更大 */
+            100% { transform: translate(-40px, -15px) scale(2.5); opacity: 0; } 
         }
 
-        /* 极速拖影 - 应用在 entity 上 */
+        /* 极速拖影 */
         .trail-active .p-grid {
-            /* 使用 CSS 变量传递颜色，产生多重残影 */
             filter: drop-shadow(-8px 0 1px var(--trail-c)) 
                     drop-shadow(-16px 0 3px var(--trail-c))
                     opacity(0.9);
-            /* 稍微拉伸一下产生速度感 */
             transform: scaleX(1.1) skewX(-5deg);
             transition: filter 0.1s ease-out, transform 0.1s ease-out;
         }
-        /* ==================== 新增特效样式 END ==================== */
+        /* ==================== 特效样式优化 END ==================== */
 
 
         #bottom-controls {
@@ -1004,14 +1005,24 @@
         // ==================== 新增特效辅助函数 START ====================
         function spawnDust(x, y) {
             const fxLayer = document.getElementById('layer-fx');
-            const el = document.createElement('div');
-            el.className = 'dust-particle';
-            // 稍微随机一点位置，在马脚下
-            el.style.left = (x + 10 + Math.random() * 20) + 'px';
-            el.style.top = (y + 38 + Math.random() * 5) + 'px';
-            fxLayer.appendChild(el);
-            // 动画结束后移除 DOM
-            setTimeout(() => el.remove(), 500);
+            // 每次生成 2-4 个粒子
+            const count = Math.floor(Math.random() * 3) + 2; 
+            for (let i = 0; i < count; i++) {
+                const el = document.createElement('div');
+                el.className = 'dust-particle';
+                // 在马脚附近随机位置生成
+                el.style.left = (x + 5 + Math.random() * 30) + 'px';
+                el.style.top = (y + 40 + Math.random() * 8) + 'px';
+                // 随机大小变化
+                const sizeMod = Math.random() * 0.5 + 0.8;
+                // 随机旋转角度，增加动感
+                const rotate = Math.random() * 360;
+                el.style.transform = `scale(${sizeMod}) rotate(${rotate}deg)`;
+
+                fxLayer.appendChild(el);
+                // 动画结束后移除 DOM (时间匹配 CSS 动画时长)
+                setTimeout(() => el.remove(), 800);
+            }
         }
         // ==================== 新增特效辅助函数 END ====================
 
@@ -1051,13 +1062,13 @@
                         p.isWalkAnimating = true;
                     }
 
-                    // ==================== 特效逻辑判断 START ====================
-                    // 1. 中等速度 ( > 8) 且随机触发：生成尘土
-                    if (currentSpeed > 8 && Math.random() < 0.3) {
+                    // ==================== 特效逻辑判断 START (已调整门槛) ====================
+                    // 1. 中等速度 ( > 7 ) 且随机触发：生成尘土云
+                    if (currentSpeed > 7 && Math.random() < 0.4) {
                         spawnDust(p.x, p.y);
                     }
-                    // 2. 极快速度 ( > 15)：标记为极速状态，用于绘制拖影
-                    if (currentSpeed > 15) {
+                    // 2. 极快速度 ( > 11 )：标记为极速状态，用于绘制拖影
+                    if (currentSpeed > 11) {
                         p.isTurbo = true;
                     }
                     // ==================== 特效逻辑判断 END ====================
