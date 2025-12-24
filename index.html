@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.56 USER SPRITE</title>
+    <title>HORSE RUNRUN - v7.57 ANIM FIX</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -425,7 +425,7 @@
 
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#ffffff', BLUE:'#2979ff' };
         
-        // 修改点 1：使用用户提供的全新 11x11 像素数据
+        // 用户提供的 11x11 像素数据
         const DEFAULT_PIXELS = [
             [0,0,0,0,0,0,0,0,0,0,0], 
             [0,0,0,0,0,0,0,0,1,0,0], 
@@ -484,7 +484,8 @@
 
             const container = document.getElementById('bar-text');
             let content = '';
-            for(let i=0; i<13; i++) {
+            // 修改点 1：将循环次数从 13 改为 12，减少一个显示单元
+            for(let i=0; i<12; i++) {
                 content += `<span class="bar-text-item">${text}</span>`;
             }
             container.innerHTML = content;
@@ -650,11 +651,17 @@
             if (!uuid) return;
             const pony = ponies.find(p => p.playerUUID === uuid);
             if (pony && pony.state === 'racing') {
-                pony.isManual = true; 
+                pony.isManual = true;
+                // 保留 lastTapTime 用于判断是否转为 BOT
                 pony.lastTapTime = Date.now(); 
                 pony.tapCount++;
                 pony.name = pony.name.replace(" (BOT)", "");
                 pony.manualSpeed = Math.min(pony.manualSpeed + 2.4, 18);
+
+                // 修改点 2：只有当动画计时器为0（腿放下时），才触发新的10帧动画循环
+                if (pony.manualAnimTimer === 0) {
+                    pony.manualAnimTimer = 10; 
+                }
             }
         }
 
@@ -676,7 +683,8 @@
                 hasCrown: false, isStreak: false, crownCount: 0,
                 timer: 0, frame: 0, finishedWalking: false,
                 targetX: null, targetY: null,
-                isWalkAnimating: false
+                isWalkAnimating: false,
+                manualAnimTimer: 0 // 新增：用于控制手动点击的动画循环
             };
 
             if (gameState === 'RACING' || gameState === 'COOLDOWN' || gameState === 'WAITING_TO_START') {
@@ -708,6 +716,7 @@
                 p.manualSpeed = 0;
                 p.tapCount = 0; 
                 p.isWalkAnimating = false;
+                p.manualAnimTimer = 0;
             });
 
             document.getElementById('hud').style.display = 'none';
@@ -878,6 +887,9 @@
             ponies.forEach(p => {
                 p.frame++;
                 p.isWalkAnimating = false; 
+                
+                // 修改点 2：每一帧减少动画倒计时
+                if (p.manualAnimTimer > 0) p.manualAnimTimer--;
 
                 if (p.state === 'ready') { p.x = 20; return; }
 
@@ -895,6 +907,7 @@
                         p.manualSpeed *= 0.90; 
                         if (p.manualSpeed < 0.1) p.manualSpeed = 0;
                         p.x += p.manualSpeed;
+                        // 手动玩家的散步动画（速度足够大时）
                         p.isWalkAnimating = p.manualSpeed > 0.1;
                     } else {
                         p.x += p.speed * (0.9 + Math.random() * 0.2);
@@ -1027,8 +1040,9 @@
                 el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
 
                 let frameStep = 0;
+                // 修改点 2：手动模式下，如果动画计时器大于0，则显示跑动帧
                 if (p.isManual && p.state === 'racing') {
-                    frameStep = (Date.now() - p.lastTapTime < 150) ? 1 : 0;
+                    frameStep = (p.manualAnimTimer > 0) ? 1 : 0;
                 } else if (p.isWalkAnimating) {
                     frameStep = Math.floor(p.frame / 5) % 2;
                 }
