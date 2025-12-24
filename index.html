@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.59 SMOOTH DRAW</title>
+    <title>HORSE RUNRUN - v7.60 NAME FIX</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -425,6 +425,7 @@
 
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#ffffff', BLUE:'#2979ff' };
         
+        // 修改点 1：完全替换默认小马数据为用户指定像素
         const DEFAULT_PIXELS = [
             [0,0,0,0,0,0,0,0,0,0,0], 
             [0,0,0,0,0,0,0,0,1,0,0], 
@@ -1100,8 +1101,10 @@
             if(!conn) return alert("Not Connected!");
             
             const nameInput = document.getElementById('m-name');
-            const name = nameInput.value.trim();
-            if (!name) { alert("PLEASE ENTER A NAME"); nameInput.focus(); return; }
+            // 修改点 2：添加名字过滤逻辑
+            let name = nameInput.value.trim().replace(/[^a-zA-Z0-9]/g, '');
+            if (!name) name = "PLAYER"; 
+            name = name.toUpperCase();
 
             let hasPixels = false;
             for(let r=0; r<11; r++) { for(let c=0; c<11; c++) { if (mobileGrid[r][c] === 1) { hasPixels = true; break; } } if(hasPixels) break; }
@@ -1112,7 +1115,7 @@
 
             conn.send({ 
                 type: 'spawn', 
-                payload: { name: name.toUpperCase(), pixels: mobileGrid, color: selectedColor, uuid: playerUUID } 
+                payload: { name: name, pixels: mobileGrid, color: selectedColor, uuid: playerUUID } 
             });
             
             document.getElementById('m-editor-ui').style.display = 'none';
@@ -1210,8 +1213,13 @@
             renderGrid('pc-grid', pcGrid, selectedColor);
             document.getElementById('modal-editor').style.display = 'flex';
         }
+        // 修改点 3：PC端也添加名字过滤
         function savePCPony() {
-            requestSpawnPony(document.getElementById('pc-name').value.toUpperCase(), pcGrid, selectedColor);
+            let name = document.getElementById('pc-name').value.trim().replace(/[^a-zA-Z0-9]/g, '');
+            if (!name) name = "PLAYER";
+            name = name.toUpperCase();
+            
+            requestSpawnPony(name, pcGrid, selectedColor);
             document.getElementById('modal-editor').style.display = 'none';
         }
 
@@ -1231,9 +1239,7 @@
             });
             renderGrid(gridId, dataGrid, selectedColor);
 
-            // 修改：优化绘图逻辑，支持滑动绘制，只更新颜色不重建DOM
-            let drawing = false;
-            let eraseMode = false;
+            let drawing = false, eraseMode = false;
 
             const getCellCoords = (e) => {
                 const t = e.touches ? e.touches[0] : e;
@@ -1249,7 +1255,6 @@
                 drawing = true;
                 const cell = getCellCoords(e);
                 if (cell) {
-                    // 确定这笔是画还是擦：如果起笔点有颜色则为擦除模式
                     eraseMode = dataGrid[cell.r][cell.c] === 1;
                     updateCell(cell.r, cell.c, cell.el);
                 }
@@ -1272,7 +1277,6 @@
                 const targetVal = eraseMode ? 0 : 1;
                 if (dataGrid[r][c] !== targetVal) {
                     dataGrid[r][c] = targetVal;
-                    // 直接更新DOM样式，不重绘整个网格
                     if (targetVal === 1) {
                         el.style.background = selectedColor;
                         el.style.boxShadow = `0 0 5px ${selectedColor}`;
@@ -1288,7 +1292,6 @@
             window.onmouseup = window.ontouchend = endDraw;
         }
 
-        // 修改：renderGrid改为只负责创建/重置DOM，不再负责实时更新
         function renderGrid(id, data, color) {
             const el = document.getElementById(id); el.innerHTML = '';
             data.forEach((row, r) => row.forEach((val, c) => {
