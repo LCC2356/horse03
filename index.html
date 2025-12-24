@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.63 TEST BOTS</title>
+    <title>HORSE RUNRUN - v7.64 WIDE ROAMING</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -646,7 +646,6 @@
             } catch(e) { console.error(e); }
         }
 
-        // 修改：增加随机 Bot 生成函数
         function spawnTestPony() {
             const names = ["SPEEDY", "THUNDER", "BOLT", "COMET", "DASH", "FLASH", "STORM", "SHADOW", "BLAZE", "SPIRIT"];
             const rName = names[Math.floor(Math.random() * names.length)] + " " + Math.floor(Math.random()*99);
@@ -654,7 +653,6 @@
             const rColorKey = colorKeys[Math.floor(Math.random() * colorKeys.length)];
             const rColor = COLORS[rColorKey];
             
-            // 使用 null UUID 生成 bot
             requestSpawnPony(rName, DEFAULT_PIXELS, rColor, null);
         }
 
@@ -693,7 +691,8 @@
                 timer: 0, frame: 0, finishedWalking: false,
                 targetX: null, targetY: null,
                 isWalkAnimating: false,
-                manualAnimTimer: 0
+                manualAnimTimer: 0,
+                roamSpeed: 0.5 
             };
 
             if (gameState === 'RACING' || gameState === 'COOLDOWN' || gameState === 'WAITING_TO_START') {
@@ -963,6 +962,7 @@
             });
         }
 
+        // 修改点：全新的 AI 行为逻辑，包含变速、长途迁徙和避免聚集
         function aiBehavior(p, restrictFinish) {
             const minX = restrictFinish ? FINISH_X : 0;
             const maxX = GAME_W - 38;
@@ -979,33 +979,54 @@
                 }
                 if (p.timer-- <= 0) { 
                     const action = Math.random();
+                    
+                    // 30% 几率：长途迁徙 (Travel)
                     if (action < 0.3) { 
+                        // 如果在左侧区域，大概率往右边最远处走；反之亦然。这能有效防止聚集在中间。
                         if (p.x < GAME_W / 2) {
-                            p.targetX = GAME_W - 100 - Math.random() * 400; 
+                            // 往右侧边缘走 (2400-3400)
+                            p.targetX = (GAME_W - 1000) + Math.random() * 900; 
                         } else {
-                            p.targetX = 50 + Math.random() * 400; 
+                            // 往左侧边缘走 (0-1000)
+                            p.targetX = 50 + Math.random() * 950; 
                         }
                         p.targetY = minY + Math.random() * (maxY - minY);
-                        p.timer = 400 + Math.random() * 400; 
-                    } else if (action < 0.8) {
+                        // 长途移动给足够的时间，且速度较快
+                        p.timer = 1000; // 给足时间让它走到
+                        p.roamSpeed = 2.0; 
+                    } 
+                    // 50% 几率：短途溜达 (Meander)
+                    else if (action < 0.8) {
                         p.targetX = p.x + (Math.random() - 0.5) * 600; 
                         p.targetY = minY + Math.random() * (maxY - minY);
                         p.timer = 100 + Math.random() * 200;
-                    } else {
+                        p.roamSpeed = 0.8; // 慢悠悠地走
+                    } 
+                    // 20% 几率：原地发呆 (Idle)
+                    else {
                         p.targetX = null; 
                         p.targetY = null;
                         p.timer = 60 + Math.random() * 120; 
+                        p.roamSpeed = 0;
                     }
                 }
+                
+                // 执行移动逻辑
                 if (p.targetX !== null && p.targetY !== null) {
                     const dx = p.targetX - p.x; const dy = p.targetY - p.y;
                     const dist = Math.sqrt(dx*dx + dy*dy);
-                    if (dist > 2) {
-                        const speed = 0.5 + Math.random() * 0.3; 
+                    
+                    // 如果接近目标，提前结束状态
+                    if (dist < 5) {
+                        p.targetX = null; p.targetY = null;
+                        p.timer = 0; // 强制重新决策
+                    } else {
+                        // 使用 roamSpeed
+                        const speed = p.roamSpeed || 0.5; 
                         p.x += (dx / dist) * speed; p.y += (dy / dist) * speed;
                         p.facing = Math.sign(dx) || 1; 
                         p.isWalkAnimating = true;
-                    } else { p.targetX = null; p.targetY = null; }
+                    }
                 }
             } else if (p.state === 'eating') {
                 if (p.timer-- <= 0) p.state = 'roaming';
@@ -1135,9 +1156,8 @@
             if(!conn) return alert("Not Connected!");
             
             const nameInput = document.getElementById('m-name');
-            let name = nameInput.value.trim().replace(/[^a-zA-Z0-9]/g, '');
-            if (!name) name = "PLAYER"; 
-            name = name.toUpperCase();
+            const name = nameInput.value.trim();
+            if (!name) { alert("PLEASE ENTER A NAME"); nameInput.focus(); return; }
 
             let hasPixels = false;
             for(let r=0; r<11; r++) { for(let c=0; c<11; c++) { if (mobileGrid[r][c] === 1) { hasPixels = true; break; } } if(hasPixels) break; }
@@ -1148,7 +1168,7 @@
 
             conn.send({ 
                 type: 'spawn', 
-                payload: { name: name, pixels: mobileGrid, color: selectedColor, uuid: playerUUID } 
+                payload: { name: name.toUpperCase(), pixels: mobileGrid, color: selectedColor, uuid: playerUUID } 
             });
             
             document.getElementById('m-editor-ui').style.display = 'none';
@@ -1247,11 +1267,7 @@
             document.getElementById('modal-editor').style.display = 'flex';
         }
         function savePCPony() {
-            let name = document.getElementById('pc-name').value.trim().replace(/[^a-zA-Z0-9]/g, '');
-            if (!name) name = "PLAYER";
-            name = name.toUpperCase();
-            
-            requestSpawnPony(name, pcGrid, selectedColor);
+            requestSpawnPony(document.getElementById('pc-name').value.toUpperCase(), pcGrid, selectedColor);
             document.getElementById('modal-editor').style.display = 'none';
         }
 
@@ -1272,71 +1288,27 @@
             renderGrid(gridId, dataGrid, selectedColor);
 
             let drawing = false, eraseMode = false;
-
-            const getCellCoords = (e) => {
+            const update = (e) => {
+                if(e.cancelable) e.preventDefault();
                 const t = e.touches ? e.touches[0] : e;
                 const el = document.elementFromPoint(t.clientX, t.clientY);
-                if (el && el.classList.contains('editor-cell')) {
-                    return { r: parseInt(el.dataset.r), c: parseInt(el.dataset.c), el: el };
-                }
-                return null;
-            };
-
-            const startDraw = (e) => {
-                if(e.cancelable) e.preventDefault();
-                drawing = true;
-                const cell = getCellCoords(e);
-                if (cell) {
-                    eraseMode = dataGrid[cell.r][cell.c] === 1;
-                    updateCell(cell.r, cell.c, cell.el);
+                if(el && el.dataset.r) {
+                    const r = parseInt(el.dataset.r), c = parseInt(el.dataset.c);
+                    if(e.type === 'mousedown' || e.type === 'touchstart') eraseMode = dataGrid[r][c] === 1;
+                    if(dataGrid[r][c] !== (eraseMode?0:1)) { dataGrid[r][c] = eraseMode?0:1; renderGrid(gridId, dataGrid, selectedColor); }
                 }
             };
-
-            const moveDraw = (e) => {
-                if (!drawing) return;
-                if(e.cancelable) e.preventDefault();
-                const cell = getCellCoords(e);
-                if (cell) {
-                    updateCell(cell.r, cell.c, cell.el);
-                }
-            };
-
-            const endDraw = () => {
-                drawing = false;
-            };
-
-            const updateCell = (r, c, el) => {
-                const targetVal = eraseMode ? 0 : 1;
-                if (dataGrid[r][c] !== targetVal) {
-                    dataGrid[r][c] = targetVal;
-                    if (targetVal === 1) {
-                        el.style.background = selectedColor;
-                        el.style.boxShadow = `0 0 5px ${selectedColor}`;
-                    } else {
-                        el.style.background = '#000';
-                        el.style.boxShadow = 'none';
-                    }
-                }
-            };
-
-            gridEl.onmousedown = gridEl.ontouchstart = startDraw;
-            window.onmousemove = window.ontouchmove = moveDraw;
-            window.onmouseup = window.ontouchend = endDraw;
+            gridEl.onmousedown = gridEl.ontouchstart = (e) => { drawing = true; update(e); };
+            window.onmousemove = window.ontouchmove = (e) => { if(drawing) update(e); };
+            window.onmouseup = window.ontouchend = () => { drawing = false; };
         }
 
         function renderGrid(id, data, color) {
             const el = document.getElementById(id); el.innerHTML = '';
             data.forEach((row, r) => row.forEach((val, c) => {
                 const cell = document.createElement('div');
-                cell.className = 'editor-cell'; 
-                cell.dataset.r = r; 
-                cell.dataset.c = c;
-                if(val) { 
-                    cell.style.background = color; 
-                    cell.style.boxShadow = `0 0 5px ${color}`; 
-                } else {
-                    cell.style.background = '#000';
-                }
+                cell.className = 'editor-cell'; cell.dataset.r = r; cell.dataset.c = c;
+                if(val) { cell.style.background = color; cell.style.boxShadow = `0 0 5px ${color}`; }
                 el.appendChild(cell);
             }));
         }
