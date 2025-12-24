@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v7.85 FX TUNED</title>
+    <title>HORSE RUNRUN - v7.88 SPEED TUNED</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -228,23 +228,21 @@
 
         /* ==================== 特效样式优化 START ==================== */
         
-        /* 尘土粒子 - 加大、加浓、动画时间延长 */
+        /* 尘土粒子 - 白色、发光、数量多 */
         .dust-particle {
             position: absolute;
-            width: 8px; height: 8px; /* 变大 */
-            background: #8d6e63; 
+            width: 7px; height: 7px;
+            background: #ffffff; /* 改回白色 */
+            box-shadow: 0 0 6px #ffffff; /* 增加发光 */
             border-radius: 50%;
             pointer-events: none;
-            opacity: 0.9; /* 初始不透明度提高 */
-            /* 动画时间从 0.5s 增加到 0.8s */
-            animation: dust-fade 0.8s ease-out forwards;
+            opacity: 1.0; /* 初始更亮 */
+            animation: dust-fade 0.7s ease-out forwards;
             z-index: 1;
         }
         @keyframes dust-fade {
-            /* 这里的 transform 会被 JS 中的随机旋转覆盖一部分，但不影响位移 */
-            0% { opacity: 0.9; }
-            /* 向后上方飘散得更远，变得更大 */
-            100% { transform: translate(-40px, -15px) scale(2.5); opacity: 0; } 
+            0% { opacity: 1.0; transform: scale(0.8); }
+            100% { transform: translate(-35px, -12px) scale(2.2); opacity: 0; } 
         }
 
         /* 极速拖影 */
@@ -762,7 +760,8 @@
                 pony.lastTapTime = Date.now(); 
                 pony.tapCount++;
                 pony.name = pony.name.replace(" (BOT)", "");
-                pony.manualSpeed = Math.min(pony.manualSpeed + 2.9, 22);
+                // 调整速度参数：每次点击增加 3.5 速度，上限提高到 25
+                pony.manualSpeed = Math.min(pony.manualSpeed + 3.5, 25);
 
                 if (pony.manualAnimTimer === 0) {
                     pony.manualAnimTimer = 10; 
@@ -791,7 +790,7 @@
                 isWalkAnimating: false,
                 manualAnimTimer: 0,
                 roamSpeed: 0.5,
-                isTurbo: false // 新增：是否处于极速状态
+                isTurbo: false 
             };
 
             if (gameState === 'RACING' || gameState === 'COOLDOWN' || gameState === 'WAITING_TO_START') {
@@ -824,7 +823,7 @@
                 p.tapCount = 0; 
                 p.isWalkAnimating = false;
                 p.manualAnimTimer = 0;
-                p.isTurbo = false; // 重置极速状态
+                p.isTurbo = false;
             });
 
             document.getElementById('hud').style.display = 'none';
@@ -984,7 +983,7 @@
                     p.targetX = null; 
                     p.targetY = null;
                     p.isWalkAnimating = false;
-                    p.isTurbo = false; // 比赛结束取消极速状态
+                    p.isTurbo = false; 
                 });
 
                 if (ponyQueue.length > 0) {
@@ -1005,8 +1004,8 @@
         // ==================== 新增特效辅助函数 START ====================
         function spawnDust(x, y) {
             const fxLayer = document.getElementById('layer-fx');
-            // 每次生成 2-4 个粒子
-            const count = Math.floor(Math.random() * 3) + 2; 
+            // 每次生成 4-7 个粒子，更多了
+            const count = Math.floor(Math.random() * 4) + 4; 
             for (let i = 0; i < count; i++) {
                 const el = document.createElement('div');
                 el.className = 'dust-particle';
@@ -1014,14 +1013,14 @@
                 el.style.left = (x + 5 + Math.random() * 30) + 'px';
                 el.style.top = (y + 40 + Math.random() * 8) + 'px';
                 // 随机大小变化
-                const sizeMod = Math.random() * 0.5 + 0.8;
+                const sizeMod = Math.random() * 0.6 + 0.7;
                 // 随机旋转角度，增加动感
                 const rotate = Math.random() * 360;
                 el.style.transform = `scale(${sizeMod}) rotate(${rotate}deg)`;
 
                 fxLayer.appendChild(el);
                 // 动画结束后移除 DOM (时间匹配 CSS 动画时长)
-                setTimeout(() => el.remove(), 800);
+                setTimeout(() => el.remove(), 700);
             }
         }
         // ==================== 新增特效辅助函数 END ====================
@@ -1033,7 +1032,7 @@
             ponies.forEach(p => {
                 p.frame++;
                 p.isWalkAnimating = false; 
-                p.isTurbo = false; // 默认非极速
+                p.isTurbo = false; 
                 
                 if (p.manualAnimTimer > 0) p.manualAnimTimer--;
 
@@ -1049,9 +1048,10 @@
                         }
                     }
 
-                    let currentSpeed = 0; // 用于判断特效
+                    let currentSpeed = 0; 
                     if (p.isManual) {
-                        p.manualSpeed *= 0.90; 
+                        // 调整速度参数：减缓衰减速度，从 0.9 改为 0.93
+                        p.manualSpeed *= 0.93; 
                         if (p.manualSpeed < 0.1) p.manualSpeed = 0;
                         p.x += p.manualSpeed;
                         p.isWalkAnimating = p.manualSpeed > 0.1;
@@ -1062,13 +1062,13 @@
                         p.isWalkAnimating = true;
                     }
 
-                    // ==================== 特效逻辑判断 START (已调整门槛) ====================
+                    // ==================== 特效逻辑判断 START ====================
                     // 1. 中等速度 ( > 7 ) 且随机触发：生成尘土云
                     if (currentSpeed > 7 && Math.random() < 0.4) {
                         spawnDust(p.x, p.y);
                     }
-                    // 2. 极快速度 ( > 11 )：标记为极速状态，用于绘制拖影
-                    if (currentSpeed > 11) {
+                    // 2. 极快速度 ( > 10 )：门槛降低，更容易触发极速拖影
+                    if (currentSpeed > 10) {
                         p.isTurbo = true;
                     }
                     // ==================== 特效逻辑判断 END ====================
@@ -1076,7 +1076,7 @@
                     p.facing = 1;
                     if (p.x >= FINISH_X) {
                         p.state = 'finished';
-                        p.isTurbo = false; // 到达终点取消极速
+                        p.isTurbo = false; 
                         if (finishedCount === 0 && !winnerFoundThisFrame && gameState === 'RACING') {
                             winnerFoundThisFrame = true;
                             if (p.hasCrown) p.isStreak = true;
