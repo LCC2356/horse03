@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v8.1 MANUAL START</title>
+    <title>HORSE RUNRUN - v7.98 SNOW & TURBO</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -226,43 +226,51 @@
         .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
         @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
 
-        /* ==================== FX Styles ==================== */
+        /* ==================== 特效样式 ==================== */
         
-        #layer-snow { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+        /* 新增：雪花层 */
+        #layer-snow {
+            position: absolute; inset: 0; pointer-events: none; z-index: 1;
+        }
+        /* 新增：雪花粒子 */
         .snowflake {
             position: absolute; top: -10px;
             background: #ffffff;
             border-radius: 50%;
             box-shadow: 0 0 4px #ffffff;
-            animation: snowfall linear forwards;
+            animation-name: snowfall;
+            animation-timing-function: linear;
+            animation-fill-mode: forwards;
         }
-        @keyframes snowfall { to { transform: translateY(calc(var(--game-h) + 20px)); } }
+        @keyframes snowfall {
+            to { transform: translateY(calc(var(--game-h) + 20px)); }
+        }
 
         .dust-particle {
             position: absolute;
-            width: 6px; height: 6px;
+            width: 7px; height: 7px;
             background: #ffffff; 
-            border-radius: 0; 
-            box-shadow: none; 
+            box-shadow: 0 0 8px #ffffff; 
+            border-radius: 50%;
             pointer-events: none;
-            opacity: 0.8; 
-            animation: dust-fade 0.6s ease-out forwards;
+            opacity: 1.0; 
+            animation: dust-fade 0.7s ease-out forwards;
             z-index: 1;
         }
         @keyframes dust-fade {
-            0% { opacity: 0.8; transform: scale(1); }
-            100% { transform: translate(-30px, -15px) scale(0); opacity: 0; } 
+            0% { opacity: 1.0; transform: scale(0.8); }
+            100% { transform: translate(-35px, -12px) scale(2.2); opacity: 0; } 
         }
 
         .trail-active .p-grid {
-            filter: drop-shadow(-10px 0 0 var(--trail-c)) 
-                    drop-shadow(-20px 0 0 var(--trail-c))
-                    brightness(1.5); 
-            transform: scaleX(1.1) skewX(-10deg); 
-            transition: filter 0.1s step-end, transform 0.1s ease-out;
+            filter: drop-shadow(-10px 0 2px var(--trail-c)) 
+                    drop-shadow(-20px 0 5px var(--trail-c))
+                    opacity(0.9);
+            transform: scaleX(1.2) skewX(-10deg); 
+            transition: filter 0.1s ease-out, transform 0.1s ease-out;
         }
         
-        /* ==================== UI Styles ==================== */
+        /* ==================== 样式结束 ==================== */
 
         #bottom-controls {
             position: fixed; bottom: 20px; left: 20px;
@@ -290,6 +298,7 @@
         .control-label { font-size: 0.8rem; color: #888; letter-spacing: 1px; }
         .input-wrapper { display: flex; align-items: center; gap: 5px; width: 100%; }
         
+        /* Slider Styling */
         input[type=range] {
             -webkit-appearance: none; width: 100%; background: transparent; margin: 5px 0;
         }
@@ -325,12 +334,6 @@
         }
         .btn:hover { background: var(--primary); color: #000; }
         .btn:active { transform: translateY(2px); }
-        
-        .btn-start-pc {
-            background: #00c853; border-color: #69f0ae; color: #fff;
-            box-shadow: 0 0 20px rgba(0, 200, 83, 0.4);
-        }
-        .btn-start-pc:hover { background: #69f0ae; color: #000; }
 
         #modal-editor {
             position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000;
@@ -452,7 +455,6 @@
 
             <button class="btn" onclick="spawnTestPony()">+ BOT</button>
             <button class="btn" onclick="openDesktopEditor()">+ PONY</button>
-            <button class="btn btn-start-pc" onclick="forceStartRace()">START RACE</button>
         </div>
     </div>
 
@@ -747,7 +749,9 @@
                             handleTap(data.uuid);
                         }
                         else if (data.type === 'force_start') {
-                            forceStartRace();
+                            if (gameState === 'ROAMING' || gameState === 'WAITING_TO_START') {
+                                startCooldown();
+                            }
                         }
                     });
                 });
@@ -768,12 +772,6 @@
             requestSpawnPony(rName, DEFAULT_PIXELS, rColor, null);
         }
 
-        function forceStartRace() {
-            if (gameState === 'ROAMING' && ponies.length > 0) {
-                startCooldown();
-            }
-        }
-
         function handleTap(uuid) {
             if (!uuid) return;
             const pony = ponies.find(p => p.playerUUID === uuid);
@@ -783,10 +781,12 @@
                 pony.tapCount++;
                 pony.name = pony.name.replace(" (BOT)", "");
                 
-                // === 1. 速度调整：2.4 舒适速度 ===
-                pony.manualSpeed = Math.min(pony.manualSpeed + 2.4, 18);
+                // === 1. 速度参数修正 (适中) ===
+                // 每次增加 3.0，上限 22 (比疯狗版慢，比原始版快)
+                pony.manualSpeed = Math.min(pony.manualSpeed + 3.0, 22);
 
-                // === 2. 连击热度 ===
+                // === 2. 增加连击热度 (Turbo Charge) ===
+                // 不管跑多快，只要点的快，热度就满
                 pony.turboCharge = Math.min(pony.turboCharge + 20, 100);
 
                 if (pony.manualAnimTimer === 0) {
@@ -817,7 +817,7 @@
                 manualAnimTimer: 0,
                 roamSpeed: 0.5,
                 isTurbo: false,
-                turboCharge: 0
+                turboCharge: 0 // 初始化热度
             };
 
             if (gameState === 'RACING' || gameState === 'COOLDOWN' || gameState === 'WAITING_TO_START') {
@@ -825,9 +825,7 @@
                 updateHUD();
             } else {
                 ponies.push(newPony);
-                // === Manual Start Fix: Don't start cooldown automatically ===
-                // Just notify phones that they can start if they want
-                broadcast({ type: 'sync_ui', label: 'START RACE', mode: 'start' });
+                startCooldown(); 
             }
         }
 
@@ -905,6 +903,12 @@
         }
 
         function gameLoop() {
+            updateGameLogic();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function updateGameLogic() {
             // === 持续下雪 ===
             spawnSnow();
 
@@ -1038,25 +1042,32 @@
                 el.style.left = (x + 5 + Math.random() * 30) + 'px';
                 el.style.top = (y + 40 + Math.random() * 8) + 'px';
                 const sizeMod = Math.random() * 0.6 + 0.7;
-                el.style.transform = `scale(${sizeMod})`;
+                const rotate = Math.random() * 360;
+                el.style.transform = `scale(${sizeMod}) rotate(${rotate}deg)`;
                 fxLayer.appendChild(el);
                 setTimeout(() => el.remove(), 700);
             }
         }
 
-        // === 雪花生成函数 ===
+        // === 新增：雪花生成函数 ===
         function spawnSnow() {
             const snowLayer = document.getElementById('layer-snow');
+            // 每次生成 1-2 片
             const count = Math.random() < 0.5 ? 1 : 2;
             for(let i=0; i<count; i++) {
                 const el = document.createElement('div');
                 el.className = 'snowflake';
+                // 随机横向位置
                 el.style.left = (Math.random() * GAME_W) + 'px';
+                // 随机大小
                 const size = 2 + Math.random() * 3;
                 el.style.width = size + 'px'; el.style.height = size + 'px';
+                // 随机不透明度
                 el.style.opacity = 0.4 + Math.random() * 0.6;
+                // 随机下落速度
                 const duration = 2000 + Math.random() * 2000;
                 el.style.animationDuration = duration + 'ms';
+                
                 snowLayer.appendChild(el);
                 setTimeout(() => el.remove(), duration + 100);
             }
@@ -1074,6 +1085,7 @@
                 if (p.manualAnimTimer > 0) p.manualAnimTimer--;
                 
                 // === 热度自然衰减 ===
+                // 每帧减 1，如果玩家停手，热度很快归零
                 p.turboCharge = Math.max(0, p.turboCharge - 1);
 
                 if (p.state === 'ready') { p.x = 20; return; }
@@ -1089,8 +1101,9 @@
                     }
 
                     if (p.isManual) {
-                        // === 1. 速度调整：2.4 舒适速度 ===
-                        p.manualSpeed *= 0.92; // 阻力增大
+                        // === 1. 速度参数修正 ===
+                        // 衰减系数 0.95 (中庸之道)
+                        p.manualSpeed *= 0.95; 
                         if (p.manualSpeed < 0.1) p.manualSpeed = 0;
                         p.x += p.manualSpeed;
                         p.isWalkAnimating = p.manualSpeed > 0.1;
@@ -1099,12 +1112,14 @@
                         p.isWalkAnimating = true;
                     }
 
-                    // ==================== 特效逻辑 ====================
+                    // ==================== 特效逻辑 (基于热度) ====================
+                    // 不再看物理速度，只看你的手速热度
+                    
                     // 1. 中等热度 > 40：生成尘土
                     if (p.turboCharge > 40 && Math.random() < 0.4) {
                         spawnDust(p.x, p.y);
                     }
-                    // 2. 高热度 > 30：触发极速残影
+                    // 2. 高热度 > 30：触发极速残影 ("白菜价"门槛)
                     if (p.turboCharge > 30) {
                         p.isTurbo = true;
                     }
