@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v8.8 THIN TRAILS</title>
+    <title>HORSE RUNRUN - v8.9 SHARPER TRAILS</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -244,12 +244,12 @@
             to { transform: translateY(calc(var(--game-h) + 20px)); }
         }
 
-        /* === 修改后：细长光线拖影 (Thin Light Trails) === */
+        /* === 光线拖影特效 (Thin Light Trails) === */
         .trail-segment {
             position: absolute;
-            height: 4px;        /* 改为 4px */
+            height: 4px;
             width: 50px;
-            border-radius: 0px; /* 改为 0px (尖锐/方形) */
+            border-radius: 0px; 
             /* background 和 box-shadow 由 JS 动态设置颜色 */
             pointer-events: none;
             opacity: 0.8;
@@ -283,11 +283,12 @@
         /* === 修改后：NOWHERE 文字表情样式 === */
         .pop-text {
             position: absolute;
-            top: -28px;
+            top: -24px; /* 微调位置，适应更小的字体 */
             left: 50%;
             transform: translateX(-50%);
             color: var(--accent);
-            font-size: 22px; /* 改为 22px (缩小20%) */
+            /* 修改后：字体减小 30% (22px -> 16px) */
+            font-size: 16px; 
             letter-spacing: 2px;
             text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
             white-space: nowrap;
@@ -650,31 +651,48 @@
             }
         };
 
+        /* === 适配非标准尺寸的像素图标创建函数，保留颜色支持 === */
         function createPixelIcon(type, pixelSize = 2, color = '#fff') {
             const container = document.createElement('div');
             container.className = 'pixel-icon-base';
+            
+            // 设置基础像素点大小
             container.style.width = pixelSize + 'px';
             container.style.height = pixelSize + 'px';
+
             const map = PIXEL_ART_MAPS[type] || PIXEL_ART_MAPS['HEART'];
+            
             let boxShadow = '';
+            // 根据实际地图数据动态遍历
             for(let y=0; y<map.length; y++) {
                 for(let x=0; x<map[y].length; x++) {
-                    if (map[y][x] === 1) { boxShadow += `${x*pixelSize}px ${y*pixelSize}px ${color},`; }
+                    if (map[y][x] === 1) {
+                        // 使用传入的颜色
+                        boxShadow += `${x*pixelSize}px ${y*pixelSize}px ${color},`;
+                    }
                 }
             }
             container.style.boxShadow = boxShadow.slice(0, -1);
+            
+            // 重新加入 translateX 以在气泡和按钮中居中
+            // 假设最大宽度大约是 7 个像素点宽
             const widthOffset = (7 * pixelSize) / 2;
             container.style.transform = `translateX(-${widthOffset}px)`;
+            
             return container;
         }
 
         window.onload = function() {
+            // 初始化移动端按钮图标 (使用白色, 跳过没有 data-icon 的按钮)
             const btns = document.querySelectorAll('.emoji-btn');
             btns.forEach(btn => {
                 const type = btn.getAttribute('data-icon');
-                if (type) { btn.appendChild(createPixelIcon(type, 3, '#fff')); }
+                if (type) { // 只处理有 icon 数据的按钮
+                    btn.appendChild(createPixelIcon(type, 3, '#fff'));
+                }
             });
 
+            // ... 原有初始化逻辑 ...
             const zoomSlider = document.getElementById('zoom-slider');
             const zoomInput = document.getElementById('zoom-input');
             const ySlider = document.getElementById('y-slider');
@@ -734,6 +752,7 @@
             }
         };
 
+        // ... 省略未修改的辅助函数 (updateBarText, setBarVisibility, triggerFlash, broadcast) ...
         function updateBarText(text, color) {
             if (currentBarText === text) return;
             currentBarText = text;
@@ -895,18 +914,19 @@
             }
         }
 
-        /* === 修改后：将 spawnDust 替换为 spawnTrail (细长光线拖影) === */
+        /* === 修改后：将 spawnDust 替换为 spawnTrail (细长光线拖影，锐利阴影) === */
         function spawnTrail(p) {
             const fxLayer = document.getElementById('layer-fx');
             const count = Math.random() < 0.5 ? 1 : 2; 
             for (let i = 0; i < count; i++) {
                 const el = document.createElement('div');
                 el.className = 'trail-segment';
-                /* 修改后：位置偏移到更后方 (-20) */
+                /* 位置偏移到更后方 (-20) */
                 el.style.left = (p.x - 20 + Math.random() * 10) + 'px';
                 el.style.top = (p.y + 15 + Math.random() * 15) + 'px';
                 el.style.background = p.color;
-                el.style.boxShadow = `0 0 10px ${p.color}`;
+                /* 修改后：5px 的阴影半径，更锐利 */
+                el.style.boxShadow = `0 0 5px ${p.color}`;
                 fxLayer.appendChild(el);
                 setTimeout(() => el.remove(), 400);
             }
@@ -1073,6 +1093,7 @@
             else if (mobileBtnState === 'start') { if(conn) conn.send({ type: 'force_start' }); }
         }
 
+        /* === 修改后：处理 FACE 为文字，其他为像素画 === */
         function triggerPonyEmoji(uuid, emojiType) {
             const pony = ponies.find(p => p.playerUUID === uuid); if (!pony) return;
             const pEl = document.getElementById(pony.id); if (!pEl) return;
