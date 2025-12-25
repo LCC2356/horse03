@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v8.7 TRAILS & NOWHERE</title>
+    <title>HORSE RUNRUN - v8.8 THIN TRAILS</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -244,18 +244,18 @@
             to { transform: translateY(calc(var(--game-h) + 20px)); }
         }
 
-        /* === 修改后：光线拖影特效 (替代尘土) === */
+        /* === 修改后：细长光线拖影 (Thin Light Trails) === */
         .trail-segment {
             position: absolute;
-            height: 16px; /* 拖影高度 */
-            width: 50px; /* 拖影长度 */
+            height: 4px;        /* 改为 4px */
+            width: 50px;
+            border-radius: 0px; /* 改为 0px (尖锐/方形) */
             /* background 和 box-shadow 由 JS 动态设置颜色 */
             pointer-events: none;
             opacity: 0.8;
             animation: trail-fade 0.4s ease-out forwards;
-            z-index: 90; /* 在小马图层下方 */
-            mix-blend-mode: screen; /* 让叠加的光效更亮 */
-            border-radius: 4px;
+            z-index: 90;
+            mix-blend-mode: screen; 
         }
         @keyframes trail-fade {
             to { opacity: 0; transform: translateX(-40px) scaleX(0.5); }
@@ -265,11 +265,11 @@
             filter: drop-shadow(-10px 0 5px var(--trail-c))
                     drop-shadow(-20px 0 10px var(--trail-c))
                     opacity(0.95);
-            transform: scaleX(1.3) skewX(-15deg); /* 增强加速形变 */
+            transform: scaleX(1.3) skewX(-15deg);
             transition: filter 0.1s ease-out, transform 0.1s ease-out;
         }
 
-        /* === 纯CSS绘制的像素表情容器 (用于HEART, POOP, BOLT) === */
+        /* === 纯CSS绘制的像素表情容器 === */
         .pixel-emoji-container {
             position: absolute;
             top: -20px;
@@ -280,16 +280,16 @@
             animation: pixel-float-smooth 2.5s linear forwards;
         }
 
-        /* === 新增：文字表情样式 (用于NOWHERE) === */
+        /* === 修改后：NOWHERE 文字表情样式 === */
         .pop-text {
             position: absolute;
-            top: -28px; /* 比像素图标稍高 */
+            top: -28px;
             left: 50%;
             transform: translateX(-50%);
-            color: var(--accent); /* 默认颜色，JS会覆盖为小马颜色 */
-            font-size: 28px;
+            color: var(--accent);
+            font-size: 22px; /* 改为 22px (缩小20%) */
             letter-spacing: 2px;
-            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000; /* 硬边描边 */
+            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
             white-space: nowrap;
             pointer-events: none;
             z-index: 210;
@@ -324,12 +324,11 @@
             color: #fff;
             width: 60px; height: 60px;
             border-radius: 12px; cursor: pointer;
-            /* Flexbox 居中 */
             display: flex; justify-content: center; align-items: center;
             transition: transform 0.1s;
             -webkit-tap-highlight-color: transparent;
             overflow: hidden;
-            font-family: 'VT323', monospace; /* 确保文字按钮使用像素字体 */
+            font-family: 'VT323', monospace;
         }
         .emoji-btn:active { transform: scale(0.8); background: #fff; border-color: #fff; color: #000; }
         .emoji-btn:active .pixel-icon-base { filter: invert(1); }
@@ -591,7 +590,7 @@
             [0,0,1,0,1,0,1,0,1,0,0]
         ];
 
-        /* === 恢复到原始的非对称像素画数据 (移除了 FACE, 因为现在是文字) === */
+        /* === 原始非对称像素画数据 (移除 FACE 数组) === */
         const PIXEL_ART_MAPS = {
             'HEART': [
                 [0,1,1,0,1,1,0],
@@ -651,48 +650,31 @@
             }
         };
 
-        /* === 适配非标准尺寸的像素图标创建函数，保留颜色支持 === */
         function createPixelIcon(type, pixelSize = 2, color = '#fff') {
             const container = document.createElement('div');
             container.className = 'pixel-icon-base';
-            
-            // 设置基础像素点大小
             container.style.width = pixelSize + 'px';
             container.style.height = pixelSize + 'px';
-
             const map = PIXEL_ART_MAPS[type] || PIXEL_ART_MAPS['HEART'];
-            
             let boxShadow = '';
-            // 根据实际地图数据动态遍历
             for(let y=0; y<map.length; y++) {
                 for(let x=0; x<map[y].length; x++) {
-                    if (map[y][x] === 1) {
-                        // 使用传入的颜色
-                        boxShadow += `${x*pixelSize}px ${y*pixelSize}px ${color},`;
-                    }
+                    if (map[y][x] === 1) { boxShadow += `${x*pixelSize}px ${y*pixelSize}px ${color},`; }
                 }
             }
             container.style.boxShadow = boxShadow.slice(0, -1);
-            
-            // 重新加入 translateX 以在气泡和按钮中居中
-            // 假设最大宽度大约是 7 个像素点宽
             const widthOffset = (7 * pixelSize) / 2;
             container.style.transform = `translateX(-${widthOffset}px)`;
-            
             return container;
         }
 
         window.onload = function() {
-            // 初始化移动端按钮图标 (使用白色, 跳过没有 data-icon 的按钮)
             const btns = document.querySelectorAll('.emoji-btn');
             btns.forEach(btn => {
                 const type = btn.getAttribute('data-icon');
-                if (type) { // 只处理有 icon 数据的按钮
-                    btn.appendChild(createPixelIcon(type, 3, '#fff'));
-                }
+                if (type) { btn.appendChild(createPixelIcon(type, 3, '#fff')); }
             });
 
-            // ... 原有初始化逻辑 ...
             const zoomSlider = document.getElementById('zoom-slider');
             const zoomInput = document.getElementById('zoom-input');
             const ySlider = document.getElementById('y-slider');
@@ -752,7 +734,6 @@
             }
         };
 
-        // ... 省略未修改的辅助函数 (updateBarText, setBarVisibility, triggerFlash, broadcast) ...
         function updateBarText(text, color) {
             if (currentBarText === text) return;
             currentBarText = text;
@@ -914,22 +895,19 @@
             }
         }
 
-        /* === 修改后：将 spawnDust 替换为 spawnTrail (光线拖影) === */
+        /* === 修改后：将 spawnDust 替换为 spawnTrail (细长光线拖影) === */
         function spawnTrail(p) {
             const fxLayer = document.getElementById('layer-fx');
-            // 每次生成 1-2 个拖影片段
-            const count = Math.random() < 0.5 ? 1 : 2;
+            const count = Math.random() < 0.5 ? 1 : 2; 
             for (let i = 0; i < count; i++) {
                 const el = document.createElement('div');
                 el.className = 'trail-segment';
-                //位置稍微靠后，高度随机一点
-                el.style.left = (p.x - 10 + Math.random() * 10) + 'px';
+                /* 修改后：位置偏移到更后方 (-20) */
+                el.style.left = (p.x - 20 + Math.random() * 10) + 'px';
                 el.style.top = (p.y + 15 + Math.random() * 15) + 'px';
-                // 使用小马的颜色
                 el.style.background = p.color;
                 el.style.boxShadow = `0 0 10px ${p.color}`;
                 fxLayer.appendChild(el);
-                // 动画结束后移除 (0.4s)
                 setTimeout(() => el.remove(), 400);
             }
         }
@@ -963,7 +941,6 @@
                     } else {
                         p.x += p.speed * (0.9 + Math.random() * 0.2); p.isWalkAnimating = true;
                     }
-                    /* === 修改后：当热度高时，生成光线拖影而不是尘土 === */
                     if (p.turboCharge > 52 && Math.random() < 0.4) spawnTrail(p);
                     if (p.turboCharge > 30) p.isTurbo = true;
                     p.facing = 1;
@@ -1096,23 +1073,20 @@
             else if (mobileBtnState === 'start') { if(conn) conn.send({ type: 'force_start' }); }
         }
 
-        /* === 修改后：处理 FACE 为文字，其他为像素画 === */
         function triggerPonyEmoji(uuid, emojiType) {
             const pony = ponies.find(p => p.playerUUID === uuid); if (!pony) return;
             const pEl = document.getElementById(pony.id); if (!pEl) return;
             
             let container;
+            /* === 修改后：FACE 类型渲染为 NOWHERE 文字 === */
             if (emojiType === 'FACE') {
-                // 如果是 FACE，创建文字元素
                 container = document.createElement('div');
                 container.className = 'pop-text';
                 container.innerText = "NOWHERE";
                 container.style.color = pony.color; // 使用小马颜色
             } else {
-                // 其他类型创建像素画容器
                 container = document.createElement('div');
                 container.className = 'pixel-emoji-container';
-                /* 使用 2px 大小，并传入小马的颜色 */
                 container.appendChild(createPixelIcon(emojiType, 2, pony.color));
             }
 
