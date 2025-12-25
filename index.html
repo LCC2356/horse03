@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v9.4 CHRISTMAS ORCHESTRA</title>
+    <title>HORSE RUNRUN - v9.5 STABLE</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -568,6 +568,7 @@
     </div>
 
     <script>
+        /* ==================== GLOBAL VARIABLES ==================== */
         const GAME_W = 3400;
         const GAME_H = 100;
         const PONY_SIZE = 50;
@@ -576,75 +577,26 @@
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#ffffff', BLUE:'#2979ff' };
 
         const DEFAULT_PIXELS = [
-            [0,0,0,0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0,1,0,0],
-            [0,0,0,0,0,0,0,1,1,1,0],
-            [0,0,0,0,0,0,0,1,1,1,1],
-            [0,1,0,0,0,0,1,1,1,0,0],
-            [1,0,1,1,1,1,1,1,1,0,0],
-            [1,0,1,1,1,1,1,1,1,0,0],
-            [0,0,1,1,1,1,1,1,1,0,0],
-            [0,0,1,0,1,0,1,0,1,0,0],
-            [0,0,1,0,1,0,1,0,1,0,0],
-            [0,0,1,0,1,0,1,0,1,0,0]
+            [0,0,0,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0,0,1,0,0], [0,0,0,0,0,0,0,1,1,1,0], [0,0,0,0,0,0,0,1,1,1,1], [0,1,0,0,0,0,1,1,1,0,0],
+            [1,0,1,1,1,1,1,1,1,0,0], [1,0,1,1,1,1,1,1,1,0,0], [0,0,1,1,1,1,1,1,1,0,0], [0,0,1,0,1,0,1,0,1,0,0], [0,0,1,0,1,0,1,0,1,0,0], [0,0,1,0,1,0,1,0,1,0,0]
         ];
 
-        /* === 原始非对称像素画数据 === */
         const PIXEL_ART_MAPS = {
-            'HEART': [
-                [0,1,1,0,1,1,0],
-                [1,1,1,1,1,1,1],
-                [1,1,1,1,1,1,1],
-                [0,1,1,1,1,1,0],
-                [0,0,1,1,1,0,0],
-                [0,0,0,1,0,0,0]
-            ],
-            'POOP': [
-                [0,0,0,1,0,0,0],
-                [0,0,1,1,1,0,0],
-                [0,1,1,1,1,1,0],
-                [1,0,1,1,1,0,1],
-                [1,1,1,1,1,1,1]
-            ],
-            'BOLT': [
-                [0,0,1,1,1,0],
-                [0,1,1,1,0,0],
-                [1,1,1,1,1,0],
-                [0,0,0,1,1,0],
-                [0,0,1,1,0,0],
-                [0,0,1,0,0,0]
-            ]
+            'HEART': [ [0,1,1,0,1,1,0], [1,1,1,1,1,1,1], [1,1,1,1,1,1,1], [0,1,1,1,1,1,0], [0,0,1,1,1,0,0], [0,0,0,1,0,0,0] ],
+            'POOP': [ [0,0,0,1,0,0,0], [0,0,1,1,1,0,0], [0,1,1,1,1,1,0], [1,0,1,1,1,0,1], [1,1,1,1,1,1,1] ],
+            'BOLT': [ [0,0,1,1,1,0], [0,1,1,1,0,0], [1,1,1,1,1,0], [0,0,0,1,1,0], [0,0,1,1,0,0], [0,0,1,0,0,0] ]
         };
 
-        /* === 扩充的圣诞歌库 (多首歌曲) === */
         const SONGS = {
-            'JINGLE': [
-                329.6, 329.6, 329.6, 329.6, 329.6, 329.6,
-                329.6, 392.0, 261.6, 293.7, 329.6,
-                349.2, 349.2, 349.2, 349.2, 349.2, 329.6, 329.6, 329.6,
-                329.6, 293.7, 293.7, 329.6, 293.7, 392.0
-            ],
-            'MERRY': [
-                392.0, 
-                523.3, 523.3, 587.3, 523.3, 493.9, 
-                440.0, 440.0,
-                440.0, 587.3, 587.3, 659.3, 587.3, 523.3,
-                493.9, 392.0
-            ],
-            'DECK': [
-                523.3, 493.9, 440.0, 392.0, 
-                349.2, 329.6, 293.7, 261.6,
-                293.7, 329.6, 349.2, 293.7,
-                329.6, 293.7, 261.6, 246.9, 261.6
-            ]
+            'JINGLE': [329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 392.0, 261.6, 293.7, 329.6, 349.2, 349.2, 349.2, 349.2, 349.2, 329.6, 329.6, 329.6, 329.6, 293.7, 293.7, 329.6, 293.7, 392.0],
+            'MERRY': [392.0, 523.3, 523.3, 587.3, 523.3, 493.9, 440.0, 440.0, 440.0, 587.3, 587.3, 659.3, 587.3, 523.3, 493.9, 392.0],
+            'DECK': [523.3, 493.9, 440.0, 392.0, 349.2, 329.6, 293.7, 261.6, 293.7, 329.6, 349.2, 293.7, 329.6, 293.7, 261.6, 246.9, 261.6]
         };
-        
-        // 随机音色列表
         const SYNTH_TYPES = ['square', 'triangle', 'sawtooth'];
 
-        let noteIndex = 0; 
-        let myCurrentSong = 'JINGLE'; // 默认
-        let mySynthType = 'triangle'; // 默认
+        let noteIndex = 0;
+        let myCurrentSong = 'JINGLE';
+        let mySynthType = 'triangle';
 
         let ponies = [];
         let ponyQueue = [];
@@ -662,8 +614,7 @@
         let mobileBtnState = 'wait';
         let audioCtx = null;
         let lastTapTime = 0;
-        let mySoundType = 'SAWTOOTH'; // 仅用于电脑端音效，手机端使用 mySynthType
-
+        
         let layout = { scale: 1.0, x: 0, y: 0 };
         let currentBarText = '';
         let lastBroadcastText = '';
@@ -677,6 +628,8 @@
                 ]
             }
         };
+
+        /* ==================== FUNCTIONS ==================== */
 
         function createPixelIcon(type, pixelSize = 2, color = '#fff') {
             const container = document.createElement('div');
@@ -696,18 +649,17 @@
             return container;
         }
 
-        /* === 播放单个音符的函数 (使用随机分配的乐器和歌曲) === */
         function playNextNote() {
             if (!audioCtx) return;
             const now = audioCtx.currentTime;
             
-            const songArr = SONGS[myCurrentSong];
+            const songArr = SONGS[myCurrentSong] || SONGS['JINGLE'];
             const freq = songArr[noteIndex % songArr.length];
             noteIndex++;
 
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.type = mySynthType; // 使用随机分配的音色
+            osc.type = mySynthType;
             osc.frequency.setValueAtTime(freq, now); 
             
             gain.connect(audioCtx.destination);
@@ -720,12 +672,11 @@
             osc.stop(now + 0.25);
         }
 
-        /* === 随机分配歌曲和乐器 === */
         function randomizeMusic() {
             const songKeys = Object.keys(SONGS);
             myCurrentSong = songKeys[Math.floor(Math.random() * songKeys.length)];
             mySynthType = SYNTH_TYPES[Math.floor(Math.random() * SYNTH_TYPES.length)];
-            noteIndex = 0; // 重置进度
+            noteIndex = 0;
         }
 
         window.onload = function() {
@@ -955,18 +906,15 @@
             }
         }
 
-        /* === 光线拖影特效 (Hard Edge Trail) === */
         function spawnTrail(p) {
             const fxLayer = document.getElementById('layer-fx');
             const count = Math.random() < 0.5 ? 1 : 2; 
             for (let i = 0; i < count; i++) {
                 const el = document.createElement('div');
                 el.className = 'trail-segment';
-                /* 位置偏移到更后方 (-20) */
                 el.style.left = (p.x - 20 + Math.random() * 10) + 'px';
                 el.style.top = (p.y + 15 + Math.random() * 15) + 'px';
                 el.style.background = p.color;
-                /* 0px 的阴影半径 (Hard Edge) */
                 el.style.boxShadow = `0 0 0px ${p.color}`;
                 fxLayer.appendChild(el);
                 setTimeout(() => el.remove(), 400);
@@ -1002,7 +950,6 @@
                     } else {
                         p.x += p.speed * (0.9 + Math.random() * 0.2); p.isWalkAnimating = true;
                     }
-                    /* 当热度大于 60 时触发 */
                     if (p.turboCharge > 60 && Math.random() < 0.4) spawnTrail(p);
                     if (p.turboCharge > 30) p.isTurbo = true;
                     p.facing = 1;
@@ -1100,13 +1047,15 @@
                             if (data.mode === 'wait') { btn.classList.add('btn-wait'); btn.innerText = data.label; info.innerText = "GET READY..."; }
                             else if (data.mode === 'mash') { 
                                 btn.classList.add('btn-mash'); btn.innerText = data.label; info.innerText = "TAP FAST!!!"; 
-                                /* === 收到 mash 信号时重置音乐 === */
                                 noteIndex = 0; 
                             }
                             else if (data.mode === 'start') { btn.classList.add('btn-start'); btn.innerText = data.label; info.innerText = "RACE FINISHED"; }
                         } else if (data.type === 'eliminated' && data.uuid === playerUUID) {
-                            const btn = document.getElementById('m-btn'); const info = document.getElementById('m-info'); mobileBtnState = 'dead'; btn.className = 'push-btn btn-dead'; btn.innerText = "TRY\nAGAIN"; info.innerText = "ELIMINATED";
-                            /* === 移除了自动跳转，现在必须手动点击按钮 === */
+                            const btn = document.getElementById('m-btn'); const info = document.getElementById('m-info'); 
+                            mobileBtnState = 'dead'; 
+                            btn.className = 'push-btn btn-dead'; 
+                            btn.innerText = "TRY\nAGAIN"; 
+                            info.innerText = "ELIMINATED";
                         }
                     });
                 });
@@ -1118,21 +1067,12 @@
             const nameInput = document.getElementById('m-name'); let name = nameInput.value.trim().replace(/[^a-zA-Z0-9]/g, ''); if (!name) name = "PLAYER"; name = name.toUpperCase();
             let hasPixels = false; for(let r=0; r<11; r++) { for(let c=0; c<11; c++) { if (mobileGrid[r][c] === 1) { hasPixels = true; break; } } if(hasPixels) break; }
             if (!hasPixels) { alert("CANVAS IS EMPTY"); return; }
-            mySoundType = SOUND_TYPES[Math.floor(Math.random() * SOUND_TYPES.length)]; initAudio();
-            randomizeMusic(); /* 随机分配音乐 */
+            initAudio(); randomizeMusic();
             conn.send({ type: 'spawn', payload: { name: name, pixels: mobileGrid, color: selectedColor, uuid: playerUUID } });
             document.getElementById('m-editor-ui').style.display = 'none'; document.getElementById('m-controller').style.display = 'flex';
         }
 
         function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
-        function playDynamicSound(interval) {
-            if (!audioCtx) return; const now = audioCtx.currentTime; let baseFreq = 150 + (30000 / Math.max(50, interval)); if (baseFreq > 800) baseFreq = 800;
-            const gain = audioCtx.createGain(); gain.connect(audioCtx.destination); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-            if (mySoundType === 'SAWTOOTH') { const osc = audioCtx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(baseFreq, now); osc.connect(gain); osc.start(); osc.stop(now + 0.15); }
-            else if (mySoundType === 'SQUARE') { const osc = audioCtx.createOscillator(); osc.type = 'square'; osc.frequency.setValueAtTime(baseFreq, now); osc.connect(gain); osc.start(); osc.stop(now + 0.1); }
-            else if (mySoundType === 'LASER') { const osc = audioCtx.createOscillator(); osc.type = 'sine'; osc.frequency.setValueAtTime(baseFreq * 2, now); osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.5, now + 0.1); osc.connect(gain); osc.start(); osc.stop(now + 0.15); }
-            else if (mySoundType === 'FM') { const carrier = audioCtx.createOscillator(); const modulator = audioCtx.createOscillator(); const modGain = audioCtx.createGain(); modulator.frequency.value = baseFreq * 1.4; modGain.gain.value = baseFreq * 0.5; modulator.connect(modGain); modGain.connect(carrier.frequency); carrier.connect(gain); carrier.frequency.setValueAtTime(baseFreq, now); modulator.start(); carrier.start(); modulator.stop(now + 0.2); carrier.stop(now + 0.2); }
-        }
 
         function btnAction(e) {
             e.preventDefault(); const btn = document.getElementById('m-btn'); btn.style.transform = 'scale(0.95)'; setTimeout(() => { btn.style.transform = 'scale(1)'; }, 50);
@@ -1140,7 +1080,7 @@
             if (mobileBtnState === 'mash') { 
                 if(conn) conn.send({ type: 'tap', uuid: playerUUID }); 
                 initAudio();
-                playNextNote(); /* 播放一个音符 */
+                playNextNote();
             }
             else if (mobileBtnState === 'start') { if(conn) conn.send({ type: 'force_start' }); }
         }
