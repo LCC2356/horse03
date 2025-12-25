@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v8.9 SHARPER TRAILS</title>
+    <title>HORSE RUNRUN - v9.0 HARD EDGE</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -244,7 +244,7 @@
             to { transform: translateY(calc(var(--game-h) + 20px)); }
         }
 
-        /* === 光线拖影特效 (Thin Light Trails) === */
+        /* === 光线拖影特效 === */
         .trail-segment {
             position: absolute;
             height: 4px;
@@ -280,15 +280,14 @@
             animation: pixel-float-smooth 2.5s linear forwards;
         }
 
-        /* === 修改后：NOWHERE 文字表情样式 === */
+        /* === 文字表情样式 (?) === */
         .pop-text {
             position: absolute;
-            top: -24px; /* 微调位置，适应更小的字体 */
+            top: -24px;
             left: 50%;
             transform: translateX(-50%);
             color: var(--accent);
-            /* 修改后：字体减小 30% (22px -> 16px) */
-            font-size: 16px; 
+            font-size: 28px; /* 问号可以稍微大一点点，或者保持 22px 看个人喜好，这里用 28px 比较清楚 */
             letter-spacing: 2px;
             text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
             white-space: nowrap;
@@ -564,7 +563,7 @@
                 <div class="emoji-btn" onclick="sendEmoji('HEART')" data-icon="HEART"></div>
                 <div class="emoji-btn" onclick="sendEmoji('POOP')" data-icon="POOP"></div>
                 <div class="emoji-btn" onclick="sendEmoji('BOLT')" data-icon="BOLT"></div>
-                <div class="emoji-btn" onclick="sendEmoji('FACE')" style="font-size: 1.2rem;">NOWHERE</div>
+                <div class="emoji-btn" onclick="sendEmoji('FACE')" style="font-size: 2rem;">?</div>
             </div>
         </div>
     </div>
@@ -651,48 +650,31 @@
             }
         };
 
-        /* === 适配非标准尺寸的像素图标创建函数，保留颜色支持 === */
         function createPixelIcon(type, pixelSize = 2, color = '#fff') {
             const container = document.createElement('div');
             container.className = 'pixel-icon-base';
-            
-            // 设置基础像素点大小
             container.style.width = pixelSize + 'px';
             container.style.height = pixelSize + 'px';
-
             const map = PIXEL_ART_MAPS[type] || PIXEL_ART_MAPS['HEART'];
-            
             let boxShadow = '';
-            // 根据实际地图数据动态遍历
             for(let y=0; y<map.length; y++) {
                 for(let x=0; x<map[y].length; x++) {
-                    if (map[y][x] === 1) {
-                        // 使用传入的颜色
-                        boxShadow += `${x*pixelSize}px ${y*pixelSize}px ${color},`;
-                    }
+                    if (map[y][x] === 1) { boxShadow += `${x*pixelSize}px ${y*pixelSize}px ${color},`; }
                 }
             }
             container.style.boxShadow = boxShadow.slice(0, -1);
-            
-            // 重新加入 translateX 以在气泡和按钮中居中
-            // 假设最大宽度大约是 7 个像素点宽
             const widthOffset = (7 * pixelSize) / 2;
             container.style.transform = `translateX(-${widthOffset}px)`;
-            
             return container;
         }
 
         window.onload = function() {
-            // 初始化移动端按钮图标 (使用白色, 跳过没有 data-icon 的按钮)
             const btns = document.querySelectorAll('.emoji-btn');
             btns.forEach(btn => {
                 const type = btn.getAttribute('data-icon');
-                if (type) { // 只处理有 icon 数据的按钮
-                    btn.appendChild(createPixelIcon(type, 3, '#fff'));
-                }
+                if (type) { btn.appendChild(createPixelIcon(type, 3, '#fff')); }
             });
 
-            // ... 原有初始化逻辑 ...
             const zoomSlider = document.getElementById('zoom-slider');
             const zoomInput = document.getElementById('zoom-input');
             const ySlider = document.getElementById('y-slider');
@@ -752,7 +734,6 @@
             }
         };
 
-        // ... 省略未修改的辅助函数 (updateBarText, setBarVisibility, triggerFlash, broadcast) ...
         function updateBarText(text, color) {
             if (currentBarText === text) return;
             currentBarText = text;
@@ -925,8 +906,8 @@
                 el.style.left = (p.x - 20 + Math.random() * 10) + 'px';
                 el.style.top = (p.y + 15 + Math.random() * 15) + 'px';
                 el.style.background = p.color;
-                /* 修改后：5px 的阴影半径，更锐利 */
-                el.style.boxShadow = `0 0 5px ${p.color}`;
+                /* 修改后：0px 的阴影半径 (Hard Edge) */
+                el.style.boxShadow = `0 0 0px ${p.color}`;
                 fxLayer.appendChild(el);
                 setTimeout(() => el.remove(), 400);
             }
@@ -961,7 +942,8 @@
                     } else {
                         p.x += p.speed * (0.9 + Math.random() * 0.2); p.isWalkAnimating = true;
                     }
-                    if (p.turboCharge > 52 && Math.random() < 0.4) spawnTrail(p);
+                    /* === 修改后：当热度大于 60 时触发 === */
+                    if (p.turboCharge > 60 && Math.random() < 0.4) spawnTrail(p);
                     if (p.turboCharge > 30) p.isTurbo = true;
                     p.facing = 1;
                     if (p.x >= FINISH_X) {
@@ -1093,18 +1075,18 @@
             else if (mobileBtnState === 'start') { if(conn) conn.send({ type: 'force_start' }); }
         }
 
-        /* === 修改后：处理 FACE 为文字，其他为像素画 === */
+        /* === 修改后：处理 FACE 为文字 ?，其他为像素画 === */
         function triggerPonyEmoji(uuid, emojiType) {
             const pony = ponies.find(p => p.playerUUID === uuid); if (!pony) return;
             const pEl = document.getElementById(pony.id); if (!pEl) return;
             
             let container;
-            /* === 修改后：FACE 类型渲染为 NOWHERE 文字 === */
             if (emojiType === 'FACE') {
+                // 修改为 ?
                 container = document.createElement('div');
                 container.className = 'pop-text';
-                container.innerText = "NOWHERE";
-                container.style.color = pony.color; // 使用小马颜色
+                container.innerText = "?";
+                container.style.color = pony.color;
             } else {
                 container = document.createElement('div');
                 container.className = 'pixel-emoji-container';
