@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v9.0 HARD EDGE</title>
+    <title>HORSE RUNRUN - v9.1 CHRISTMAS EDITION</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -244,7 +244,7 @@
             to { transform: translateY(calc(var(--game-h) + 20px)); }
         }
 
-        /* === 光线拖影特效 === */
+        /* === 光线拖影特效 (Hard Edge Trail) === */
         .trail-segment {
             position: absolute;
             height: 4px;
@@ -287,7 +287,7 @@
             left: 50%;
             transform: translateX(-50%);
             color: var(--accent);
-            font-size: 28px; /* 问号可以稍微大一点点，或者保持 22px 看个人喜好，这里用 28px 比较清楚 */
+            font-size: 28px;
             letter-spacing: 2px;
             text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
             white-space: nowrap;
@@ -617,6 +617,18 @@
             ]
         };
 
+        const JINGLE_PHRASES = [
+            [329.6, 329.6, 329.6],                
+            [329.6, 329.6, 329.6],                
+            [329.6, 392.0, 261.6, 293.7, 329.6],  
+            [349.2, 349.2, 349.2, 349.2],         
+            [349.2, 329.6, 329.6, 329.6],         
+            [329.6, 293.7, 293.7, 329.6, 293.7],  
+            [392.0]                               
+        ];
+        
+        let songIndex = 0; 
+
         let ponies = [];
         let ponyQueue = [];
         let grass = [];
@@ -666,6 +678,27 @@
             const widthOffset = (7 * pixelSize) / 2;
             container.style.transform = `translateX(-${widthOffset}px)`;
             return container;
+        }
+
+        /* === 新增：播放一句旋律的函数 === */
+        function playJinglePhrase() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const phrase = JINGLE_PHRASES[songIndex % JINGLE_PHRASES.length];
+            songIndex++; 
+            phrase.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle'; 
+                osc.frequency.setValueAtTime(freq, now + i * 0.15); 
+                gain.connect(audioCtx.destination);
+                gain.gain.setValueAtTime(0, now + i * 0.15);
+                gain.gain.linearRampToValueAtTime(0.3, now + i * 0.15 + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.15 + 0.3); 
+                osc.connect(gain);
+                osc.start(now + i * 0.15);
+                osc.stop(now + i * 0.15 + 0.4);
+            });
         }
 
         window.onload = function() {
@@ -895,7 +928,7 @@
             }
         }
 
-        /* === 修改后：将 spawnDust 替换为 spawnTrail (细长光线拖影，锐利阴影) === */
+        /* === 修改后：将 spawnDust 替换为 spawnTrail (细长光线拖影，0px阴影) === */
         function spawnTrail(p) {
             const fxLayer = document.getElementById('layer-fx');
             const count = Math.random() < 0.5 ? 1 : 2; 
@@ -1071,21 +1104,25 @@
         function btnAction(e) {
             e.preventDefault(); const btn = document.getElementById('m-btn'); btn.style.transform = 'scale(0.95)'; setTimeout(() => { btn.style.transform = 'scale(1)'; }, 50);
             if (mobileBtnState === 'dead') { resetMobile(); return; }
-            if (mobileBtnState === 'mash') { if(conn) conn.send({ type: 'tap', uuid: playerUUID }); const now = Date.now(); const interval = now - lastTapTime; lastTapTime = now; playDynamicSound(interval); }
+            if (mobileBtnState === 'mash') { 
+                if(conn) conn.send({ type: 'tap', uuid: playerUUID }); 
+                // === 修改点：播放圣诞歌旋律 ===
+                initAudio();
+                playJinglePhrase();
+            }
             else if (mobileBtnState === 'start') { if(conn) conn.send({ type: 'force_start' }); }
         }
 
-        /* === 修改后：处理 FACE 为文字 ?，其他为像素画 === */
+        /* === 修改后：处理 FACE 为文字 ? === */
         function triggerPonyEmoji(uuid, emojiType) {
             const pony = ponies.find(p => p.playerUUID === uuid); if (!pony) return;
             const pEl = document.getElementById(pony.id); if (!pEl) return;
             
             let container;
             if (emojiType === 'FACE') {
-                // 修改为 ?
                 container = document.createElement('div');
                 container.className = 'pop-text';
-                container.innerText = "?";
+                container.innerText = "?"; /* 修改为 ? */
                 container.style.color = pony.color;
             } else {
                 container = document.createElement('div');
