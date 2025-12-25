@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v9.1 CHRISTMAS EDITION</title>
+    <title>HORSE RUNRUN - v9.3 TAP FOR MUSIC</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -244,13 +244,12 @@
             to { transform: translateY(calc(var(--game-h) + 20px)); }
         }
 
-        /* === 光线拖影特效 (Hard Edge Trail) === */
+        /* === 光线拖影特效 (Hard Edge) === */
         .trail-segment {
             position: absolute;
             height: 4px;
             width: 50px;
             border-radius: 0px; 
-            /* background 和 box-shadow 由 JS 动态设置颜色 */
             pointer-events: none;
             opacity: 0.8;
             animation: trail-fade 0.4s ease-out forwards;
@@ -617,17 +616,17 @@
             ]
         };
 
-        const JINGLE_PHRASES = [
-            [329.6, 329.6, 329.6],                
-            [329.6, 329.6, 329.6],                
-            [329.6, 392.0, 261.6, 293.7, 329.6],  
-            [349.2, 349.2, 349.2, 349.2],         
-            [349.2, 329.6, 329.6, 329.6],         
-            [329.6, 293.7, 293.7, 329.6, 293.7],  
-            [392.0]                               
+        /* === JINGLE BELLS (CHORUS) NOTES === */
+        const JINGLE_NOTES = [
+            329.6, 329.6, 329.6,
+            329.6, 329.6, 329.6,
+            329.6, 392.0, 261.6, 293.7, 329.6,
+            349.2, 349.2, 349.2, 349.2,
+            349.2, 329.6, 329.6, 329.6,
+            329.6, 293.7, 293.7, 329.6, 293.7, 392.0
         ];
         
-        let songIndex = 0; 
+        let noteIndex = 0; 
 
         let ponies = [];
         let ponyQueue = [];
@@ -680,25 +679,27 @@
             return container;
         }
 
-        /* === 新增：播放一句旋律的函数 === */
-        function playJinglePhrase() {
+        /* === 播放单个音符的函数 === */
+        function playNextNote() {
             if (!audioCtx) return;
             const now = audioCtx.currentTime;
-            const phrase = JINGLE_PHRASES[songIndex % JINGLE_PHRASES.length];
-            songIndex++; 
-            phrase.forEach((freq, i) => {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'triangle'; 
-                osc.frequency.setValueAtTime(freq, now + i * 0.15); 
-                gain.connect(audioCtx.destination);
-                gain.gain.setValueAtTime(0, now + i * 0.15);
-                gain.gain.linearRampToValueAtTime(0.3, now + i * 0.15 + 0.05);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.15 + 0.3); 
-                osc.connect(gain);
-                osc.start(now + i * 0.15);
-                osc.stop(now + i * 0.15 + 0.4);
-            });
+            
+            const freq = JINGLE_NOTES[noteIndex % JINGLE_NOTES.length];
+            noteIndex++;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle'; 
+            osc.frequency.setValueAtTime(freq, now); 
+            
+            gain.connect(audioCtx.destination);
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.3, now + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2); 
+
+            osc.connect(gain);
+            osc.start(now);
+            osc.stop(now + 0.25);
         }
 
         window.onload = function() {
@@ -1074,7 +1075,7 @@
                             else if (data.mode === 'mash') { btn.classList.add('btn-mash'); btn.innerText = data.label; info.innerText = "TAP FAST!!!"; }
                             else if (data.mode === 'start') { btn.classList.add('btn-start'); btn.innerText = data.label; info.innerText = "RACE FINISHED"; }
                         } else if (data.type === 'eliminated' && data.uuid === playerUUID) {
-                            const btn = document.getElementById('m-btn'); const info = document.getElementById('m-info'); mobileBtnState = 'dead'; btn.className = 'push-btn btn-dead'; btn.innerText = "YOU DIED\nAGAIN?"; info.innerText = "ELIMINATED";
+                            const btn = document.getElementById('m-btn'); const info = document.getElementById('m-info'); mobileBtnState = 'dead'; btn.className = 'push-btn btn-dead'; btn.innerText = "TRY\nAGAIN"; info.innerText = "ELIMINATED";
                         }
                     });
                 });
@@ -1106,9 +1107,8 @@
             if (mobileBtnState === 'dead') { resetMobile(); return; }
             if (mobileBtnState === 'mash') { 
                 if(conn) conn.send({ type: 'tap', uuid: playerUUID }); 
-                // === 修改点：播放圣诞歌旋律 ===
                 initAudio();
-                playJinglePhrase();
+                playNextNote();
             }
             else if (mobileBtnState === 'start') { if(conn) conn.send({ type: 'force_start' }); }
         }
