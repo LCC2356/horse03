@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v9.3 TAP FOR MUSIC</title>
+    <title>HORSE RUNRUN - v9.4 CHRISTMAS ORCHESTRA</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -244,7 +244,7 @@
             to { transform: translateY(calc(var(--game-h) + 20px)); }
         }
 
-        /* === 光线拖影特效 (Hard Edge) === */
+        /* === 光线拖影特效 (Hard Edge Trail) === */
         .trail-segment {
             position: absolute;
             height: 4px;
@@ -589,7 +589,7 @@
             [0,0,1,0,1,0,1,0,1,0,0]
         ];
 
-        /* === 原始非对称像素画数据 (移除 FACE 数组) === */
+        /* === 原始非对称像素画数据 === */
         const PIXEL_ART_MAPS = {
             'HEART': [
                 [0,1,1,0,1,1,0],
@@ -616,17 +616,35 @@
             ]
         };
 
-        /* === JINGLE BELLS (CHORUS) NOTES === */
-        const JINGLE_NOTES = [
-            329.6, 329.6, 329.6,
-            329.6, 329.6, 329.6,
-            329.6, 392.0, 261.6, 293.7, 329.6,
-            349.2, 349.2, 349.2, 349.2,
-            349.2, 329.6, 329.6, 329.6,
-            329.6, 293.7, 293.7, 329.6, 293.7, 392.0
-        ];
+        /* === 扩充的圣诞歌库 (多首歌曲) === */
+        const SONGS = {
+            'JINGLE': [
+                329.6, 329.6, 329.6, 329.6, 329.6, 329.6,
+                329.6, 392.0, 261.6, 293.7, 329.6,
+                349.2, 349.2, 349.2, 349.2, 349.2, 329.6, 329.6, 329.6,
+                329.6, 293.7, 293.7, 329.6, 293.7, 392.0
+            ],
+            'MERRY': [
+                392.0, 
+                523.3, 523.3, 587.3, 523.3, 493.9, 
+                440.0, 440.0,
+                440.0, 587.3, 587.3, 659.3, 587.3, 523.3,
+                493.9, 392.0
+            ],
+            'DECK': [
+                523.3, 493.9, 440.0, 392.0, 
+                349.2, 329.6, 293.7, 261.6,
+                293.7, 329.6, 349.2, 293.7,
+                329.6, 293.7, 261.6, 246.9, 261.6
+            ]
+        };
         
+        // 随机音色列表
+        const SYNTH_TYPES = ['square', 'triangle', 'sawtooth'];
+
         let noteIndex = 0; 
+        let myCurrentSong = 'JINGLE'; // 默认
+        let mySynthType = 'triangle'; // 默认
 
         let ponies = [];
         let ponyQueue = [];
@@ -644,8 +662,7 @@
         let mobileBtnState = 'wait';
         let audioCtx = null;
         let lastTapTime = 0;
-        let mySoundType = 'SAWTOOTH';
-        const SOUND_TYPES = ['SAWTOOTH', 'LASER', 'SQUARE', 'FM'];
+        let mySoundType = 'SAWTOOTH'; // 仅用于电脑端音效，手机端使用 mySynthType
 
         let layout = { scale: 1.0, x: 0, y: 0 };
         let currentBarText = '';
@@ -679,17 +696,18 @@
             return container;
         }
 
-        /* === 播放单个音符的函数 === */
+        /* === 播放单个音符的函数 (使用随机分配的乐器和歌曲) === */
         function playNextNote() {
             if (!audioCtx) return;
             const now = audioCtx.currentTime;
             
-            const freq = JINGLE_NOTES[noteIndex % JINGLE_NOTES.length];
+            const songArr = SONGS[myCurrentSong];
+            const freq = songArr[noteIndex % songArr.length];
             noteIndex++;
 
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.type = 'triangle'; 
+            osc.type = mySynthType; // 使用随机分配的音色
             osc.frequency.setValueAtTime(freq, now); 
             
             gain.connect(audioCtx.destination);
@@ -700,6 +718,14 @@
             osc.connect(gain);
             osc.start(now);
             osc.stop(now + 0.25);
+        }
+
+        /* === 随机分配歌曲和乐器 === */
+        function randomizeMusic() {
+            const songKeys = Object.keys(SONGS);
+            myCurrentSong = songKeys[Math.floor(Math.random() * songKeys.length)];
+            mySynthType = SYNTH_TYPES[Math.floor(Math.random() * SYNTH_TYPES.length)];
+            noteIndex = 0; // 重置进度
         }
 
         window.onload = function() {
@@ -929,7 +955,7 @@
             }
         }
 
-        /* === 修改后：将 spawnDust 替换为 spawnTrail (细长光线拖影，0px阴影) === */
+        /* === 光线拖影特效 (Hard Edge Trail) === */
         function spawnTrail(p) {
             const fxLayer = document.getElementById('layer-fx');
             const count = Math.random() < 0.5 ? 1 : 2; 
@@ -940,7 +966,7 @@
                 el.style.left = (p.x - 20 + Math.random() * 10) + 'px';
                 el.style.top = (p.y + 15 + Math.random() * 15) + 'px';
                 el.style.background = p.color;
-                /* 修改后：0px 的阴影半径 (Hard Edge) */
+                /* 0px 的阴影半径 (Hard Edge) */
                 el.style.boxShadow = `0 0 0px ${p.color}`;
                 fxLayer.appendChild(el);
                 setTimeout(() => el.remove(), 400);
@@ -976,7 +1002,7 @@
                     } else {
                         p.x += p.speed * (0.9 + Math.random() * 0.2); p.isWalkAnimating = true;
                     }
-                    /* === 修改后：当热度大于 60 时触发 === */
+                    /* 当热度大于 60 时触发 */
                     if (p.turboCharge > 60 && Math.random() < 0.4) spawnTrail(p);
                     if (p.turboCharge > 30) p.isTurbo = true;
                     p.facing = 1;
@@ -1072,10 +1098,15 @@
                         else if (data.type === 'sync_ui') {
                             const btn = document.getElementById('m-btn'); const info = document.getElementById('m-info'); mobileBtnState = data.mode; btn.className = 'push-btn'; btn.onclick = null;
                             if (data.mode === 'wait') { btn.classList.add('btn-wait'); btn.innerText = data.label; info.innerText = "GET READY..."; }
-                            else if (data.mode === 'mash') { btn.classList.add('btn-mash'); btn.innerText = data.label; info.innerText = "TAP FAST!!!"; }
+                            else if (data.mode === 'mash') { 
+                                btn.classList.add('btn-mash'); btn.innerText = data.label; info.innerText = "TAP FAST!!!"; 
+                                /* === 收到 mash 信号时重置音乐 === */
+                                noteIndex = 0; 
+                            }
                             else if (data.mode === 'start') { btn.classList.add('btn-start'); btn.innerText = data.label; info.innerText = "RACE FINISHED"; }
                         } else if (data.type === 'eliminated' && data.uuid === playerUUID) {
                             const btn = document.getElementById('m-btn'); const info = document.getElementById('m-info'); mobileBtnState = 'dead'; btn.className = 'push-btn btn-dead'; btn.innerText = "TRY\nAGAIN"; info.innerText = "ELIMINATED";
+                            /* === 移除了自动跳转，现在必须手动点击按钮 === */
                         }
                     });
                 });
@@ -1088,6 +1119,7 @@
             let hasPixels = false; for(let r=0; r<11; r++) { for(let c=0; c<11; c++) { if (mobileGrid[r][c] === 1) { hasPixels = true; break; } } if(hasPixels) break; }
             if (!hasPixels) { alert("CANVAS IS EMPTY"); return; }
             mySoundType = SOUND_TYPES[Math.floor(Math.random() * SOUND_TYPES.length)]; initAudio();
+            randomizeMusic(); /* 随机分配音乐 */
             conn.send({ type: 'spawn', payload: { name: name, pixels: mobileGrid, color: selectedColor, uuid: playerUUID } });
             document.getElementById('m-editor-ui').style.display = 'none'; document.getElementById('m-controller').style.display = 'flex';
         }
@@ -1108,7 +1140,7 @@
             if (mobileBtnState === 'mash') { 
                 if(conn) conn.send({ type: 'tap', uuid: playerUUID }); 
                 initAudio();
-                playNextNote();
+                playNextNote(); /* 播放一个音符 */
             }
             else if (mobileBtnState === 'start') { if(conn) conn.send({ type: 'force_start' }); }
         }
@@ -1122,7 +1154,7 @@
             if (emojiType === 'FACE') {
                 container = document.createElement('div');
                 container.className = 'pop-text';
-                container.innerText = "?"; /* 修改为 ? */
+                container.innerText = "?";
                 container.style.color = pony.color;
             } else {
                 container = document.createElement('div');
