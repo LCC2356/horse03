@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v9.9 POLISHED</title>
+    <title>HORSE RUNRUN - v10.0 FINAL UI</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -460,9 +460,15 @@
 
         .btn-wait { background: #1a1a1a !important; border-color: #333 !important; color: #555 !important; }
         .btn-mash { background: #fff !important; border-color: #ccc !important; color: #000 !important; box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; }
-        .btn-start { background: #e65100 !important; border-color: #ffb300 !important; color: #fff !important; box-shadow: 0 0 50px rgba(255, 179, 0, 0.4) !important; }
         
-        /* === 修改后：白色按钮样式 (TRY AGAIN) === */
+        /* === 修改后：白色按钮 (START RACE / RESTART) === */
+        .btn-start { 
+            background: #ffffff !important; 
+            border: 8px solid #000000 !important; 
+            color: #000000 !important; 
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.6) !important; 
+        }
+
         .btn-dead { 
             background: #ffffff !important; 
             border: 8px solid #000000 !important; 
@@ -596,7 +602,7 @@
             'BOLT': [ [0,0,1,1,1,0], [0,1,1,1,0,0], [1,1,1,1,1,0], [0,0,0,1,1,0], [0,0,1,1,0,0], [0,0,1,0,0,0] ]
         };
 
-        /* === 歌曲库 - 修改后：直接从高潮部分开始 === */
+        /* === 歌曲库 - 修改后：直接从耳熟能详的副歌开始 === */
         const SONGS = {
             'JINGLE': [
                 // Jingle bells (E-E-E)
@@ -703,7 +709,12 @@
             const now = audioCtx.currentTime;
             
             const songArr = SONGS[myCurrentSongKey] || SONGS['JINGLE'];
-            const freq = songArr[noteIndex % songArr.length];
+            // 跳过 0 频率的休止符
+            let freq = songArr[noteIndex % songArr.length];
+            while (freq === 0) {
+                 noteIndex++;
+                 freq = songArr[noteIndex % songArr.length];
+            }
             noteIndex++;
 
             const style = SOUND_STYLES[myStyleKey] || SOUND_STYLES['GAMEBOY'];
@@ -961,7 +972,7 @@
             }
         }
 
-        /* === 修改后：将 spawnDust 替换为 spawnTrail (细长光线拖影，0px阴影) === */
+        /* === 光线拖影特效 (Hard Edge Trail) === */
         function spawnTrail(p) {
             const fxLayer = document.getElementById('layer-fx');
             const count = Math.random() < 0.5 ? 1 : 2; 
@@ -972,7 +983,7 @@
                 el.style.left = (p.x - 20 + Math.random() * 10) + 'px';
                 el.style.top = (p.y + 15 + Math.random() * 15) + 'px';
                 el.style.background = p.color;
-                /* 修改后：0px 的阴影半径 (Hard Edge) */
+                /* 0px 的阴影半径 (Hard Edge) */
                 el.style.boxShadow = `0 0 0px ${p.color}`;
                 fxLayer.appendChild(el);
                 setTimeout(() => el.remove(), 400);
@@ -1008,7 +1019,7 @@
                     } else {
                         p.x += p.speed * (0.9 + Math.random() * 0.2); p.isWalkAnimating = true;
                     }
-                    /* 修改后：当热度大于 60 时触发 */
+                    /* 当热度大于 60 时触发 */
                     if (p.turboCharge > 60 && Math.random() < 0.4) spawnTrail(p);
                     if (p.turboCharge > 30) p.isTurbo = true;
                     p.facing = 1;
