@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v10.1 FLASH BUTTON</title>
+    <title>HORSE RUNRUN - v10.2 CLEAN UI</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -449,13 +449,13 @@
             
             /* === 修改后：常态（2px白边，暗底） === */
             border: 2px solid #ffffff;
-            background: rgba(0,0,0,0.5); /* 半透明黑 */
+            background: rgba(0,0,0,0.5); 
             
             color: #ffffff; 
             font-size: 4rem; font-family: 'VT323', monospace;
             display: flex; justify-content: center; align-items: center;
             box-shadow: 0 0 50px rgba(0,0,0, 0.4);
-            transition: all 0.1s ease-out; /* 加快响应 */
+            transition: all 0.05s ease-out; /* 极速响应 */
             user-select: none;
             cursor: pointer; -webkit-tap-highlight-color: transparent;
             text-align: center; line-height: 1; padding: 20px;
@@ -466,30 +466,35 @@
 
         .btn-wait { background: #1a1a1a !important; border-color: #333 !important; color: #555 !important; }
         
-        /* === 修改后：赛跑状态 (MASH) - 遵循原先设计，主要通过 :active 变色 === */
+        /* === 修改后：赛跑状态 (MASH) === */
         .btn-mash { 
             border-color: #ffffff !important; 
             color: #ffffff !important; 
-            background: transparent !important; /* 保持透明，强调边框 */
+            background: transparent !important; 
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
         }
 
-        /* === 修改后：点击效果 (渐变白底 + 黑字) === */
+        /* === 修改后：点击效果 (纯白底 + 黑字，无渐变) === */
         .btn-mash:active {
-            background: radial-gradient(circle, #ffffff 40%, #cccccc 100%) !important;
+            background: #ffffff !important;
             color: #000000 !important;
-            box-shadow: 0 0 50px rgba(255, 255, 255, 0.9) !important; /* 强烈的闪光 */
-            border-color: #ffffff !important;
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.8) !important;
         }
         
-        /* === 修改后：白色按钮 (START RACE / RESTART) === */
+        /* === 修改后：START RACE 按钮 (统一风格) === */
         .btn-start { 
-            background: #ffffff !important; 
-            border: 8px solid #000000 !important; 
-            color: #000000 !important; 
-            box-shadow: 0 0 40px rgba(255, 255, 255, 0.6) !important; 
+            background: transparent !important; 
+            border: 2px solid #ffffff !important; 
+            color: #ffffff !important; 
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2) !important; 
+        }
+        .btn-start:active {
+            background: #ffffff !important;
+            color: #000000 !important;
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.8) !important;
         }
 
+        /* === TRY AGAIN 按钮 (保持黑白复古风) === */
         .btn-dead { 
             background: #ffffff !important; 
             border: 8px solid #000000 !important; 
@@ -626,34 +631,22 @@
         /* === 歌曲库 - 修改后：直接从耳熟能详的副歌开始 === */
         const SONGS = {
             'JINGLE': [
-                // Jingle bells (E-E-E)
-                329.6, 329.6, 329.6,  
-                // Jingle bells (E-E-E)
-                329.6, 329.6, 329.6,  
-                // Jingle all the way (E-G-C-D-E)
-                329.6, 392.0, 261.6, 293.7, 329.6,
-                // Oh what fun it is to ride (F-F-F-F-F-E-E)
-                349.2, 349.2, 349.2, 349.2, 349.2, 329.6, 329.6,
-                // In a one-horse open sleigh (E-D-D-E-D-G)
-                329.6, 293.7, 293.7, 329.6, 293.7, 392.0
+                329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 392.0, 261.6, 293.7, 329.6,
+                349.2, 349.2, 349.2, 349.2, 349.2, 329.6, 329.6, 329.6, 329.6, 293.7, 293.7, 329.6, 293.7, 392.0,
+                329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 392.0, 261.6, 293.7, 329.6,
+                349.2, 349.2, 349.2, 349.2, 349.2, 329.6, 329.6, 392.0, 392.0, 349.2, 293.7, 261.6
             ],
             'MERRY': [
-                // We wish you a Merry Christmas (C-F-F-G-F-E-D)
                 261.6, 349.2, 349.2, 392.0, 349.2, 329.6, 293.7, 293.7,
-                // We wish you a Merry Christmas (D-G-G-A-G-F-E)
                 293.7, 392.0, 392.0, 440.0, 392.0, 349.2, 329.6, 261.6,
-                // We wish you a Merry Christmas (C-A-A-A#-A-G-F)
                 261.6, 440.0, 440.0, 466.2, 440.0, 392.0, 349.2, 293.7,
-                // And a Happy New Year (C-C-D-G-E-F)
                 261.6, 261.6, 293.7, 392.0, 329.6, 349.2
             ],
             'DECK': [
-                 // Deck the halls with boughs of holly (C-B-A-G-F-E-D-C)
                 523.3, 493.9, 440.0, 392.0, 349.2, 329.6, 293.7, 261.6,
-                // Fa la la la la (D-E-F-D)
-                293.7, 329.6, 349.2, 293.7,
-                // la la la (E-D-C) - 修正节奏
-                329.6, 293.7, 261.6
+                293.7, 329.6, 349.2, 293.7, 329.6, 293.7, 261.6, 246.9, 261.6,
+                523.3, 493.9, 440.0, 392.0, 349.2, 329.6, 293.7, 261.6,
+                293.7, 329.6, 349.2, 293.7, 329.6, 293.7, 261.6, 246.9, 261.6
             ]
         };
 
@@ -1044,7 +1037,7 @@
                     if (p.turboCharge > 60 && Math.random() < 0.4) spawnTrail(p);
                     if (p.turboCharge > 30) p.isTurbo = true;
                     p.facing = 1;
-                    /* === 修改后：检测终点，只触发一次 === */
+                    /* === 检测终点，只触发一次 === */
                     if (p.x >= FINISH_X) {
                         if (p.state === 'racing') {
                             p.state = 'finished';
@@ -1155,7 +1148,7 @@
                             btn.innerText = "TRY\nAGAIN"; 
                             info.innerText = "ELIMINATED";
                         } else if (data.type === 'player_finished' && data.uuid === playerUUID) {
-                            /* === 修改后：玩家到达终点 === */
+                            /* === 玩家到达终点 === */
                             mobileBtnState = 'finished';
                             const btn = document.getElementById('m-btn');
                             btn.className = 'push-btn btn-wait';
@@ -1178,6 +1171,14 @@
         }
 
         function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
+        function playDynamicSound(interval) {
+            if (!audioCtx) return; const now = audioCtx.currentTime; let baseFreq = 150 + (30000 / Math.max(50, interval)); if (baseFreq > 800) baseFreq = 800;
+            const gain = audioCtx.createGain(); gain.connect(audioCtx.destination); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+            if (mySoundType === 'SAWTOOTH') { const osc = audioCtx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(baseFreq, now); osc.connect(gain); osc.start(); osc.stop(now + 0.15); }
+            else if (mySoundType === 'SQUARE') { const osc = audioCtx.createOscillator(); osc.type = 'square'; osc.frequency.setValueAtTime(baseFreq, now); osc.connect(gain); osc.start(); osc.stop(now + 0.1); }
+            else if (mySoundType === 'LASER') { const osc = audioCtx.createOscillator(); osc.type = 'sine'; osc.frequency.setValueAtTime(baseFreq * 2, now); osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.5, now + 0.1); osc.connect(gain); osc.start(); osc.stop(now + 0.15); }
+            else if (mySoundType === 'FM') { const carrier = audioCtx.createOscillator(); const modulator = audioCtx.createOscillator(); const modGain = audioCtx.createGain(); modulator.frequency.value = baseFreq * 1.4; modGain.gain.value = baseFreq * 0.5; modulator.connect(modGain); modGain.connect(carrier.frequency); carrier.connect(gain); carrier.frequency.setValueAtTime(baseFreq, now); modulator.start(); carrier.start(); modulator.stop(now + 0.2); carrier.stop(now + 0.2); }
+        }
 
         function btnAction(e) {
             e.preventDefault(); const btn = document.getElementById('m-btn'); btn.style.transform = 'scale(0.95)'; setTimeout(() => { btn.style.transform = 'scale(1)'; }, 50);
