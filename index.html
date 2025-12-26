@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v10.0 FINAL UI</title>
+    <title>HORSE RUNRUN - v10.1 FLASH BUTTON</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -446,11 +446,17 @@
         .push-btn {
             width: 250px; height: 250px; border-radius: 50%;
             background: #222;
-            border: 8px solid #444;
-            color: #888; font-size: 4rem; font-family: 'VT323', monospace;
+            
+            /* === 修改后：常态（2px白边，暗底） === */
+            border: 2px solid #ffffff;
+            background: rgba(0,0,0,0.5); /* 半透明黑 */
+            
+            color: #ffffff; 
+            font-size: 4rem; font-family: 'VT323', monospace;
             display: flex; justify-content: center; align-items: center;
             box-shadow: 0 0 50px rgba(0,0,0, 0.4);
-            transition: all 0.2s; user-select: none;
+            transition: all 0.1s ease-out; /* 加快响应 */
+            user-select: none;
             cursor: pointer; -webkit-tap-highlight-color: transparent;
             text-align: center; line-height: 1; padding: 20px;
             touch-action: manipulation;
@@ -459,7 +465,22 @@
         .controller-info { font-size: 1.5rem; color: #888; margin-bottom: 30px; text-align: center; }
 
         .btn-wait { background: #1a1a1a !important; border-color: #333 !important; color: #555 !important; }
-        .btn-mash { background: #fff !important; border-color: #ccc !important; color: #000 !important; box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; }
+        
+        /* === 修改后：赛跑状态 (MASH) - 遵循原先设计，主要通过 :active 变色 === */
+        .btn-mash { 
+            border-color: #ffffff !important; 
+            color: #ffffff !important; 
+            background: transparent !important; /* 保持透明，强调边框 */
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+
+        /* === 修改后：点击效果 (渐变白底 + 黑字) === */
+        .btn-mash:active {
+            background: radial-gradient(circle, #ffffff 40%, #cccccc 100%) !important;
+            color: #000000 !important;
+            box-shadow: 0 0 50px rgba(255, 255, 255, 0.9) !important; /* 强烈的闪光 */
+            border-color: #ffffff !important;
+        }
         
         /* === 修改后：白色按钮 (START RACE / RESTART) === */
         .btn-start { 
