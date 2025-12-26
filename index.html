@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v9.6 COMPLETE CHRISTMAS</title>
+    <title>HORSE RUNRUN - v9.9 POLISHED</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -424,6 +424,7 @@
             align-items: center;
         }
         .m-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; flex-shrink: 0; width: 100%; max-width: 400px; }
+        /* === 修改后：NOWHERE TO RUN === */
         .m-title { font-size: 1.5rem; color: #fff; }
         .m-status { background: #222; padding: 4px 8px; border-radius: 4px; font-size: 1rem; color: #fff; border: 1px solid #444; }
         .m-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; flex-shrink: 0; width: 100%; max-width: 400px; }
@@ -460,7 +461,15 @@
         .btn-wait { background: #1a1a1a !important; border-color: #333 !important; color: #555 !important; }
         .btn-mash { background: #fff !important; border-color: #ccc !important; color: #000 !important; box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; }
         .btn-start { background: #e65100 !important; border-color: #ffb300 !important; color: #fff !important; box-shadow: 0 0 50px rgba(255, 179, 0, 0.4) !important; }
-        .btn-dead { background: #b71c1c !important; border-color: #f44336 !important; color: #fff !important; box-shadow: 0 0 50px rgba(244, 67, 54, 0.4) !important; font-size: 3rem !important; }
+        
+        /* === 修改后：白色按钮样式 (TRY AGAIN) === */
+        .btn-dead { 
+            background: #ffffff !important; 
+            border: 8px solid #000000 !important; 
+            color: #000000 !important; 
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.5) !important;
+            font-size: 3rem !important;
+        }
 
         #m-success-modal { display: none; }
     </style>
@@ -538,7 +547,7 @@
     <div id="mobile-view" style="display: none;">
         <div id="m-editor-ui">
             <div class="m-header">
-                <span class="m-title">PIXEL MAKER</span>
+                <span class="m-title">NOWHERE TO RUN</span>
                 <span id="m-status" class="m-status">Wait...</span>
             </div>
             <div class="m-controls">
@@ -587,34 +596,37 @@
             'BOLT': [ [0,0,1,1,1,0], [0,1,1,1,0,0], [1,1,1,1,1,0], [0,0,0,1,1,0], [0,0,1,1,0,0], [0,0,1,0,0,0] ]
         };
 
-        /* === 歌曲库 - 全本 Jingle Bells 和其他歌曲 === */
+        /* === 歌曲库 - 修改后：直接从高潮部分开始 === */
         const SONGS = {
             'JINGLE': [
-                // 主歌 (Dashing through the snow...)
-                392.0, 329.6, 293.7, 261.6, 392.0, 392.0, 392.0, // G E D C G G G
-                392.0, 329.6, 293.7, 261.6, 440.0, 440.0,       // G E D C A A
-                440.0, 349.2, 329.6, 293.7, 493.9, 493.9,       // A F E D B B
-                392.0, 392.0, 349.2, 293.7, 329.6, 392.0,       // G G F D E G
-                392.0, 329.6, 293.7, 261.6, 392.0, 392.0, 392.0,// G E D C G G G
-                392.0, 329.6, 293.7, 261.6, 440.0, 440.0, 440.0,// G E D C A A A
-                440.0, 349.2, 329.6, 293.7, 392.0, 392.0, 392.0, 392.0, 440.0, 392.0, 349.2, 293.7, 261.6, 392.0, // A F E D G G G G A G F D C G
-                // 副歌 (Jingle Bells...)
-                329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 392.0, 261.6, 293.7, 329.6,
-                349.2, 349.2, 349.2, 349.2, 349.2, 329.6, 329.6, 329.6, 329.6, 293.7, 293.7, 329.6, 293.7, 392.0,
-                329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 392.0, 261.6, 293.7, 329.6,
-                349.2, 349.2, 349.2, 349.2, 349.2, 329.6, 329.6, 392.0, 392.0, 349.2, 293.7, 261.6
+                // Jingle bells (E-E-E)
+                329.6, 329.6, 329.6,  
+                // Jingle bells (E-E-E)
+                329.6, 329.6, 329.6,  
+                // Jingle all the way (E-G-C-D-E)
+                329.6, 392.0, 261.6, 293.7, 329.6,
+                // Oh what fun it is to ride (F-F-F-F-F-E-E)
+                349.2, 349.2, 349.2, 349.2, 349.2, 329.6, 329.6,
+                // In a one-horse open sleigh (E-D-D-E-D-G)
+                329.6, 293.7, 293.7, 329.6, 293.7, 392.0
             ],
             'MERRY': [
-                392.0, 523.3, 523.3, 587.3, 523.3, 493.9, 440.0, 440.0,
-                440.0, 587.3, 587.3, 659.3, 587.3, 523.3, 493.9, 392.0,
-                392.0, 659.3, 659.3, 698.5, 659.3, 587.3, 523.3, 440.0,
-                392.0, 392.0, 440.0, 587.3, 493.9, 523.3
+                // We wish you a Merry Christmas (C-F-F-G-F-E-D)
+                261.6, 349.2, 349.2, 392.0, 349.2, 329.6, 293.7, 293.7,
+                // We wish you a Merry Christmas (D-G-G-A-G-F-E)
+                293.7, 392.0, 392.0, 440.0, 392.0, 349.2, 329.6, 261.6,
+                // We wish you a Merry Christmas (C-A-A-A#-A-G-F)
+                261.6, 440.0, 440.0, 466.2, 440.0, 392.0, 349.2, 293.7,
+                // And a Happy New Year (C-C-D-G-E-F)
+                261.6, 261.6, 293.7, 392.0, 329.6, 349.2
             ],
             'DECK': [
+                 // Deck the halls with boughs of holly (C-B-A-G-F-E-D-C)
                 523.3, 493.9, 440.0, 392.0, 349.2, 329.6, 293.7, 261.6,
-                293.7, 329.6, 349.2, 293.7, 329.6, 293.7, 261.6, 246.9, 261.6,
-                523.3, 493.9, 440.0, 392.0, 349.2, 329.6, 293.7, 261.6,
-                293.7, 329.6, 349.2, 293.7, 329.6, 293.7, 261.6, 246.9, 261.6
+                // Fa la la la la (D-E-F-D)
+                293.7, 329.6, 349.2, 293.7,
+                // la la la (E-D-C) - 修正节奏
+                329.6, 293.7, 261.6
             ]
         };
 
@@ -691,8 +703,7 @@
             const now = audioCtx.currentTime;
             
             const songArr = SONGS[myCurrentSongKey] || SONGS['JINGLE'];
-            // 跳过休止符(如果有)
-            let freq = songArr[noteIndex % songArr.length];
+            const freq = songArr[noteIndex % songArr.length];
             noteIndex++;
 
             const style = SOUND_STYLES[myStyleKey] || SOUND_STYLES['GAMEBOY'];
@@ -950,7 +961,7 @@
             }
         }
 
-        /* === 光线拖影特效 (Hard Edge Trail) === */
+        /* === 修改后：将 spawnDust 替换为 spawnTrail (细长光线拖影，0px阴影) === */
         function spawnTrail(p) {
             const fxLayer = document.getElementById('layer-fx');
             const count = Math.random() < 0.5 ? 1 : 2; 
@@ -961,7 +972,7 @@
                 el.style.left = (p.x - 20 + Math.random() * 10) + 'px';
                 el.style.top = (p.y + 15 + Math.random() * 15) + 'px';
                 el.style.background = p.color;
-                /* 0px 的阴影半径 (Hard Edge) */
+                /* 修改后：0px 的阴影半径 (Hard Edge) */
                 el.style.boxShadow = `0 0 0px ${p.color}`;
                 fxLayer.appendChild(el);
                 setTimeout(() => el.remove(), 400);
@@ -997,15 +1008,22 @@
                     } else {
                         p.x += p.speed * (0.9 + Math.random() * 0.2); p.isWalkAnimating = true;
                     }
-                    /* 当热度大于 60 时触发 */
+                    /* 修改后：当热度大于 60 时触发 */
                     if (p.turboCharge > 60 && Math.random() < 0.4) spawnTrail(p);
                     if (p.turboCharge > 30) p.isTurbo = true;
                     p.facing = 1;
+                    /* === 修改后：检测终点，只触发一次 === */
                     if (p.x >= FINISH_X) {
-                        p.state = 'finished'; p.isTurbo = false;
-                        if (finishedCount === 0 && !winnerFoundThisFrame && gameState === 'RACING') {
-                            winnerFoundThisFrame = true; if (p.hasCrown) p.isStreak = true; else { p.hasCrown = true; p.isStreak = false; }
-                            ponies.forEach(o => { if(o.id !== p.id) { o.hasCrown = false; o.isStreak = false; }});
+                        if (p.state === 'racing') {
+                            p.state = 'finished';
+                            p.isTurbo = false;
+                            if (p.playerUUID) {
+                                broadcast({ type: 'player_finished', uuid: p.playerUUID });
+                            }
+                            if (finishedCount === 0 && !winnerFoundThisFrame && gameState === 'RACING') {
+                                winnerFoundThisFrame = true; if (p.hasCrown) p.isStreak = true; else { p.hasCrown = true; p.isStreak = false; }
+                                ponies.forEach(o => { if(o.id !== p.id) { o.hasCrown = false; o.isStreak = false; }});
+                            }
                         }
                     }
                 } else if (p.state === 'finished') {
@@ -1104,6 +1122,13 @@
                             btn.className = 'push-btn btn-dead'; 
                             btn.innerText = "TRY\nAGAIN"; 
                             info.innerText = "ELIMINATED";
+                        } else if (data.type === 'player_finished' && data.uuid === playerUUID) {
+                            /* === 修改后：玩家到达终点 === */
+                            mobileBtnState = 'finished';
+                            const btn = document.getElementById('m-btn');
+                            btn.className = 'push-btn btn-wait';
+                            btn.innerText = "DONE";
+                            document.getElementById('m-info').innerText = "WAITING...";
                         }
                     });
                 });
@@ -1124,11 +1149,17 @@
 
         function btnAction(e) {
             e.preventDefault(); const btn = document.getElementById('m-btn'); btn.style.transform = 'scale(0.95)'; setTimeout(() => { btn.style.transform = 'scale(1)'; }, 50);
-            if (mobileBtnState === 'dead') { resetMobile(); return; }
+            
+            if (mobileBtnState === 'dead') { 
+                resetMobile(); 
+                return; 
+            }
+            if (mobileBtnState === 'finished') return; // 到达终点后禁止点击
+
             if (mobileBtnState === 'mash') { 
                 if(conn) conn.send({ type: 'tap', uuid: playerUUID }); 
                 initAudio();
-                playNextNote(); /* 播放一个音符 */
+                playNextNote(); 
             }
             else if (mobileBtnState === 'start') { if(conn) conn.send({ type: 'force_start' }); }
         }
@@ -1142,7 +1173,7 @@
             if (emojiType === 'FACE') {
                 container = document.createElement('div');
                 container.className = 'pop-text';
-                container.innerText = "?"; /* 修改为 ? */
+                container.innerText = "?";
                 container.style.color = pony.color;
             } else {
                 container = document.createElement('div');
