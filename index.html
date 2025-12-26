@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v10.3 DYNAMIC ENERGY</title>
+    <title>HORSE RUNRUN - v10.4 PIXEL PARTICLES</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -447,7 +447,7 @@
             width: 250px; height: 250px; border-radius: 50%;
             background: #222;
             
-            /* === 修改后：常态（2px白边，暗底） === */
+            /* === 常态：2px白边，暗底 === */
             border: 2px solid #ffffff;
             background: rgba(0,0,0,0.5); 
             
@@ -455,51 +455,73 @@
             font-size: 4rem; font-family: 'VT323', monospace;
             display: flex; justify-content: center; align-items: center;
             box-shadow: 0 0 50px rgba(0,0,0, 0.4);
-            /* transition: all 0.05s ease-out;  移除，由JS接管 */
+            transition: all 0.05s ease-out; 
             user-select: none;
             cursor: pointer; -webkit-tap-highlight-color: transparent;
             text-align: center; line-height: 1; padding: 20px;
             touch-action: manipulation;
-            position: relative; /* 为光晕定位 */
-            overflow: hidden;   /* 裁剪光晕 */
+            position: relative; 
+            overflow: hidden;   
         }
         
-        /* 用于显示文本的容器 */
         #m-btn-text {
             position: relative;
-            z-index: 2; /* 确保在光晕之上 */
+            z-index: 2; 
             transition: opacity 0.2s ease-out;
         }
 
-        /* 用于显示中心渐变光晕的容器 */
+        /* === 新增：粒子效果样式 === */
+        .btn-particle {
+            position: absolute;
+            width: 6px; height: 6px;
+            background: #ffffff;
+            z-index: 5;
+            pointer-events: none;
+            /* steps(4) 产生像素/定格动画感 */
+            animation: particle-fly 0.4s steps(4) forwards;
+        }
+
+        @keyframes particle-fly {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+
+        /* === 修改后：光晕容器 === */
         #m-btn-glow {
             position: absolute;
             top: 50%; left: 50%;
-            width: 0%; height: 0%; /* 初始大小 */
+            width: 0%; height: 0%; 
             transform: translate(-50%, -50%);
-            background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0.8) 30%, rgba(255,255,255,0) 70%);
+            /* 像素风光晕：硬边缘的同心圆 */
+            background: radial-gradient(circle, #ffffff 30%, transparent 31%, transparent 50%, rgba(255,255,255,0.3) 51%, transparent 70%);
             opacity: 0;
             z-index: 1;
             border-radius: 50%;
             pointer-events: none;
-            transition: all 0.1s ease-out;
+            transition: none; /* 由JS逐帧控制 */
         }
 
-        .push-btn:active { transform: scale(0.98); } /* 轻微缩放反馈 */
+        .push-btn:active { transform: scale(0.98); } 
         .controller-info { font-size: 1.5rem; color: #888; margin-bottom: 30px; text-align: center; }
 
         .btn-wait { background: #1a1a1a !important; border-color: #333 !important; color: #555 !important; }
         
-        /* === 修改后：赛跑状态 (MASH) === */
+        /* === 赛跑状态 (MASH) === */
         .btn-mash { 
             border-color: #ffffff !important; 
             color: #ffffff !important; 
             background: rgba(0,0,0,0.5) !important; 
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
-            /* 移除旧的 :active 样式 */
         }
 
-        /* === 修改后：START RACE 按钮 (统一风格) === */
+        /* === 点击效果：瞬间变白，文字变黑 === */
+        .btn-mash:active {
+            background: #ffffff !important;
+            color: #000000 !important;
+            box-shadow: 0 0 50px rgba(255, 255, 255, 0.8) !important;
+        }
+        
+        /* === START RACE 按钮 (统一风格) === */
         .btn-start { 
             background: transparent !important; 
             border: 2px solid #ffffff !important; 
@@ -704,7 +726,7 @@
         let audioCtx = null;
         let lastTapTime = 0;
 
-        /* === 新增：手机端点击能量值 (0-100) === */
+        /* === 手机端点击能量值 (0-100) === */
         let mobileEnergy = 0; 
         
         let layout = { scale: 1.0, x: 0, y: 0 };
@@ -1199,16 +1221,23 @@
 
         function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
 
-        /* === 新增：手机端视觉更新循环 (用于处理能量衰减和动态效果) === */
+        /* === 手机端视觉更新循环 (用于处理能量衰减和动态效果) === */
         function updateMobileVisuals() {
-            if (mobileBtnState !== 'mash') return; // 只在赛跑时运行
-
-            // 能量衰减
-            mobileEnergy = Math.max(0, mobileEnergy - 2.5); 
-
             const btn = document.getElementById('m-btn');
             const text = document.getElementById('m-btn-text');
             const glow = document.getElementById('m-btn-glow');
+
+            /* 检测是否应该停止光效 (非 mash 状态) */
+            if (mobileBtnState !== 'mash') {
+                btn.style.boxShadow = '';
+                glow.style.opacity = 0;
+                text.style.opacity = 1;
+                mobileEnergy = 0;
+                return;
+            }
+
+            // 能量衰减
+            mobileEnergy = Math.max(0, mobileEnergy - 2.5); 
             
             // 计算动态参数 (0.0 - 1.0)
             const intensity = mobileEnergy / 100;
@@ -1218,20 +1247,50 @@
 
             // 2. 光晕层控制
             glow.style.opacity = intensity;
-            // 光晕大小从 20% 到 100%
             const scale = 0.2 + (intensity * 0.8);
             glow.style.width = `${scale * 100}%`;
             glow.style.height = `${scale * 100}%`;
             
-            // 3. 按钮外发光控制
-            // 模糊半径从 20px 到 60px，扩散半径从 0px 到 20px
-            const blur = 20 + (intensity * 40);
-            const spread = intensity * 20;
-            btn.style.boxShadow = `0 0 ${blur}px ${spread}px rgba(255, 255, 255, ${0.2 + intensity * 0.6})`;
+            // 3. 按钮外发光控制 (锐利发光)
+            const blur = 0; // 0px blur for sharp pixel look
+            const spread = 4 + (intensity * 20); // spread increases
+            btn.style.boxShadow = `0 0 ${blur}px ${spread}px rgba(255, 255, 255, ${0.4 + intensity * 0.6})`;
 
             requestAnimationFrame(updateMobileVisuals);
         }
 
+        /* === 粒子生成函数 === */
+        function spawnBtnParticles(count) {
+            const btn = document.getElementById('m-btn');
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('div');
+                p.className = 'btn-particle';
+                
+                // 随机方向
+                const angle = Math.random() * 2 * Math.PI;
+                const distance = 80 + Math.random() * 60; // 爆炸半径
+                const tx = Math.cos(angle) * distance + 'px';
+                const ty = Math.sin(angle) * distance + 'px';
+                
+                p.style.setProperty('--tx', tx);
+                p.style.setProperty('--ty', ty);
+                
+                // 必须添加到按钮的光晕容器中或按钮本身，注意 overflow
+                // 这里添加到按钮内部，但是按钮有 overflow:hidden。
+                // 为了让粒子飞出去，我们需要把粒子加到 controller 容器里，并定位到按钮中心
+                const controller = document.getElementById('m-controller');
+                
+                // 计算按钮中心相对于 controller 的位置 (简单起见，假设居中)
+                // 更好的做法是直接 absolute center
+                p.style.left = '50%';
+                p.style.top = '50%';
+                
+                controller.appendChild(p);
+                
+                // 自动清理
+                setTimeout(() => p.remove(), 400);
+            }
+        }
 
         function btnAction(e) {
             e.preventDefault(); 
@@ -1245,6 +1304,8 @@
                 playNextNote();
                 /* === 点击增加能量 === */
                 mobileEnergy = Math.min(100, mobileEnergy + 18);
+                spawnBtnParticles(8); // 生成粒子
+                
                 // 点击时的瞬间反馈 (轻微缩放)
                 const btn = document.getElementById('m-btn'); 
                 btn.style.transform = 'scale(0.96)'; setTimeout(() => { btn.style.transform = 'scale(1)'; }, 50);
