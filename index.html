@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v9.6 FULL ORCHESTRA</title>
+    <title>HORSE RUNRUN - v9.7 COMPLETE SONGS</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -244,7 +244,7 @@
             to { transform: translateY(calc(var(--game-h) + 20px)); }
         }
 
-        /* === 光线拖影特效 (Hard Edge Trail) === */
+        /* === 光线拖影特效 === */
         .trail-segment {
             position: absolute;
             height: 4px;
@@ -587,25 +587,33 @@
             'BOLT': [ [0,0,1,1,1,0], [0,1,1,1,0,0], [1,1,1,1,1,0], [0,0,0,1,1,0], [0,0,1,1,0,0], [0,0,1,0,0,0] ]
         };
 
-        /* === 歌曲库 - 更完整版本 === */
+        /* === 扩充的歌曲库 - 完整版 === */
         const SONGS = {
             'JINGLE': [
+                // 主歌 (Dashing through the snow...)
+                392.0, 329.6, 293.7, 261.6, 392.0, 392.0, 392.0,
+                392.0, 329.6, 293.7, 261.6, 440.0, 440.0,
+                440.0, 349.2, 329.6, 293.7, 493.9, 493.9,
+                392.0, 392.0, 349.2, 293.7, 329.6, 392.0,
+                392.0, 329.6, 293.7, 261.6, 392.0, 392.0, 392.0,
+                392.0, 329.6, 293.7, 261.6, 440.0, 440.0, 440.0,
+                440.0, 349.2, 329.6, 293.7, 392.0, 392.0, 392.0, 392.0, 440.0, 392.0, 349.2, 293.7, 261.6, 392.0,
+                // 副歌 (Jingle Bells...)
                 329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 392.0, 261.6, 293.7, 329.6,
                 349.2, 349.2, 349.2, 349.2, 349.2, 329.6, 329.6, 329.6, 329.6, 293.7, 293.7, 329.6, 293.7, 392.0,
                 329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 392.0, 261.6, 293.7, 329.6,
                 349.2, 349.2, 349.2, 349.2, 349.2, 329.6, 329.6, 392.0, 392.0, 349.2, 293.7, 261.6
             ],
-            'MERRY': [
-                392.0, 523.3, 523.3, 587.3, 523.3, 493.9, 440.0, 440.0,
-                440.0, 587.3, 587.3, 659.3, 587.3, 523.3, 493.9, 392.0,
-                392.0, 659.3, 659.3, 698.5, 659.3, 587.3, 523.3, 440.0,
-                392.0, 392.0, 440.0, 587.3, 493.9, 523.3
+            'RACE': [ // 威廉退尔序曲 (赛马)
+                329.6, 329.6, 329.6,  329.6, 329.6, 329.6,  329.6, 329.6, 329.6, 329.6, 329.6,
+                329.6, 329.6, 329.6,  329.6, 329.6, 329.6,  329.6, 392.0, 440.0, 392.0, 329.6,
+                329.6, 329.6, 329.6,  329.6, 329.6, 329.6,  329.6, 329.6, 329.6, 329.6, 329.6,
+                329.6, 392.0, 440.0, 392.0, 329.6, 293.7
             ],
-            'DECK': [
-                523.3, 493.9, 440.0, 392.0, 349.2, 329.6, 293.7, 261.6,
-                293.7, 329.6, 349.2, 293.7, 329.6, 293.7, 261.6, 246.9, 261.6,
-                523.3, 493.9, 440.0, 392.0, 349.2, 329.6, 293.7, 261.6,
-                293.7, 329.6, 349.2, 293.7, 329.6, 293.7, 261.6, 246.9, 261.6
+            'MARIO': [ // 8-bit 风格
+                329.6, 329.6, 0, 329.6, 0, 261.6, 329.6, 0, 392.0, 0, 0, 0, 196.0, 0, 0, 0,
+                261.6, 0, 0, 196.0, 0, 0, 164.8, 0, 0, 220.0, 0, 246.9, 0, 233.1, 220.0, 0,
+                196.0, 329.6, 392.0, 440.0, 0, 349.2, 392.0, 0, 329.6, 0, 261.6, 293.7, 246.9
             ]
         };
 
@@ -654,8 +662,6 @@
             }
         };
 
-        /* ==================== FUNCTIONS ==================== */
-
         function createPixelIcon(type, pixelSize = 2, color = '#fff') {
             const container = document.createElement('div');
             container.className = 'pixel-icon-base';
@@ -680,7 +686,12 @@
             const now = audioCtx.currentTime;
             
             const songArr = SONGS[myCurrentSongKey] || SONGS['JINGLE'];
-            const freq = songArr[noteIndex % songArr.length];
+            // 跳过 0 频率的休止符
+            let freq = songArr[noteIndex % songArr.length];
+            while (freq === 0) {
+                 noteIndex++;
+                 freq = songArr[noteIndex % songArr.length];
+            }
             noteIndex++;
 
             const style = SOUND_STYLES[myStyleKey] || SOUND_STYLES['GAMEBOY'];
@@ -708,7 +719,7 @@
             const songKeys = Object.keys(SONGS);
             myCurrentSongKey = songKeys[Math.floor(Math.random() * songKeys.length)];
             myStyleKey = STYLE_KEYS[Math.floor(Math.random() * STYLE_KEYS.length)];
-            noteIndex = 0;
+            noteIndex = 0; // 强制重置进度
         }
 
         window.onload = function() {
@@ -1109,25 +1120,27 @@
         }
 
         function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
+        function playDynamicSound(interval) {
+            if (!audioCtx) return; const now = audioCtx.currentTime; let baseFreq = 150 + (30000 / Math.max(50, interval)); if (baseFreq > 800) baseFreq = 800;
+            const gain = audioCtx.createGain(); gain.connect(audioCtx.destination); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+            if (mySoundType === 'SAWTOOTH') { const osc = audioCtx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(baseFreq, now); osc.connect(gain); osc.start(); osc.stop(now + 0.15); }
+            else if (mySoundType === 'SQUARE') { const osc = audioCtx.createOscillator(); osc.type = 'square'; osc.frequency.setValueAtTime(baseFreq, now); osc.connect(gain); osc.start(); osc.stop(now + 0.1); }
+            else if (mySoundType === 'LASER') { const osc = audioCtx.createOscillator(); osc.type = 'sine'; osc.frequency.setValueAtTime(baseFreq * 2, now); osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.5, now + 0.1); osc.connect(gain); osc.start(); osc.stop(now + 0.15); }
+            else if (mySoundType === 'FM') { const carrier = audioCtx.createOscillator(); const modulator = audioCtx.createOscillator(); const modGain = audioCtx.createGain(); modulator.frequency.value = baseFreq * 1.4; modGain.gain.value = baseFreq * 0.5; modulator.connect(modGain); modGain.connect(carrier.frequency); carrier.connect(gain); carrier.frequency.setValueAtTime(baseFreq, now); modulator.start(); carrier.start(); modulator.stop(now + 0.2); carrier.stop(now + 0.2); }
+        }
 
         function btnAction(e) {
             e.preventDefault(); const btn = document.getElementById('m-btn'); btn.style.transform = 'scale(0.95)'; setTimeout(() => { btn.style.transform = 'scale(1)'; }, 50);
-            
-            // 手动复活逻辑
-            if (mobileBtnState === 'dead') { 
-                resetMobile(); 
-                return; 
-            }
-
+            if (mobileBtnState === 'dead') { resetMobile(); return; }
             if (mobileBtnState === 'mash') { 
                 if(conn) conn.send({ type: 'tap', uuid: playerUUID }); 
                 initAudio();
-                playNextNote(); // 播放单音符
+                playNextNote(); /* 播放一个音符 */
             }
             else if (mobileBtnState === 'start') { if(conn) conn.send({ type: 'force_start' }); }
         }
 
-        /* === 处理 FACE 为文字 ? === */
+        /* === 修改后：处理 FACE 为文字 ? === */
         function triggerPonyEmoji(uuid, emojiType) {
             const pony = ponies.find(p => p.playerUUID === uuid); if (!pony) return;
             const pEl = document.getElementById(pony.id); if (!pEl) return;
@@ -1136,7 +1149,7 @@
             if (emojiType === 'FACE') {
                 container = document.createElement('div');
                 container.className = 'pop-text';
-                container.innerText = "?";
+                container.innerText = "?"; /* 修改为 ? */
                 container.style.color = pony.color;
             } else {
                 container = document.createElement('div');
