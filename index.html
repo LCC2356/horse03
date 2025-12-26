@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v9.5 STABLE</title>
+    <title>HORSE RUNRUN - v9.6 FULL ORCHESTRA</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -568,7 +568,6 @@
     </div>
 
     <script>
-        /* ==================== GLOBAL VARIABLES ==================== */
         const GAME_W = 3400;
         const GAME_H = 100;
         const PONY_SIZE = 50;
@@ -581,22 +580,48 @@
             [1,0,1,1,1,1,1,1,1,0,0], [1,0,1,1,1,1,1,1,1,0,0], [0,0,1,1,1,1,1,1,1,0,0], [0,0,1,0,1,0,1,0,1,0,0], [0,0,1,0,1,0,1,0,1,0,0], [0,0,1,0,1,0,1,0,1,0,0]
         ];
 
+        /* === 原始非对称像素画数据 === */
         const PIXEL_ART_MAPS = {
             'HEART': [ [0,1,1,0,1,1,0], [1,1,1,1,1,1,1], [1,1,1,1,1,1,1], [0,1,1,1,1,1,0], [0,0,1,1,1,0,0], [0,0,0,1,0,0,0] ],
             'POOP': [ [0,0,0,1,0,0,0], [0,0,1,1,1,0,0], [0,1,1,1,1,1,0], [1,0,1,1,1,0,1], [1,1,1,1,1,1,1] ],
             'BOLT': [ [0,0,1,1,1,0], [0,1,1,1,0,0], [1,1,1,1,1,0], [0,0,0,1,1,0], [0,0,1,1,0,0], [0,0,1,0,0,0] ]
         };
 
+        /* === 歌曲库 - 更完整版本 === */
         const SONGS = {
-            'JINGLE': [329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 392.0, 261.6, 293.7, 329.6, 349.2, 349.2, 349.2, 349.2, 349.2, 329.6, 329.6, 329.6, 329.6, 293.7, 293.7, 329.6, 293.7, 392.0],
-            'MERRY': [392.0, 523.3, 523.3, 587.3, 523.3, 493.9, 440.0, 440.0, 440.0, 587.3, 587.3, 659.3, 587.3, 523.3, 493.9, 392.0],
-            'DECK': [523.3, 493.9, 440.0, 392.0, 349.2, 329.6, 293.7, 261.6, 293.7, 329.6, 349.2, 293.7, 329.6, 293.7, 261.6, 246.9, 261.6]
+            'JINGLE': [
+                329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 392.0, 261.6, 293.7, 329.6,
+                349.2, 349.2, 349.2, 349.2, 349.2, 329.6, 329.6, 329.6, 329.6, 293.7, 293.7, 329.6, 293.7, 392.0,
+                329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 392.0, 261.6, 293.7, 329.6,
+                349.2, 349.2, 349.2, 349.2, 349.2, 329.6, 329.6, 392.0, 392.0, 349.2, 293.7, 261.6
+            ],
+            'MERRY': [
+                392.0, 523.3, 523.3, 587.3, 523.3, 493.9, 440.0, 440.0,
+                440.0, 587.3, 587.3, 659.3, 587.3, 523.3, 493.9, 392.0,
+                392.0, 659.3, 659.3, 698.5, 659.3, 587.3, 523.3, 440.0,
+                392.0, 392.0, 440.0, 587.3, 493.9, 523.3
+            ],
+            'DECK': [
+                523.3, 493.9, 440.0, 392.0, 349.2, 329.6, 293.7, 261.6,
+                293.7, 329.6, 349.2, 293.7, 329.6, 293.7, 261.6, 246.9, 261.6,
+                523.3, 493.9, 440.0, 392.0, 349.2, 329.6, 293.7, 261.6,
+                293.7, 329.6, 349.2, 293.7, 329.6, 293.7, 261.6, 246.9, 261.6
+            ]
         };
-        const SYNTH_TYPES = ['square', 'triangle', 'sawtooth'];
+
+        /* === 音色风格定义 === */
+        const SOUND_STYLES = {
+            'GAMEBOY': { type: 'square', decay: 0.1, attack: 0.01 },
+            'FLUTE': { type: 'sine', decay: 0.3, attack: 0.05 },
+            'LASER': { type: 'sawtooth', decay: 0.15, attack: 0.01 },
+            'CRYSTAL': { type: 'triangle', decay: 0.5, attack: 0.01 },
+            'TUBA': { type: 'square', decay: 0.2, attack: 0.1 }
+        };
+        const STYLE_KEYS = Object.keys(SOUND_STYLES);
 
         let noteIndex = 0;
-        let myCurrentSong = 'JINGLE';
-        let mySynthType = 'triangle';
+        let myCurrentSongKey = 'JINGLE';
+        let myStyleKey = 'GAMEBOY';
 
         let ponies = [];
         let ponyQueue = [];
@@ -649,33 +674,40 @@
             return container;
         }
 
+        /* === 播放单个音符 (支持风格) === */
         function playNextNote() {
             if (!audioCtx) return;
             const now = audioCtx.currentTime;
             
-            const songArr = SONGS[myCurrentSong] || SONGS['JINGLE'];
+            const songArr = SONGS[myCurrentSongKey] || SONGS['JINGLE'];
             const freq = songArr[noteIndex % songArr.length];
             noteIndex++;
 
+            const style = SOUND_STYLES[myStyleKey] || SOUND_STYLES['GAMEBOY'];
+
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.type = mySynthType;
+            
+            osc.type = style.type;
             osc.frequency.setValueAtTime(freq, now); 
             
             gain.connect(audioCtx.destination);
             gain.gain.setValueAtTime(0, now);
-            gain.gain.linearRampToValueAtTime(0.3, now + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2); 
+            // Attack
+            gain.gain.linearRampToValueAtTime(0.3, now + style.attack);
+            // Decay
+            gain.gain.exponentialRampToValueAtTime(0.01, now + style.attack + style.decay); 
 
             osc.connect(gain);
             osc.start(now);
-            osc.stop(now + 0.25);
+            osc.stop(now + style.attack + style.decay + 0.1);
         }
 
+        /* === 随机分配歌曲和乐器 === */
         function randomizeMusic() {
             const songKeys = Object.keys(SONGS);
-            myCurrentSong = songKeys[Math.floor(Math.random() * songKeys.length)];
-            mySynthType = SYNTH_TYPES[Math.floor(Math.random() * SYNTH_TYPES.length)];
+            myCurrentSongKey = songKeys[Math.floor(Math.random() * songKeys.length)];
+            myStyleKey = STYLE_KEYS[Math.floor(Math.random() * STYLE_KEYS.length)];
             noteIndex = 0;
         }
 
@@ -906,15 +938,18 @@
             }
         }
 
+        /* === 光线拖影特效 (Hard Edge Trail) === */
         function spawnTrail(p) {
             const fxLayer = document.getElementById('layer-fx');
             const count = Math.random() < 0.5 ? 1 : 2; 
             for (let i = 0; i < count; i++) {
                 const el = document.createElement('div');
                 el.className = 'trail-segment';
+                /* 位置偏移到更后方 (-20) */
                 el.style.left = (p.x - 20 + Math.random() * 10) + 'px';
                 el.style.top = (p.y + 15 + Math.random() * 15) + 'px';
                 el.style.background = p.color;
+                /* 0px 的阴影半径 (Hard Edge) */
                 el.style.boxShadow = `0 0 0px ${p.color}`;
                 fxLayer.appendChild(el);
                 setTimeout(() => el.remove(), 400);
@@ -950,6 +985,7 @@
                     } else {
                         p.x += p.speed * (0.9 + Math.random() * 0.2); p.isWalkAnimating = true;
                     }
+                    /* 当热度大于 60 时触发 */
                     if (p.turboCharge > 60 && Math.random() < 0.4) spawnTrail(p);
                     if (p.turboCharge > 30) p.isTurbo = true;
                     p.facing = 1;
@@ -1047,7 +1083,7 @@
                             if (data.mode === 'wait') { btn.classList.add('btn-wait'); btn.innerText = data.label; info.innerText = "GET READY..."; }
                             else if (data.mode === 'mash') { 
                                 btn.classList.add('btn-mash'); btn.innerText = data.label; info.innerText = "TAP FAST!!!"; 
-                                noteIndex = 0; 
+                                randomizeMusic(); // 确保每局开始前都随机一次
                             }
                             else if (data.mode === 'start') { btn.classList.add('btn-start'); btn.innerText = data.label; info.innerText = "RACE FINISHED"; }
                         } else if (data.type === 'eliminated' && data.uuid === playerUUID) {
@@ -1076,16 +1112,22 @@
 
         function btnAction(e) {
             e.preventDefault(); const btn = document.getElementById('m-btn'); btn.style.transform = 'scale(0.95)'; setTimeout(() => { btn.style.transform = 'scale(1)'; }, 50);
-            if (mobileBtnState === 'dead') { resetMobile(); return; }
+            
+            // 手动复活逻辑
+            if (mobileBtnState === 'dead') { 
+                resetMobile(); 
+                return; 
+            }
+
             if (mobileBtnState === 'mash') { 
                 if(conn) conn.send({ type: 'tap', uuid: playerUUID }); 
                 initAudio();
-                playNextNote();
+                playNextNote(); // 播放单音符
             }
             else if (mobileBtnState === 'start') { if(conn) conn.send({ type: 'force_start' }); }
         }
 
-        /* === 修改后：处理 FACE 为文字 ? === */
+        /* === 处理 FACE 为文字 ? === */
         function triggerPonyEmoji(uuid, emojiType) {
             const pony = ponies.find(p => p.playerUUID === uuid); if (!pony) return;
             const pEl = document.getElementById(pony.id); if (!pEl) return;
