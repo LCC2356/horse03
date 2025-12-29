@@ -56,12 +56,12 @@
             box-shadow: none;
             overflow: hidden;
             flex-shrink: 0;
-            transition: background-color 0.05s; /* 极速响应闪烁 */
+            transition: background-color 0.1s;
         }
 
         /* === 红绿灯模式背景样式 === */
         .bg-green { background: #002200 !important; box-shadow: inset 0 0 50px #00ff00 !important; border-color: #00ff00 !important; }
-        /* 删除黄灯样式 */
+        .bg-yellow { background: #332200 !important; box-shadow: inset 0 0 50px #ffb300 !important; border-color: #ffb300 !important; }
         .bg-red { background: #440000 !important; box-shadow: inset 0 0 100px #ff0000 !important; border-color: #ff0000 !important; }
 
         #track-wrapper {
@@ -290,7 +290,7 @@
         }
 
         .emoji-bar {
-            display: none !important; /* 修改：隐藏表情栏 */
+            display: none !important; /* 隐藏表情栏 */
             gap: 15px; margin-top: 40px; pointer-events: auto; z-index: 22001; justify-content: center;
         }
         .emoji-btn {
@@ -471,9 +471,8 @@
                 <span class="control-label">GAME MODE</span>
                 <select id="mode-select">
                     <option value="RANDOM">RANDOM</option>
-                    <option value="CLASSIC">CLASSIC</option>
-                    <option value="HURDLE">JUMP</option>
-                    <option value="RED_LIGHT">FREEZE</option> </select>
+                    <option value="CLASSIC">RUN</option> <option value="HURDLE">JUMP</option>
+                    <option value="RED_LIGHT">STOP?</option> </select>
             </div>
 
             <button class="btn" onclick="spawnTestPony()">+ BOT</button>
@@ -520,9 +519,8 @@
             <div id="m-mode-wrapper">
                 <select id="m-mode-select">
                     <option value="RANDOM">RANDOM</option>
-                    <option value="CLASSIC">CLASSIC</option>
-                    <option value="HURDLE">JUMP</option>
-                    <option value="RED_LIGHT">FREEZE</option> </select>
+                    <option value="CLASSIC">RUN</option> <option value="HURDLE">JUMP</option>
+                    <option value="RED_LIGHT">STOP?</option> </select>
             </div>
 
             <div id="m-btn" class="push-btn btn-wait">WAIT</div>
@@ -602,8 +600,7 @@
         let currentBarText = '';
         let lastBroadcastText = '';
 
-        let touchStartY = 0;
-        let isSwiping = false;
+        let lastShakeTime = 0; // 摇一摇防抖
 
         const PEER_CONFIG = {
             debug: 2,
@@ -651,13 +648,25 @@
                 gain.gain.setValueAtTime(0.3, now);
                 gain.gain.linearRampToValueAtTime(0, now + 0.3);
                 osc.start(now); osc.stop(now + 0.3);
-            } else if (type === 'TICK') {
-                // 闪烁时的急促倒计时音
+            } else if (type === 'YELLOW') {
+                // 恢复黄灯音效
                 osc.type = 'square';
-                osc.frequency.setValueAtTime(800, now);
-                gain.gain.setValueAtTime(0.1, now);
-                gain.gain.linearRampToValueAtTime(0, now + 0.05);
-                osc.start(now); osc.stop(now + 0.05);
+                osc.frequency.setValueAtTime(400, now);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.1);
+                
+                osc.start(now); osc.stop(now + 0.1);
+                
+                const osc2 = audioCtx.createOscillator();
+                const gain2 = audioCtx.createGain();
+                gain2.connect(audioCtx.destination);
+                osc2.connect(gain2);
+                osc2.type = 'square';
+                osc2.frequency.setValueAtTime(400, now + 0.15);
+                gain2.gain.setValueAtTime(0.2, now + 0.15);
+                gain2.gain.linearRampToValueAtTime(0, now + 0.25);
+                osc2.start(now + 0.15); osc2.stop(now + 0.25);
+
             } else if (type === 'RED') {
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(150, now);
@@ -903,8 +912,12 @@
             });
             document.getElementById('hud').style.display = 'none'; document.getElementById('queue-text').style.display = 'none';
             setBarVisibility(true); 
-            // 修改：显示 FREEZE 而不是 DANGER
-            let modeName = currentGameMode === 'RED_LIGHT' ? "FREEZE" : (currentGameMode === 'HURDLE' ? "JUMP" : "CLASSIC");
+            // 修改：显示 FREEZE 而不是 RED LIGHT, RUN 而不是 CLASSIC
+            let modeName = "CLASSIC";
+            if (currentGameMode === 'RED_LIGHT') modeName = "STOP?";
+            else if (currentGameMode === 'HURDLE') modeName = "JUMP";
+            else if (currentGameMode === 'CLASSIC') modeName = "RUN";
+
             updateBarText(modeName, "#ffb300"); 
             broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
             
@@ -923,13 +936,13 @@
             // 初始化特定模式逻辑
             if (currentGameMode === 'HURDLE') {
                 statusText = "STATUS: JUMP";
-                mobileInfo = "TAP: RUN / SWIPE: JUMP";
+                mobileInfo = "TAP: RUN / SHAKE: JUMP"; // 修改：摇一摇
                 obstacles = [];
                 for(let ox = 500; ox < FINISH_X - 200; ox += (400 + Math.random() * 300)) {
                     obstacles.push({ x: ox, width: 10, passed: false });
                 }
             } else if (currentGameMode === 'RED_LIGHT') {
-                statusText = "STATUS: FREEZE!"; // 修改：显示 FREEZE
+                statusText = "STATUS: STOP?"; // 修改：显示 STOP?
                 mobileInfo = "WATCH!"; 
                 obstacles = []; 
                 lightState = 'GREEN';
@@ -938,7 +951,8 @@
                 document.getElementById('game-screen').classList.add('bg-green');
                 playSignalSound('GREEN');
             } else {
-                // Classic
+                // Classic -> RUN
+                statusText = "STATUS: RUN";
                 obstacles = [];
             }
 
@@ -985,11 +999,20 @@
                     redLightTimer--;
                     if (redLightTimer <= 0) {
                         const screen = document.getElementById('game-screen');
+                        screen.className = ''; // 重置 class
 
                         if (lightState === 'GREEN') {
-                            // 绿 -> 红 (直接转换)
+                            // 绿 -> 黄 (恢复)
+                            lightState = 'YELLOW';
+                            redLightTimer = 30; // 黄灯固定0.5s (30帧)
+                            screen.classList.add('bg-yellow');
+                            updateBarText("STOP?", "#ffb300"); // 黄灯提示：STOP?
+                            setBarVisibility(true);
+                            playSignalSound('YELLOW');
+                        
+                        } else if (lightState === 'YELLOW') {
+                            // 黄 -> 红
                             lightState = 'RED';
-                            screen.className = ''; // 清除闪烁
                             redLightTimer = 60 + Math.random() * 90; // 红灯持续 1-2.5秒
                             screen.classList.add('bg-red');
                             updateBarText("STOP!", "#ff5252"); setBarVisibility(true);
@@ -1000,27 +1023,11 @@
                             lightState = 'GREEN';
                             // 绿灯时间缩短20%
                             redLightTimer = (100 + Math.random() * 150) * 0.8; 
-                            screen.className = ''; 
                             screen.classList.add('bg-green');
                             updateBarText("GO!", "#69f0ae"); 
                             playSignalSound('GREEN');
-                            // 稍微延迟消失文字
+                            // 稍微延迟消失文字，以免遮挡
                             setTimeout(() => { if (lightState === 'GREEN') setBarVisibility(false); }, 500);
-                        }
-                    } else {
-                        // === 绿灯闪烁逻辑 ===
-                        // 如果是绿灯，且时间少于90帧 (1.5秒)，开始闪烁
-                        if (lightState === 'GREEN' && redLightTimer < 90) {
-                            // 每5帧切换一次背景
-                            if (redLightTimer % 10 === 0) {
-                                const screen = document.getElementById('game-screen');
-                                if (screen.classList.contains('bg-green')) {
-                                    screen.classList.remove('bg-green');
-                                } else {
-                                    screen.classList.add('bg-green');
-                                }
-                                playSignalSound('TICK'); // 播放倒计时音效
-                            }
                         }
                     }
                 }
@@ -1331,6 +1338,24 @@
             } catch(e) { console.error(e); }
         }
 
+        /* === 手机端：摇一摇监测函数 === */
+        function handleMotion(event) {
+            const acc = event.acceleration; // 使用不带重力的加速度
+            if (!acc) return;
+            
+            // 计算合加速度
+            const magnitude = Math.sqrt(acc.x*acc.x + acc.y*acc.y + acc.z*acc.z);
+            
+            // 阈值设置为 15 m/s^2 (大约1.5G)
+            if (magnitude > 15) {
+                const now = Date.now();
+                if (now - lastShakeTime > 500) { // 500ms 冷却
+                    lastShakeTime = now;
+                    if(conn) conn.send({ type: 'jump', uuid: playerUUID }); 
+                }
+            }
+        }
+
         /* === 手机端：初始化手势监听 === */
         const mBtn = document.getElementById('m-btn');
         mBtn.addEventListener('touchstart', (e) => {
@@ -1346,8 +1371,6 @@
 
             e.preventDefault(); 
             // 立即触发跑步 (TAP)
-            touchStartY = e.touches[0].clientY;
-            isSwiping = false;
             
             // 视觉反馈
             mBtn.style.transform = 'scale(0.95)'; 
@@ -1357,23 +1380,28 @@
             initAudio(); playNextNote(); 
         }, {passive: false});
 
-        mBtn.addEventListener('touchmove', (e) => {
-            if (mobileBtnState !== 'mash') return;
-            e.preventDefault(); 
-            const currentY = e.touches[0].clientY;
-            // 如果向上滑动超过 50px，且还没触发过这次滑动的跳跃
-            if (!isSwiping && touchStartY - currentY > 50) {
-                isSwiping = true;
-                if(conn) conn.send({ type: 'jump', uuid: playerUUID }); 
-            }
-        }, {passive: false});
-
         function sendMobile() {
             if(!conn) return alert("Not Connected!");
             const nameInput = document.getElementById('m-name'); let name = nameInput.value.trim().replace(/[^a-zA-Z0-9]/g, ''); if (!name) name = "PLAYER"; name = name.toUpperCase();
             let hasPixels = false; for(let r=0; r<11; r++) { for(let c=0; c<11; c++) { if (mobileGrid[r][c] === 1) { hasPixels = true; break; } } if(hasPixels) break; }
             if (!hasPixels) { alert("CANVAS IS EMPTY"); return; }
+            
             initAudio(); randomizeMusic();
+
+            // === 请求传感器权限 (iOS 13+) ===
+            if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                DeviceMotionEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            window.addEventListener('devicemotion', handleMotion);
+                        }
+                    })
+                    .catch(console.error);
+            } else {
+                // 非iOS 13+ 设备直接监听
+                window.addEventListener('devicemotion', handleMotion);
+            }
+
             conn.send({ type: 'spawn', payload: { name: name, pixels: mobileGrid, color: selectedColor, uuid: playerUUID } });
             document.getElementById('m-editor-ui').style.display = 'none'; document.getElementById('m-controller').style.display = 'flex';
         }
