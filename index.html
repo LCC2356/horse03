@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - HURDLE EDITION</title>
+    <title>HORSE RUNRUN - GESTURE EDITION</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -64,6 +64,7 @@
             height: var(--game-h);
             box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
             flex-shrink: 0;
+            position: relative;
         }
 
         #side-qr-box {
@@ -224,7 +225,8 @@
         }
         .grass { position: absolute; width: 6px; height: 6px; background: #69f0ae; box-shadow: 0 0 4px #69f0ae; }
         
-        /* === 新增：障碍物样式 === */
+        /* === 修改：障碍物位置 === */
+        /* 要求：在最下方。GAME_H=100px。Obstacle=30px。Bottom:5px */
         .obstacle {
             position: absolute;
             width: 10px; height: 30px; 
@@ -232,7 +234,7 @@
             border: 2px solid #fff;
             box-shadow: 0 0 10px #ff5252;
             z-index: 5;
-            transform: translateY(-50%);
+            bottom: 5px; /* 修改：固定在最下方 */
         }
 
         .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
@@ -457,33 +459,20 @@
             display: none; flex-direction: column; align-items: center; justify-content: center;
         }
 
-        /* 新增：按钮容器，让跑和跳并排 */
-        .btn-container {
-            display: flex; gap: 20px; align-items: center; justify-content: center;
-            width: 100%; max-width: 500px;
-        }
-
         /* 修改：通用按钮样式 */
         .push-btn {
-            width: 140px; height: 140px; 
-            border-radius: 20px; /* 方形圆角 */
-            background: #222; border: 4px solid #444;
-            color: #888; font-size: 2.5rem; font-family: 'VT323', monospace;
+            width: 250px; height: 250px; 
+            border-radius: 50%;
+            background: #222; border: 8px solid #444;
+            color: #888; font-size: 4rem; font-family: 'VT323', monospace;
             display: flex; justify-content: center; align-items: center;
-            box-shadow: 0 0 30px rgba(0,0,0, 0.4);
+            box-shadow: 0 0 50px rgba(0,0,0, 0.4);
             transition: all 0.1s; user-select: none;
             cursor: pointer; -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
+            touch-action: none; /* 关键：禁止浏览器默认手势 */
+            text-align: center; line-height: 1; padding: 20px;
         }
-        .push-btn:active { transform: scale(0.9); }
-
-        /* JUMP 按钮特有样式 */
-        .btn-jump {
-            border-color: #ffb300 !important;
-            color: #ffb300 !important;
-            display: none; /* 默认隐藏，只有比赛时显示 */
-        }
-        .btn-jump:active { background: #ffb300 !important; color: #000 !important; }
+        .push-btn:active { transform: scale(0.95); }
 
         .controller-info { font-size: 1.5rem; color: #888; margin-bottom: 30px; text-align: center; }
 
@@ -491,14 +480,8 @@
         
         /* RUN 按钮在比赛时的样式 */
         .btn-mash { 
-            width: 160px !important; height: 160px !important; 
             background: #fff !important; border-color: #ccc !important; color: #000 !important; 
-            box-shadow: 0 0 40px rgba(255, 255, 255, 0.4) !important; 
-        }
-
-        /* 开始/结束 状态的大按钮 (占满一行) */
-        .btn-full {
-            width: 250px !important; height: 250px !important; border-radius: 50% !important;
+            box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; 
         }
         
         /* 白色按钮 (START RACE / RESTART) */
@@ -612,10 +595,7 @@
         <div id="m-controller">
             <div id="m-info" class="controller-info">GET READY</div>
             
-            <div class="btn-container">
-                <div id="m-btn-jump" class="push-btn btn-jump" ontouchstart="sendAction('jump', event)" onmousedown="sendAction('jump', event)">JUMP</div>
-                <div id="m-btn" class="push-btn btn-full btn-wait" ontouchstart="sendAction('tap', event)" onmousedown="sendAction('tap', event)">WAIT</div>
-            </div>
+            <div id="m-btn" class="push-btn btn-wait">WAIT</div>
             
             <div class="emoji-bar">
                 <div class="emoji-btn" onclick="sendEmoji('HEART')" data-icon="HEART"></div>
@@ -646,7 +626,6 @@
             'BOLT': [ [0,0,1,1,1,0], [0,1,1,1,0,0], [1,1,1,1,1,0], [0,0,0,1,1,0], [0,0,1,1,0,0], [0,0,1,0,0,0] ]
         };
 
-        /* === 歌曲库 - 修改后：直接从耳熟能详的副歌开始 === */
         const SONGS = {
             'JINGLE': [
                 329.6, 329.6, 329.6,  
@@ -668,7 +647,6 @@
             ]
         };
 
-        /* === 更多音效风格 (随机分配) === */
         const SOUND_STYLES = {
             'GAMEBOY': { type: 'square', decay: 0.1, attack: 0.01 },
             'FLUTE': { type: 'sine', decay: 0.3, attack: 0.05 },
@@ -687,7 +665,7 @@
         let ponies = [];
         let ponyQueue = [];
         let grass = [];
-        let obstacles = []; // 障碍物
+        let obstacles = []; 
         let gameState = 'ROAMING';
         let cooldownTimer = 0;
         let waitTimer = 0;
@@ -705,6 +683,10 @@
         let layout = { scale: 1.0, x: 0, y: 0 };
         let currentBarText = '';
         let lastBroadcastText = '';
+
+        /* === 触控逻辑变量 === */
+        let touchStartY = 0;
+        let isSwiping = false;
 
         const PEER_CONFIG = {
             debug: 2,
@@ -736,11 +718,9 @@
             return container;
         }
 
-        /* === 播放单个音符 (支持风格) === */
         function playNextNote() {
             if (!audioCtx) return;
             const now = audioCtx.currentTime;
-            
             const songArr = SONGS[myCurrentSongKey] || SONGS['JINGLE'];
             let freq = songArr[noteIndex % songArr.length];
             while (freq === 0) {
@@ -748,26 +728,20 @@
                  freq = songArr[noteIndex % songArr.length];
             }
             noteIndex++;
-
             const style = SOUND_STYLES[myStyleKey] || SOUND_STYLES['GAMEBOY'];
-
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            
             osc.type = style.type;
             osc.frequency.setValueAtTime(freq, now); 
-            
             gain.connect(audioCtx.destination);
             gain.gain.setValueAtTime(0, now);
             gain.gain.linearRampToValueAtTime(0.3, now + style.attack);
             gain.gain.exponentialRampToValueAtTime(0.01, now + style.attack + style.decay); 
-
             osc.connect(gain);
             osc.start(now);
             osc.stop(now + style.attack + style.decay + 0.1);
         }
 
-        /* === 随机分配歌曲和乐器 === */
         function randomizeMusic() {
             const songKeys = Object.keys(SONGS);
             myCurrentSongKey = songKeys[Math.floor(Math.random() * songKeys.length)];
@@ -914,7 +888,6 @@
         function handleJump(uuid) {
             if (!uuid) return;
             const pony = ponies.find(p => p.playerUUID === uuid);
-            // 只有在没晕、没跳的时候才能跳
             if (pony && pony.state === 'racing' && !pony.isStunned && !pony.isJumping) {
                 pony.isJumping = true;
                 pony.vz = 12; // 起跳初始速度
@@ -931,12 +904,13 @@
                 hasCrown: false, isStreak: false, crownCount: 0, timer: 0, frame: 0, finishedWalking: false,
                 targetX: null, targetY: null, isWalkAnimating: false, manualAnimTimer: 0, roamSpeed: 0.5,
                 isTurbo: false, turboCharge: 0,
-                /* === 新增：跳跃与状态属性 === */
-                z: 0,           // 高度
-                vz: 0,          // 垂直速度
+                /* === 跳跃与状态属性 === */
+                z: 0,           
+                vz: 0,          
                 isJumping: false,
-                isStunned: false, // 是否被撞晕
-                stunTimer: 0
+                isStunned: false, 
+                stunTimer: 0,
+                invincibleTimer: 0 // 无敌时间计数器
             };
             if (gameState === 'RACING' || gameState === 'COOLDOWN' || gameState === 'WAITING_TO_START') {
                 ponyQueue.push(newPony); updateHUD();
@@ -952,7 +926,7 @@
                 p.x = 20; p.y = 30 + Math.random() * (GAME_H - PONY_SIZE - 30); p.targetX = null; p.targetY = null;
                 p.facing = 1; p.state = 'ready'; p.manualSpeed = 0; p.tapCount = 0;
                 p.isWalkAnimating = false; p.manualAnimTimer = 0; p.isTurbo = false; p.turboCharge = 0;
-                p.z = 0; p.vz = 0; p.isStunned = false; p.stunTimer = 0;
+                p.z = 0; p.vz = 0; p.isStunned = false; p.stunTimer = 0; p.invincibleTimer = 0;
             });
             document.getElementById('hud').style.display = 'none'; document.getElementById('queue-text').style.display = 'none';
             setBarVisibility(true); updateBarText("READY", "#ffffff"); broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
@@ -967,7 +941,7 @@
             textItems.forEach((item, index) => { item.style.animation = `text-vanish 0.05s linear forwards ${delay = 0.02 + (index * 0.06)}s`; });
             setTimeout(() => { if (gameState === 'RACING') { setBarVisibility(false); vfdOverlay.classList.remove('vfd-active'); } }, 1500);
             
-            /* === 新增：生成障碍物 === */
+            /* === 生成障碍物 === */
             obstacles = [];
             // 每隔 400-700px 生成一排障碍物
             for(let ox = 500; ox < FINISH_X - 200; ox += (400 + Math.random() * 300)) {
@@ -978,11 +952,11 @@
                 p.speed = 3.0 + Math.random() * 2.5; 
                 p.state = 'racing'; 
                 p.finishedWalking = false; 
-                p.z = 0; p.vz = 0; p.isStunned = false; p.stunTimer = 0;
+                p.z = 0; p.vz = 0; p.isStunned = false; p.stunTimer = 0; p.invincibleTimer = 0;
                 if(p.isManual) p.lastTapTime = Date.now(); 
             });
             grass = []; gameState = 'RACING'; 
-            broadcast({ type: 'sync_ui', label: 'RUN!', mode: 'mash' });
+            broadcast({ type: 'sync_ui', label: 'TAP TO RUN\nSWIPE UP JUMP', mode: 'mash' });
         }
 
         function gameLoop() { updateGameLogic(); draw(); requestAnimationFrame(gameLoop); }
@@ -1071,6 +1045,10 @@
             ponies.forEach(p => {
                 p.frame++; p.isWalkAnimating = false; p.isTurbo = false;
                 if (p.manualAnimTimer > 0) p.manualAnimTimer--; p.turboCharge = Math.max(0, p.turboCharge - 1);
+                
+                // 处理无敌时间倒计时
+                if (p.invincibleTimer > 0) p.invincibleTimer--;
+
                 if (p.state === 'ready') { p.x = 20; return; }
                 if (p.state === 'racing') {
                     // === 1. 眩晕逻辑 ===
@@ -1089,12 +1067,11 @@
                             p.manualSpeed *= 0.95; if (p.manualSpeed < 0.1) p.manualSpeed = 0;
                             p.x += p.manualSpeed; p.isWalkAnimating = p.manualSpeed > 0.1;
                         } else {
-                            // AI 逻辑：遇到障碍物自动跳
+                            // AI 逻辑
                             p.x += p.speed * (0.9 + Math.random() * 0.2); p.isWalkAnimating = true;
-                            // AI 简单的障碍物探测
                             if (!p.isJumping) {
                                 const nearestObs = obstacles.find(o => o.x > p.x && o.x < p.x + 150); 
-                                if (nearestObs && Math.random() < 0.15) { // AI 有几率跳跃
+                                if (nearestObs && Math.random() < 0.15) { 
                                     p.isJumping = true; p.vz = 12; 
                                 }
                             }
@@ -1109,25 +1086,26 @@
                             }
                         }
 
-                        // === 4. 碰撞检测 ===
-                        // 只有在地面 (z < 10) 且碰到障碍物 x 坐标时才算撞击
-                        obstacles.forEach(obs => {
-                            if (p.x + 40 > obs.x && p.x < obs.x + obs.width) {
-                                if (p.z < 20) { // 如果高度不够（没跳起来）
-                                    p.isStunned = true;
-                                    p.stunTimer = 60; // 眩晕 60 帧 (约1秒)
-                                    p.manualSpeed = 0; // 速度清零
-                                    p.x = obs.x - 10; // 被挡在障碍物前
-                                    triggerPonyEmoji(p.playerUUID, 'POOP'); // 自动发个便便表情
+                        // === 4. 碰撞检测 (带无敌时间) ===
+                        if (p.invincibleTimer <= 0) {
+                            obstacles.forEach(obs => {
+                                if (p.x + 40 > obs.x && p.x < obs.x + obs.width) {
+                                    if (p.z < 20) { 
+                                        p.isStunned = true;
+                                        p.stunTimer = 30; // 修改：眩晕0.5秒 (约30帧)
+                                        p.invincibleTimer = 90; // 修改：无敌1.5秒 (约90帧)
+                                        p.manualSpeed = 0; 
+                                        p.x = obs.x - 10; 
+                                        triggerPonyEmoji(p.playerUUID, 'POOP'); 
+                                    }
                                 }
-                            }
-                        });
+                            });
+                        }
 
                         // === 特效 ===
                         if (p.turboCharge > 60 && Math.random() < 0.4) spawnTrail(p);
                         if (p.turboCharge > 30) p.isTurbo = true;
                         p.facing = 1;
-                        /* === 修改后：检测终点，只触发一次 === */
                         if (p.x >= FINISH_X) {
                             if (p.state === 'racing') {
                                 p.state = 'finished';
@@ -1191,7 +1169,7 @@
             const grassL = document.getElementById('layer-grass'); 
             let htmlContent = grass.map(g => `<div class="grass" style="left:${g.x}px; top:${g.y}px"></div>`).join('');
             if (gameState === 'RACING' || gameState === 'COOLDOWN') {
-                htmlContent += obstacles.map(o => `<div class="obstacle" style="left:${o.x}px; top:50%; height:40px;"></div>`).join('');
+                htmlContent += obstacles.map(o => `<div class="obstacle" style="left:${o.x}px; height:30px;"></div>`).join('');
             }
             grassL.innerHTML = htmlContent;
 
@@ -1209,9 +1187,15 @@
                 el.style.transform = `translate(${p.x}px, ${p.y - p.z}px) scale(1.1)`; 
                 el.style.zIndex = Math.floor(p.y);
                 
-                // 眩晕滤镜
-                if (p.isStunned) el.style.filter = "grayscale(100%) opacity(0.5)";
-                else el.style.filter = "none";
+                // 眩晕与无敌效果
+                if (p.isStunned) {
+                    el.style.filter = "grayscale(100%) opacity(0.5)";
+                } else if (p.invincibleTimer > 0) {
+                    // 无敌闪烁：每5帧切换一次透明度
+                    el.style.filter = (Math.floor(p.invincibleTimer / 5) % 2 === 0) ? "opacity(0.3)" : "opacity(0.8)";
+                } else {
+                    el.style.filter = "none";
+                }
 
                 const crownC = el.querySelector('.crown-container'); if (p.hasCrown) { crownC.style.display = 'flex'; } else { crownC.style.display = 'none'; }
                 el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none'; el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
@@ -1242,27 +1226,20 @@
                         if (data.type === 'reconnect_success') { document.getElementById('m-editor-ui').style.display = 'none'; document.getElementById('m-controller').style.display = 'flex'; }
                         else if (data.type === 'sync_ui') {
                             const btn = document.getElementById('m-btn'); 
-                            const jumpBtn = document.getElementById('m-btn-jump'); 
                             const info = document.getElementById('m-info'); 
                             
                             mobileBtnState = data.mode; 
-                            btn.onclick = null;
                             
-                            // 重置样式
-                            btn.className = 'push-btn btn-full'; 
-                            jumpBtn.style.display = 'none'; 
+                            // 重置
+                            btn.className = 'push-btn'; 
 
                             if (data.mode === 'wait') { 
                                 btn.classList.add('btn-wait'); btn.innerText = data.label; info.innerText = "GET READY..."; 
                             }
                             else if (data.mode === 'mash') { 
-                                // 比赛模式：显示跳跃按钮，调整 RUN 按钮样式
-                                btn.classList.remove('btn-full'); 
                                 btn.classList.add('btn-mash'); 
                                 btn.innerText = "RUN"; 
-                                
-                                jumpBtn.style.display = 'flex'; 
-                                info.innerText = "RUN & JUMP!"; 
+                                info.innerText = "RUN (TAP) / JUMP (SWIPE UP)"; 
                                 randomizeMusic();
                             }
                             else if (data.mode === 'start') { 
@@ -1286,6 +1263,38 @@
             } catch(e) { console.error(e); }
         }
 
+        /* === 手机端：初始化手势监听 === */
+        const mBtn = document.getElementById('m-btn');
+        mBtn.addEventListener('touchstart', (e) => {
+            if (mobileBtnState === 'dead') { resetMobile(); return; }
+            if (mobileBtnState === 'finished') return;
+            if (mobileBtnState === 'start') { if(conn) conn.send({ type: 'force_start' }); return; }
+            if (mobileBtnState !== 'mash') return;
+
+            e.preventDefault(); 
+            // 立即触发跑步 (TAP)
+            touchStartY = e.touches[0].clientY;
+            isSwiping = false;
+            
+            // 视觉反馈
+            mBtn.style.transform = 'scale(0.95)'; 
+            setTimeout(() => { mBtn.style.transform = 'scale(1)'; }, 50);
+
+            if(conn) conn.send({ type: 'tap', uuid: playerUUID }); 
+            initAudio(); playNextNote(); 
+        }, {passive: false});
+
+        mBtn.addEventListener('touchmove', (e) => {
+            if (mobileBtnState !== 'mash') return;
+            e.preventDefault(); 
+            const currentY = e.touches[0].clientY;
+            // 如果向上滑动超过 50px，且还没触发过这次滑动的跳跃
+            if (!isSwiping && touchStartY - currentY > 50) {
+                isSwiping = true;
+                if(conn) conn.send({ type: 'jump', uuid: playerUUID }); 
+            }
+        }, {passive: false});
+
         function sendMobile() {
             if(!conn) return alert("Not Connected!");
             const nameInput = document.getElementById('m-name'); let name = nameInput.value.trim().replace(/[^a-zA-Z0-9]/g, ''); if (!name) name = "PLAYER"; name = name.toUpperCase();
@@ -1297,27 +1306,6 @@
         }
 
         function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
-
-        /* === 替换原来的 btnAction === */
-        function sendAction(actionType, e) {
-            e.preventDefault(); 
-            // 视觉反馈
-            const target = e.currentTarget;
-            target.style.transform = 'scale(0.9)'; setTimeout(() => { target.style.transform = 'scale(1)'; }, 50);
-
-            if (mobileBtnState === 'dead') { resetMobile(); return; }
-            if (mobileBtnState === 'finished') return;
-
-            if (mobileBtnState === 'mash') { 
-                if (actionType === 'jump') {
-                    if(conn) conn.send({ type: 'jump', uuid: playerUUID }); 
-                } else {
-                    if(conn) conn.send({ type: 'tap', uuid: playerUUID }); 
-                    initAudio(); playNextNote(); 
-                }
-            }
-            else if (mobileBtnState === 'start') { if(conn) conn.send({ type: 'force_start' }); }
-        }
 
         /* === 修改后：处理 FACE 为文字 ? === */
         function triggerPonyEmoji(uuid, emojiType) {
