@@ -3,6 +3,1527 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HORSE RUNRUN - v14 PARTY PACK</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #111;
+            --primary: #ffffff;
+            --panel: #222222;
+            --border: #444444;
+            --game-w: 3400px;
+            --game-h: 100px;
+            --accent: #40e0d0;
+        }
+
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: #0a0a0a;
+            font-family: 'VT323', monospace;
+            color: var(--primary);
+            height: 100vh; width: 100vw;
+            overflow: hidden;
+            display: flex; flex-direction: column;
+            position: relative;
+        }
+
+        .hidden { display: none !important; }
+
+        #desktop-view {
+            position: absolute; inset: 0;
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #game-container {
+            position: absolute;
+            left: 50%; top: 50%;
+            width: 0; height: 0;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        #game-screen {
+            width: var(--game-w); height: var(--game-h);
+            background: #000; position: relative;
+            border: 2px solid var(--primary);
+            border-right: none;
+            box-shadow: none;
+            overflow: hidden;
+            flex-shrink: 0;
+            transition: background-color 0.1s;
+        }
+
+        /* === WATCH OUT (红绿灯) 模式背景 === */
+        .bg-green { background: #002200 !important; box-shadow: inset 0 0 50px #00ff00 !important; border-color: #00ff00 !important; }
+        .bg-yellow { background: #332200 !important; box-shadow: inset 0 0 50px #ffb300 !important; border-color: #ffb300 !important; }
+        .bg-red { background: #440000 !important; box-shadow: inset 0 0 100px #ff0000 !important; border-color: #ff0000 !important; }
+
+        #track-wrapper {
+            display: flex;
+            width: calc(var(--game-w) + var(--game-h));
+            height: var(--game-h);
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        #side-qr-box {
+            width: var(--game-h);
+            height: var(--game-h);
+            background: #000;
+            border: 2px solid var(--primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .join-label {
+            position: absolute;
+            bottom: 2px;
+            left: 0; width: 100%;
+            text-align: center;
+            font-size: 14px;
+            color: #888;
+            pointer-events: none;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        .flash-active {
+            animation: track-flash 0.2s ease-out;
+        }
+        @keyframes track-flash {
+            0% { background-color: rgba(255, 255, 255, 0.4); box-shadow: inset 0 0 150px var(--primary); border-color: #fff; }
+            100% { background-color: #000; box-shadow: none; border-color: var(--primary); }
+        }
+
+        .grid-bg {
+            position: absolute; inset: 0; opacity: 0.2;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.3) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255, 255, 255, 0.3) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+        }
+        .finish-line {
+            position: absolute; top: 0; bottom: 0; right: 400px; width: 12px;
+            background-image: linear-gradient(45deg, #fff 25%, transparent 25%, transparent 50%, #fff 50%, #fff 75%, transparent 75%, transparent);
+            background-size: 12px 12px; opacity: 0.8; z-index: 0;
+        }
+
+        /* HUD */
+        .hud { position: absolute; bottom: 4px; right: 10px; font-size: 32px; opacity: 0.5; letter-spacing: 2px; z-index: 110; }
+
+        #track-display-bar {
+            position: absolute;
+            top: 50%; transform: translateY(-50%);
+            left: 0; width: 100%; height: 100px;
+            display: none;
+            align-items: center; justify-content: center;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .bar-container {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bar-text-item {
+            font-size: 80px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px currentColor;
+            font-weight: bold;
+            width: 260px;
+            display: flex;
+            justify-content: center;
+            flex-shrink: 0;
+            margin: 0;
+            animation: text-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes text-pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1.0); opacity: 1; }
+        }
+
+        @keyframes text-vanish {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .queue-alert {
+            position: absolute; top: 10px; right: 20px;
+            font-size: 24px; color: #ffb300; text-shadow: 0 0 5px #ffb300;
+            display: none; z-index: 20;
+        }
+
+        #scan-line { display: none; }
+
+        /* VFD Overlay */
+        #vfd-overlay {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: flex-start;
+            overflow: hidden;
+            opacity: 0;
+            pointer-events: none; z-index: 95;
+            padding-left: 0;
+        }
+
+        #vfd-overlay i {
+            display: inline-block;
+            width: 0; height: 0;
+            border-top: 15px solid transparent;
+            border-bottom: 15px solid transparent;
+            border-left: 80px solid var(--primary);
+            margin-right: 20px;
+            flex-shrink: 0;
+            opacity: 0;
+            transform: scale(0.8) skewX(-20deg);
+            filter: drop-shadow(0 0 5px var(--primary));
+        }
+
+        .vfd-active { opacity: 1 !important; }
+        .vfd-active i { animation: vfd-flash 0.4s ease-out forwards calc(var(--d) * 1s); }
+
+        @keyframes vfd-flash {
+            0% { opacity: 0; transform: scale(0.8) translateX(0); }
+            10% { opacity: 1; transform: scale(1.2) translateX(10px); filter: drop-shadow(0 0 15px var(--primary)) drop-shadow(0 0 30px #fff); }
+            40% { opacity: 0.3; transform: scale(1.0) translateX(20px); }
+            100% { opacity: 0; transform: scale(0.8) translateX(30px); }
+        }
+
+        .entity { position: absolute; width: 44px; height: 44px; will-change: transform; }
+        .pixel-grid {
+            display: grid;
+            grid-template-columns: repeat(11, 1fr);
+            width: 100%; height: 100%;
+            transform-origin: bottom center;
+            transition: transform 0.2s;
+        }
+
+        .crown-container {
+            position: absolute; top: -31px; left: 50%; transform: translateX(-50%);
+            width: 18px; height: 18px;
+            animation: bounce 1s infinite; z-index: 10;
+            display: flex; flex-direction: column-reverse; align-items: center;
+        }
+        .aura {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 160%; height: 160%; border-radius: 50%;
+            background: radial-gradient(circle, rgba(250,204,21,0.4) 0%, transparent 70%);
+            box-shadow: 0 0 10px #facc15; z-index: -1;
+            animation: pulse 0.5s infinite alternate; display: none;
+        }
+        @keyframes pulse { from { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } }
+
+        .name-tag {
+            position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+            font-size: 20px; white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000;
+        }
+        .grass { position: absolute; width: 6px; height: 6px; background: #69f0ae; box-shadow: 0 0 4px #69f0ae; }
+        
+        .obstacle {
+            position: absolute;
+            width: 10px; height: 30px; 
+            background: #ff5252;
+            border: 2px solid #fff;
+            box-shadow: 0 0 10px #ff5252;
+            z-index: 5;
+            bottom: 5px;
+        }
+
+        .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
+        @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
+
+        /* ==================== 特效样式 ==================== */
+
+        #layer-snow {
+            position: absolute; inset: 0; pointer-events: none; z-index: 1;
+        }
+        .snowflake {
+            position: absolute; top: -10px;
+            background: #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 0 4px #ffffff;
+            animation-name: snowfall;
+            animation-timing-function: linear;
+            animation-fill-mode: forwards;
+        }
+        @keyframes snowfall {
+            to { transform: translateY(calc(var(--game-h) + 20px)); }
+        }
+
+        /* === 光线拖影特效 === */
+        .trail-segment {
+            position: absolute;
+            height: 4px;
+            width: 50px;
+            border-radius: 0px; 
+            pointer-events: none;
+            opacity: 0.8;
+            animation: trail-fade 0.4s ease-out forwards;
+            z-index: 90;
+            mix-blend-mode: screen; 
+        }
+        @keyframes trail-fade {
+            to { opacity: 0; transform: translateX(-40px) scaleX(0.5); }
+        }
+
+        .trail-active .p-grid {
+            filter: drop-shadow(-10px 0 5px var(--trail-c))
+                    drop-shadow(-20px 0 10px var(--trail-c))
+                    opacity(0.95);
+            transform: scaleX(1.3) skewX(-15deg);
+            transition: filter 0.1s ease-out, transform 0.1s ease-out;
+        }
+
+        /* === 纯CSS绘制的像素表情容器 === */
+        .pixel-emoji-container {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: none;
+            z-index: 200;
+            animation: pixel-float-smooth 2.5s linear forwards;
+        }
+
+        /* === 文字表情样式 (?) === */
+        .pop-text {
+            position: absolute;
+            top: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--accent);
+            font-size: 28px;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 210;
+            font-family: 'VT323', monospace;
+            animation: pixel-float-smooth 2.5s linear forwards;
+        }
+
+        /* 基础像素点样式 */
+        .pixel-icon-base {
+            background: transparent;
+            position: relative;
+        }
+
+        @keyframes pixel-float-smooth {
+            0% { opacity: 0; transform: translate(-50%, 10px) scale(0.5); }
+            10% { opacity: 1; transform: translate(-50%, -10px) scale(1); }
+            25% { transform: translate(calc(-50% + 20px), -40px) scale(1); }
+            50% { transform: translate(calc(-50% - 20px), -80px) scale(1); }
+            75% { transform: translate(calc(-50% + 15px), -120px) scale(1); opacity: 0.8; }
+            100% { transform: translate(-50%, -160px) scale(1); opacity: 0; }
+        }
+
+        /* === 手机端表情按钮栏 === */
+        .emoji-bar {
+            display: flex; gap: 15px; margin-top: 40px;
+            pointer-events: auto;
+            z-index: 22001;
+            justify-content: center;
+        }
+        .emoji-btn {
+            background: #222; border: 2px solid #555;
+            color: #fff;
+            width: 60px; height: 60px;
+            border-radius: 12px; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            transition: transform 0.1s;
+            -webkit-tap-highlight-color: transparent;
+            overflow: hidden;
+            font-family: 'VT323', monospace;
+        }
+        .emoji-btn:active { transform: scale(0.8); background: #fff; border-color: #fff; color: #000; }
+        .emoji-btn:active .pixel-icon-base { filter: invert(1); }
+
+        /* ==================== 样式结束 ==================== */
+
+        #bottom-controls {
+            position: fixed; bottom: 20px; left: 20px;
+            display: flex; align-items: center; gap: 15px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+        #qrcode {
+            background: white; padding: 3px;
+            width: 90px; height: 90px;
+            display: flex; justify-content: center; align-items: center;
+            border-radius: 2px;
+        }
+        #qrcode img { display: block; width: 100%; height: 100%; }
+
+        .control-group {
+            display: flex; flex-direction: column;
+            gap: 5px; border-left: 1px solid #333; padding-left: 15px;
+            width: 140px;
+        }
+        .control-label { font-size: 0.8rem; color: #888; letter-spacing: 1px; }
+        .input-wrapper { display: flex; align-items: center; gap: 5px; width: 100%; }
+
+        /* Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none; width: 100%; background: transparent; margin: 5px 0;
+        }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 6px; cursor: pointer; background: #333; border-radius: 3px; border: 1px solid #555;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px; width: 16px; border-radius: 2px; background: var(--accent);
+            cursor: pointer; -webkit-appearance: none; margin-top: -6px; box-shadow: 0 0 5px var(--accent);
+        }
+        input[type=range]::-moz-range-track {
+            width: 100%; height: 6px; cursor: pointer; background: #333; border-radius: 3px; border: 1px solid #555;
+        }
+        input[type=range]::-moz-range-thumb {
+            height: 16px; width: 16px; border: none; border-radius: 2px; background: var(--accent); cursor: pointer;
+        }
+
+        input[type="number"] {
+            background: #222; border: 1px solid var(--border);
+            color: var(--primary); font-family: 'VT323', monospace;
+            font-size: 1.4rem; width: 60px; text-align: center;
+            padding: 2px; border-radius: 4px;
+        }
+        .unit-label { font-size: 1.2rem; color: #555; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+        select {
+            background: #222; border: 2px solid var(--border); color: white;
+            padding: 8px; font-family: 'VT323', monospace; font-size: 1.2rem;
+            margin-right: 10px; cursor: pointer;
+        }
+
+        .btn {
+            background: #222; border: 2px solid var(--primary); color: var(--primary);
+            padding: 10px 20px; font-family: 'VT323', monospace; font-size: 1.2rem;
+            cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            transition: all 0.2s; margin-left: 5px;
+        }
+        .btn:hover { background: var(--primary); color: #000; }
+        .btn:active { transform: translateY(2px); }
+
+        #modal-editor {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000;
+            display: none; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: #1a1c20; border: 2px solid var(--primary); padding: 30px;
+            display: flex; flex-direction: column; align-items: center; gap: 20px;
+        }
+        .editor-grid {
+            display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr);
+            gap: 2px; background: #333; border: 2px solid #555;
+            touch-action: none;
+        }
+        .editor-cell { width: 28px; height: 28px; background: #000; }
+        .color-picker { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+        .c-dot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #333; }
+        .c-dot.active { border-color: white; transform: scale(1.1); }
+        .btn-outline { background: transparent; border-color: #ff5252; color: #ff5252; }
+        .btn-flex { flex: 1; display: flex; justify-content: center; align-items: center; }
+
+        #mobile-view {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #111; display: flex; flex-direction: column; z-index: 20000;
+            padding: 20px;
+            align-items: center;
+        }
+        .m-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; flex-shrink: 0; width: 100%; max-width: 400px; }
+        /* === 修改后：NOWHERE TO RUN === */
+        .m-title { font-size: 1.5rem; color: #fff; }
+        .m-status { background: #222; padding: 4px 8px; border-radius: 4px; font-size: 1rem; color: #fff; border: 1px solid #444; }
+        .m-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; flex-shrink: 0; width: 100%; max-width: 400px; }
+        input[type="text"] {
+            background: #222; border: 1px solid #444; color: white; padding: 12px;
+            font-family: inherit; text-align: center; font-size: 1.5rem; width: 100%; border-radius: 4px;
+        }
+        .m-canvas-container {
+            flex: 1; display: flex; justify-content: center; align-items: center;
+            background: #1a1a1a; border-radius: 8px; margin-bottom: 20px;
+            overflow: hidden; width: 100%; max-width: 400px;
+        }
+        .m-footer { display: flex; gap: 15px; height: 60px; flex-shrink: 0; width: 100%; max-width: 400px; }
+
+        /* === 修改：手机端控制区布局 === */
+        #m-controller {
+            position: fixed; inset: 0; background: #111; z-index: 22000;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        /* 修改：通用按钮样式 */
+        .push-btn {
+            width: 250px; height: 250px; 
+            border-radius: 50%;
+            background: #222; border: 8px solid #444;
+            color: #888; font-size: 4rem; font-family: 'VT323', monospace;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 0 50px rgba(0,0,0, 0.4);
+            transition: all 0.1s; user-select: none;
+            cursor: pointer; -webkit-tap-highlight-color: transparent;
+            touch-action: none; /* 关键：禁止浏览器默认手势 */
+            text-align: center; line-height: 1; padding: 20px;
+        }
+        .push-btn:active { transform: scale(0.95); }
+
+        .controller-info { font-size: 1.5rem; color: #888; margin-bottom: 30px; text-align: center; }
+
+        .btn-wait { background: #1a1a1a !important; border-color: #333 !important; color: #555 !important; }
+        
+        /* RUN 按钮在比赛时的样式 */
+        .btn-mash { 
+            background: #fff !important; border-color: #ccc !important; color: #000 !important; 
+            box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; 
+        }
+        
+        /* 白色按钮 (START RACE / RESTART) */
+        .btn-start { 
+            background: #ffffff !important; 
+            border: 8px solid #ccc !important; 
+            color: #000000 !important; 
+            box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; 
+        }
+
+        .btn-dead { 
+            background: #ffffff !important; 
+            border: 8px solid #000000 !important; 
+            color: #000000 !important; 
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.5) !important;
+            font-size: 3rem !important;
+        }
+
+        #m-success-modal { display: none; }
+    </style>
+</head>
+<body>
+
+    <div id="desktop-view">
+        <div id="game-container">
+            <div id="track-wrapper">
+                <div id="game-screen">
+                    <div class="grid-bg"></div>
+                    <div class="finish-line"></div>
+
+                    <div id="hud" class="hud">NOWHERE TO RUN</div>
+
+                    <div id="track-display-bar">
+                        <div class="bar-container" id="bar-text"></div>
+                    </div>
+
+                    <div id="queue-text" class="queue-alert"></div>
+
+                    <div id="vfd-overlay"></div>
+
+                    <div id="layer-snow"></div>
+
+                    <div id="layer-grass"></div>
+                    <div id="layer-pony"></div>
+                    <div id="layer-fx"></div>
+                </div>
+                <div id="side-qr-box">
+                    <div id="qrcode"></div>
+                    <div class="join-label">JOIN</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="bottom-controls">
+            <div class="control-group" style="border-left: none;">
+                <span class="control-label">ZOOM</span>
+                <input type="range" id="zoom-slider" min="1" max="500" step="1" value="100">
+                <div class="input-wrapper">
+                    <input type="number" id="zoom-input" value="100" min="1" max="500">
+                    <span class="unit-label">%</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <span class="control-label">Y OFFSET</span>
+                <input type="range" id="y-slider" min="-1200" max="1200" step="10" value="0">
+                <div class="input-wrapper">
+                    <input type="number" id="y-input" value="0" step="1">
+                    <span class="unit-label">PX</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <span class="control-label">GAME MODE</span>
+                <select id="mode-select">
+                    <option value="RANDOM">RANDOM</option>
+                    <option value="CLASSIC">CLASSIC</option>
+                    <option value="HURDLE">HURDLES</option>
+                    <option value="RED_LIGHT">WATCH OUT</option>
+                </select>
+            </div>
+
+            <button class="btn" onclick="spawnTestPony()">+ BOT</button>
+            <button class="btn" onclick="openDesktopEditor()">+ PONY</button>
+        </div>
+    </div>
+
+    <div id="modal-editor" class="hidden">
+        <div class="modal-content">
+            <h2 class="vfd-glow" style="margin:0;">DESIGN RUNNER</h2>
+            <input type="text" id="pc-name" placeholder="ENTER NAME" maxlength="8" value="PLAYER" style="background:#222; border:1px solid #444; color:white; padding:10px; text-align:center; font-size:1.5rem; border-radius:4px;">
+            <div class="color-picker" id="pc-colors"></div>
+            <div id="pc-grid" class="editor-grid"></div>
+            <div style="display: flex; gap: 20px; width: 100%;">
+                <button class="btn btn-outline btn-flex" onclick="document.getElementById('modal-editor').style.display='none'">CANCEL</button>
+                <button class="btn btn-outline btn-flex" style="border-color:#ffb300; color:#ffb300;" onclick="clearDesktop()">CLEAR</button>
+                <button class="btn btn-flex" onclick="savePCPony()">SPAWN</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mobile-view" style="display: none;">
+        <div id="m-editor-ui">
+            <div class="m-header">
+                <span class="m-title">NOWHERE TO RUN</span>
+                <span id="m-status" class="m-status">Wait...</span>
+            </div>
+            <div class="m-controls">
+                <input type="text" id="m-name" placeholder="ENTER NAME" maxlength="8">
+                <div class="color-picker" id="m-colors"></div>
+            </div>
+            <div class="m-canvas-container">
+                <div id="m-grid" class="editor-grid"></div>
+            </div>
+            <div class="m-footer">
+                <button class="btn btn-outline btn-flex" onclick="clearMobile()">CLEAR CANVAS</button>
+                <button class="btn btn-flex" onclick="sendMobile()">RUN</button>
+            </div>
+        </div>
+
+        <div id="m-controller">
+            <div id="m-info" class="controller-info">GET READY</div>
+            
+            <div id="m-mode-wrapper" style="display: none; margin-bottom: 20px; width: 100%; justify-content: center;">
+                <select id="m-mode-select" style="background: #222; color: #fff; font-family: 'VT323'; font-size: 1.5rem; padding: 10px; border: 2px solid #555; border-radius: 8px; width: 200px; text-align: center;">
+                    <option value="RANDOM">RANDOM</option>
+                    <option value="CLASSIC">CLASSIC</option>
+                    <option value="HURDLE">HURDLES</option>
+                    <option value="RED_LIGHT">WATCH OUT</option>
+                </select>
+            </div>
+
+            <div id="m-btn" class="push-btn btn-wait">WAIT</div>
+            
+            <div class="emoji-bar">
+                <div class="emoji-btn" onclick="sendEmoji('HEART')" data-icon="HEART"></div>
+                <div class="emoji-btn" onclick="sendEmoji('POOP')" data-icon="POOP"></div>
+                <div class="emoji-btn" onclick="sendEmoji('BOLT')" data-icon="BOLT"></div>
+                <div class="emoji-btn" onclick="sendEmoji('FACE')" style="font-size: 2rem;">?</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GAME_W = 3400;
+        const GAME_H = 100;
+        const PONY_SIZE = 50;
+        const FINISH_X = GAME_W - 400;
+
+        const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#ffffff', BLUE:'#2979ff' };
+
+        const DEFAULT_PIXELS = [
+            [0,0,0,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0,0,1,0,0], [0,0,0,0,0,0,0,1,1,1,0], [0,0,0,0,0,0,0,1,1,1,1], [0,1,0,0,0,0,1,1,1,0,0],
+            [1,0,1,1,1,1,1,1,1,0,0], [1,0,1,1,1,1,1,1,1,0,0], [0,0,1,1,1,1,1,1,1,0,0], [0,0,1,0,1,0,1,0,1,0,0], [0,0,1,0,1,0,1,0,1,0,0], [0,0,1,0,1,0,1,0,1,0,0]
+        ];
+
+        const PIXEL_ART_MAPS = {
+            'HEART': [ [0,1,1,0,1,1,0], [1,1,1,1,1,1,1], [1,1,1,1,1,1,1], [0,1,1,1,1,1,0], [0,0,1,1,1,0,0], [0,0,0,1,0,0,0] ],
+            'POOP': [ [0,0,0,1,0,0,0], [0,0,1,1,1,0,0], [0,1,1,1,1,1,0], [1,0,1,1,1,0,1], [1,1,1,1,1,1,1] ],
+            'BOLT': [ [0,0,1,1,1,0], [0,1,1,1,0,0], [1,1,1,1,1,0], [0,0,0,1,1,0], [0,0,1,1,0,0], [0,0,1,0,0,0] ]
+        };
+
+        const SONGS = {
+            'JINGLE': [ 329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 392.0, 261.6, 293.7, 329.6, 349.2, 349.2, 349.2, 349.2, 349.2, 329.6, 329.6, 329.6, 293.7, 293.7, 329.6, 293.7, 392.0 ],
+            'MERRY': [ 261.6, 349.2, 349.2, 392.0, 349.2, 329.6, 293.7, 293.7, 293.7, 392.0, 392.0, 440.0, 392.0, 349.2, 329.6, 261.6, 261.6, 440.0, 440.0, 466.2, 440.0, 392.0, 349.2, 293.7, 261.6, 261.6, 293.7, 392.0, 329.6, 349.2 ],
+            'DECK': [ 523.3, 493.9, 440.0, 392.0, 349.2, 329.6, 293.7, 261.6, 293.7, 329.6, 349.2, 293.7, 329.6, 293.7, 261.6 ]
+        };
+
+        const SOUND_STYLES = {
+            'GAMEBOY': { type: 'square', decay: 0.1, attack: 0.01 },
+            'FLUTE': { type: 'sine', decay: 0.3, attack: 0.05 },
+            'LASER': { type: 'sawtooth', decay: 0.15, attack: 0.01 },
+            'CRYSTAL': { type: 'triangle', decay: 0.5, attack: 0.01 },
+            'TUBA': { type: 'square', decay: 0.2, attack: 0.1 },
+            'PIANO': { type: 'triangle', decay: 0.3, attack: 0.001 },
+            'BANJO': { type: 'sawtooth', decay: 0.1, attack: 0.001 }
+        };
+        const STYLE_KEYS = Object.keys(SOUND_STYLES);
+
+        let noteIndex = 0;
+        let myCurrentSongKey = 'JINGLE';
+        let myStyleKey = 'GAMEBOY';
+
+        let ponies = [];
+        let ponyQueue = [];
+        let grass = [];
+        let obstacles = []; 
+        let gameState = 'ROAMING';
+        let cooldownTimer = 0;
+        let waitTimer = 0;
+        
+        /* === 游戏模式变量 === */
+        let currentGameMode = 'CLASSIC'; // 'CLASSIC', 'HURDLE', 'RED_LIGHT'
+        let redLightTimer = 0;
+        let lightState = 'GREEN'; // 'GREEN', 'YELLOW', 'RED'
+
+        let peer = null, conn = null;
+        let pcGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
+        let mobileGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
+        let selectedColor = COLORS.CYAN;
+        let playerUUID = null;
+
+        let mobileBtnState = 'wait';
+        let audioCtx = null;
+        let lastTapTime = 0;
+        
+        let layout = { scale: 1.0, x: 0, y: 0 };
+        let currentBarText = '';
+        let lastBroadcastText = '';
+
+        /* === 触控逻辑变量 === */
+        let touchStartY = 0;
+        let isSwiping = false;
+
+        const PEER_CONFIG = {
+            debug: 2,
+            config: {
+                'iceServers': [
+                    { url: 'stun:stun.l.google.com:19302' },
+                    { url: 'stun:stun1.l.google.com:19302' }
+                ]
+            }
+        };
+
+        /* ==================== FUNCTIONS ==================== */
+
+        function createPixelIcon(type, pixelSize = 2, color = '#fff') {
+            const container = document.createElement('div');
+            container.className = 'pixel-icon-base';
+            container.style.width = pixelSize + 'px';
+            container.style.height = pixelSize + 'px';
+            const map = PIXEL_ART_MAPS[type] || PIXEL_ART_MAPS['HEART'];
+            let boxShadow = '';
+            for(let y=0; y<map.length; y++) {
+                for(let x=0; x<map[y].length; x++) {
+                    if (map[y][x] === 1) { boxShadow += `${x*pixelSize}px ${y*pixelSize}px ${color},`; }
+                }
+            }
+            container.style.boxShadow = boxShadow.slice(0, -1);
+            const widthOffset = (7 * pixelSize) / 2;
+            container.style.transform = `translateX(-${widthOffset}px)`;
+            return container;
+        }
+
+        /* === 简单的信号提示音 === */
+        function playSignalSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const now = audioCtx.currentTime;
+            
+            gain.connect(audioCtx.destination);
+            osc.connect(gain);
+
+            if (type === 'GREEN') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'YELLOW') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(400, now);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.1);
+                
+                osc.start(now); osc.stop(now + 0.1);
+                
+                const osc2 = audioCtx.createOscillator();
+                const gain2 = audioCtx.createGain();
+                gain2.connect(audioCtx.destination);
+                osc2.connect(gain2);
+                osc2.type = 'square';
+                osc2.frequency.setValueAtTime(400, now + 0.15);
+                gain2.gain.setValueAtTime(0.2, now + 0.15);
+                gain2.gain.linearRampToValueAtTime(0, now + 0.25);
+                osc2.start(now + 0.15); osc2.stop(now + 0.25);
+
+            } else if (type === 'RED') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.linearRampToValueAtTime(100, now + 0.5);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.5);
+                osc.start(now); osc.stop(now + 0.5);
+            }
+        }
+
+        function playNextNote() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const songArr = SONGS[myCurrentSongKey] || SONGS['JINGLE'];
+            let freq = songArr[noteIndex % songArr.length];
+            while (freq === 0) {
+                 noteIndex++;
+                 freq = songArr[noteIndex % songArr.length];
+            }
+            noteIndex++;
+            const style = SOUND_STYLES[myStyleKey] || SOUND_STYLES['GAMEBOY'];
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = style.type;
+            osc.frequency.setValueAtTime(freq, now); 
+            gain.connect(audioCtx.destination);
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.3, now + style.attack);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + style.attack + style.decay); 
+            osc.connect(gain);
+            osc.start(now);
+            osc.stop(now + style.attack + style.decay + 0.1);
+        }
+
+        function randomizeMusic() {
+            const songKeys = Object.keys(SONGS);
+            myCurrentSongKey = songKeys[Math.floor(Math.random() * songKeys.length)];
+            myStyleKey = STYLE_KEYS[Math.floor(Math.random() * STYLE_KEYS.length)];
+            noteIndex = 0; 
+        }
+
+        window.onload = function() {
+            const btns = document.querySelectorAll('.emoji-btn');
+            btns.forEach(btn => {
+                const type = btn.getAttribute('data-icon');
+                if (type) { btn.appendChild(createPixelIcon(type, 3, '#fff')); }
+            });
+
+            const zoomSlider = document.getElementById('zoom-slider');
+            const zoomInput = document.getElementById('zoom-input');
+            const ySlider = document.getElementById('y-slider');
+            const yInput = document.getElementById('y-input');
+
+            zoomSlider.oninput = function() { zoomInput.value = this.value; layout.scale = this.value / 100; applyLayout(false); };
+            zoomInput.oninput = function() { let val = parseFloat(this.value); if(val) { zoomSlider.value = val; layout.scale = val / 100; applyLayout(false); } };
+            ySlider.oninput = function() { yInput.value = this.value; layout.y = parseFloat(this.value); applyLayout(false); };
+            yInput.oninput = function() { let val = parseFloat(this.value); if(!isNaN(val)) { ySlider.value = val; layout.y = val; applyLayout(false); } };
+
+            const gameContainer = document.getElementById('desktop-view');
+            gameContainer.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                if (e.ctrlKey) {
+                    const zoomSpeed = 0.001;
+                    const newScale = layout.scale - (e.deltaY * zoomSpeed);
+                    layout.scale = Math.min(Math.max(0.1, newScale), 5.0);
+                } else {
+                    const panSpeed = 1.0;
+                    layout.y -= e.deltaY * panSpeed;
+                }
+                applyLayout(true);
+            }, { passive: false });
+
+            const vfdOverlay = document.getElementById('vfd-overlay');
+            for (let i = 0; i < 80; i++) {
+                const arrow = document.createElement('i');
+                arrow.style.setProperty('--d', i * 0.01);
+                vfdOverlay.appendChild(arrow);
+            }
+
+            requestAnimationFrame(gameLoop);
+            fitScreen();
+
+            window.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT') return;
+                const step = 20 / layout.scale; const zoomStep = 0.05; let changed = false;
+                switch(e.key) {
+                    case 'ArrowUp': layout.y -= step; changed = true; break;
+                    case 'ArrowDown': layout.y += step; changed = true; break;
+                    case 'ArrowLeft': layout.x -= step; changed = true; break;
+                    case 'ArrowRight': layout.x += step; changed = true; break;
+                    case '=': case '+': layout.scale += zoomStep; changed = true; break;
+                    case '-': case '_': layout.scale = Math.max(0.1, layout.scale - zoomStep); changed = true; break;
+                    case '0': fitScreen(); return;
+                }
+                if(changed) applyLayout(true);
+            });
+
+            const isMobile = new URLSearchParams(window.location.search).has('host');
+            if(isMobile) {
+                document.getElementById('desktop-view').style.display = 'none';
+                document.getElementById('mobile-view').style.display = 'flex';
+                initMobile();
+            } else {
+                initDesktop();
+            }
+        };
+
+        function updateBarText(text, color) {
+            if (currentBarText === text) return;
+            currentBarText = text;
+            const container = document.getElementById('bar-text');
+            let content = '';
+            for(let i=0; i<12; i++) { content += `<span class="bar-text-item">${text}</span>`; }
+            container.innerHTML = content;
+            if(color) { container.style.color = color; } else { container.style.color = ''; }
+        }
+        function setBarVisibility(show) { document.getElementById('track-display-bar').style.display = show ? 'flex' : 'none'; if(!show) currentBarText = ''; }
+        function triggerFlash() { const screen = document.getElementById('track-wrapper'); screen.classList.remove('flash-active'); void screen.offsetWidth; screen.classList.add('flash-active'); }
+        function broadcast(data) { if(!peer || !peer.connections) return; Object.values(peer.connections).forEach(conns => { conns.forEach(conn => { if(conn.open) conn.send(data); }); }); }
+        function fitScreen() { const availableW = window.innerWidth * 0.95; layout.scale = Math.min(availableW / (GAME_W + GAME_H), 1); layout.x = 0; layout.y = 0; applyLayout(true); }
+        function applyLayout(updateInput = true) { const el = document.getElementById('track-wrapper'); el.style.transform = `scale(${layout.scale}) translate(${layout.x}px, ${layout.y}px)`; if(updateInput) { document.getElementById('zoom-input').value = Math.round(layout.scale * 100); document.getElementById('zoom-slider').value = Math.round(layout.scale * 100); document.getElementById('y-input').value = Math.round(layout.y); document.getElementById('y-slider').value = Math.round(layout.y); } }
+
+        function initDesktop() {
+            initEditor('pc-grid', 'pc-colors', pcGrid);
+            try {
+                peer = new Peer(null, PEER_CONFIG);
+                peer.on('open', id => {
+                    const url = `${location.href}?host=${id}`;
+                    new QRCode(document.getElementById("qrcode"), {
+                        text: url, width: 86, height: 86,
+                        colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L
+                    });
+                });
+                peer.on('connection', c => {
+                    c.on('data', data => {
+                        if (data.type === 'check_reconnect') {
+                            const uuid = data.uuid;
+                            const exists = ponies.find(p => p.playerUUID === uuid) || ponyQueue.find(p => p.playerUUID === uuid);
+                            if (exists) c.send({ type: 'reconnect_success' });
+                        } else if (data.type === 'spawn') {
+                            const uuid = data.payload.uuid;
+                            const exists = ponies.find(p => p.playerUUID === uuid) || ponyQueue.find(p => p.playerUUID === uuid);
+                            if (!exists) requestSpawnPony(data.payload.name, data.payload.pixels, data.payload.color, uuid);
+                        } else if (data.type === 'tap') {
+                            handleTap(data.uuid);
+                        } else if (data.type === 'jump') {
+                            handleJump(data.uuid);
+                        } else if (data.type === 'force_start') {
+                            if (data.mode) {
+                                currentGameMode = data.mode;
+                                const select = document.getElementById('mode-select');
+                                if(select) select.value = data.mode;
+                            }
+                            if (gameState === 'ROAMING' || gameState === 'WAITING_TO_START') startCooldown();
+                        } else if (data.type === 'emoji') {
+                            triggerPonyEmoji(data.uuid, data.content);
+                        }
+                    });
+                });
+                peer.on('error', (err) => { console.error("PeerJS Error:", err); alert("Network Error: " + err.type + "\nTry refreshing."); });
+            } catch(e) { console.error(e); }
+        }
+
+        function spawnTestPony() {
+            const names = ["SPEEDY", "THUNDER", "BOLT", "COMET", "DASH", "FLASH", "STORM", "SHADOW", "BLAZE", "SPIRIT"];
+            const rName = names[Math.floor(Math.random() * names.length)] + " " + Math.floor(Math.random()*99);
+            const colorKeys = Object.keys(COLORS); const rColorKey = colorKeys[Math.floor(Math.random() * colorKeys.length)];
+            requestSpawnPony(rName, DEFAULT_PIXELS, COLORS[rColorKey], null);
+        }
+
+        function handleTap(uuid) {
+            if (!uuid) return;
+            const pony = ponies.find(p => p.playerUUID === uuid);
+            if (pony && pony.state === 'racing') {
+                if (pony.isStunned) return;
+
+                if (currentGameMode === 'RED_LIGHT' && lightState === 'RED') {
+                    if (pony.invincibleTimer <= 0) {
+                        pony.isStunned = true;
+                        pony.stunTimer = 60; // 眩晕1秒
+                        pony.invincibleTimer = 90;
+                        pony.manualSpeed = -15; // 后退惩罚
+                        triggerPonyEmoji(p.playerUUID, 'POOP');
+                    }
+                    return;
+                }
+
+                pony.isManual = true; pony.lastTapTime = Date.now(); pony.tapCount++;
+                pony.name = pony.name.replace(" (BOT)", "");
+                pony.manualSpeed = Math.min(pony.manualSpeed + 2.4, 18);
+                pony.turboCharge = Math.min(pony.turboCharge + 20, 100);
+                if (pony.manualAnimTimer === 0) pony.manualAnimTimer = 10;
+            }
+        }
+        
+        function handleJump(uuid) {
+            if (!uuid) return;
+            const pony = ponies.find(p => p.playerUUID === uuid);
+            if (pony && pony.state === 'racing' && !pony.isStunned && !pony.isJumping) {
+                if (currentGameMode === 'RED_LIGHT') return;
+
+                pony.isJumping = true;
+                pony.vz = 12; 
+                pony.isManual = true; 
+            }
+        }
+
+        function requestSpawnPony(name, pixels, color, uuid = null) {
+            const newPony = {
+                id: Math.random().toString(36).substr(2, 9),
+                playerUUID: uuid, isManual: !!uuid, manualSpeed: 0, tapCount: 0, lastTapTime: Date.now(),
+                name: name || 'PONY', pixels: JSON.parse(JSON.stringify(pixels || DEFAULT_PIXELS)), color: color || COLORS.CYAN,
+                x: 20, y: 30 + Math.random() * (GAME_H - PONY_SIZE - 20), speed: 3.0, state: 'racing',
+                hasCrown: false, isStreak: false, crownCount: 0, timer: 0, frame: 0, finishedWalking: false,
+                targetX: null, targetY: null, isWalkAnimating: false, manualAnimTimer: 0, roamSpeed: 0.5,
+                isTurbo: false, turboCharge: 0,
+                z: 0, vz: 0, isJumping: false, isStunned: false, stunTimer: 0, invincibleTimer: 0 
+            };
+            if (gameState === 'RACING' || gameState === 'COOLDOWN' || gameState === 'WAITING_TO_START') {
+                ponyQueue.push(newPony); updateHUD();
+            } else {
+                ponies.push(newPony); startCooldown();
+            }
+        }
+
+        function startCooldown() {
+            const selected = document.getElementById('mode-select').value;
+            if (selected === 'RANDOM' && (currentGameMode === 'RANDOM' || !['CLASSIC', 'HURDLE', 'RED_LIGHT'].includes(currentGameMode))) {
+                 const modes = ['CLASSIC', 'HURDLE', 'RED_LIGHT'];
+                 currentGameMode = modes[Math.floor(Math.random() * modes.length)];
+            } else if (selected !== 'RANDOM') {
+                currentGameMode = selected;
+            }
+
+            gameState = 'COOLDOWN'; cooldownTimer = 240;
+            if (ponyQueue.length > 0) { ponies = ponies.concat(ponyQueue); ponyQueue = []; }
+            ponies.forEach(p => {
+                p.x = 20; p.y = 30 + Math.random() * (GAME_H - PONY_SIZE - 30); p.targetX = null; p.targetY = null;
+                p.facing = 1; p.state = 'ready'; p.manualSpeed = 0; p.tapCount = 0;
+                p.isWalkAnimating = false; p.manualAnimTimer = 0; p.isTurbo = false; p.turboCharge = 0;
+                p.z = 0; p.vz = 0; p.isStunned = false; p.stunTimer = 0; p.invincibleTimer = 0;
+            });
+            document.getElementById('hud').style.display = 'none'; document.getElementById('queue-text').style.display = 'none';
+            setBarVisibility(true); 
+            let modeName = currentGameMode === 'RED_LIGHT' ? "WATCH OUT" : (currentGameMode === 'HURDLE' ? "HURDLES" : "CLASSIC");
+            updateBarText(modeName, "#ffb300"); 
+            broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
+            
+            obstacles = [];
+            document.getElementById('game-screen').className = ''; 
+            lightState = 'GREEN'; 
+        }
+
+        function startRace() {
+            updateBarText("GO!", "#ffffff");
+            
+            let statusText = "STATUS: RACING";
+            let mobileInfo = "RUN (TAP)";
+
+            if (currentGameMode === 'HURDLE') {
+                statusText = "STATUS: HURDLES";
+                mobileInfo = "TAP: RUN / SWIPE: JUMP";
+                obstacles = [];
+                for(let ox = 500; ox < FINISH_X - 200; ox += (400 + Math.random() * 300)) {
+                    obstacles.push({ x: ox, width: 10, passed: false });
+                }
+            } else if (currentGameMode === 'RED_LIGHT') {
+                statusText = "STATUS: WATCH OUT!";
+                mobileInfo = "WATCH THE SCREEN!";
+                obstacles = []; 
+                lightState = 'GREEN';
+                // 绿灯时间再缩短 20%：60 ~ 150 帧 (1s - 2.5s)
+                redLightTimer = 60 + Math.random() * 90; 
+                document.getElementById('game-screen').classList.add('bg-green');
+                playSignalSound('GREEN');
+            } else {
+                obstacles = [];
+            }
+
+            const hud = document.getElementById('hud'); hud.style.display = 'block'; hud.innerText = statusText;
+            const vfdOverlay = document.getElementById('vfd-overlay');
+            vfdOverlay.classList.remove('vfd-active'); void vfdOverlay.offsetWidth; vfdOverlay.classList.add('vfd-active');
+            const textItems = document.querySelectorAll('.bar-text-item');
+            textItems.forEach((item, index) => { item.style.animation = `text-vanish 0.05s linear forwards ${delay = 0.02 + (index * 0.06)}s`; });
+            setTimeout(() => { if (gameState === 'RACING') { setBarVisibility(false); vfdOverlay.classList.remove('vfd-active'); } }, 1500);
+            
+            ponies.forEach(p => { 
+                p.speed = 3.0 + Math.random() * 2.5; 
+                p.state = 'racing'; 
+                p.finishedWalking = false; 
+                p.z = 0; p.vz = 0; p.isStunned = false; p.stunTimer = 0; p.invincibleTimer = 0;
+                if(p.isManual) p.lastTapTime = Date.now(); 
+            });
+            grass = []; gameState = 'RACING'; 
+            broadcast({ type: 'sync_ui', label: 'RUN!', mode: 'mash', infoText: mobileInfo });
+        }
+
+        function gameLoop() { updateGameLogic(); draw(); requestAnimationFrame(gameLoop); }
+
+        function updateGameLogic() {
+            spawnSnow();
+            const alert = document.getElementById('queue-text'); const hud = document.getElementById('hud');
+            if (gameState === 'WAITING_TO_START') {
+                waitTimer--; alert.style.display = 'block'; const sec = Math.ceil(waitTimer / 60); alert.innerText = `NEXT ROUND IN ${sec}`;
+                if (sec > 0 && lastBroadcastText !== sec) { broadcast({ type: 'sync_ui', label: `STARTING ${sec}`, mode: 'wait' }); lastBroadcastText = sec; }
+                updatePoniesMovement(); if (waitTimer <= 0) startCooldown();
+            } else if (gameState === 'COOLDOWN') {
+                cooldownTimer--; alert.style.display = 'none';
+                if (cooldownTimer > 180) { } else {
+                    const sec = Math.ceil(cooldownTimer / 60); updateBarText(sec.toString(), '#ffffff');
+                    if (cooldownTimer % 60 === 59) triggerFlash();
+                    if (sec > 0 && lastBroadcastText !== sec) { broadcast({ type: 'sync_ui', label: sec.toString(), mode: 'wait' }); lastBroadcastText = sec; }
+                }
+                if (cooldownTimer <= 0) startRace(); updatePoniesMovement();
+            } else if (gameState === 'RACING') {
+                if (ponyQueue.length > 0) { alert.style.display = 'block'; alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`; } else { alert.style.display = 'none'; }
+                
+                if (currentGameMode === 'RED_LIGHT') {
+                    redLightTimer--;
+                    if (redLightTimer <= 0) {
+                        const screen = document.getElementById('game-screen');
+                        screen.className = ''; 
+
+                        if (lightState === 'GREEN') {
+                            // 绿 -> 黄 (固定 0.5s = 30帧)
+                            lightState = 'YELLOW';
+                            redLightTimer = 30; 
+                            screen.classList.add('bg-yellow');
+                            updateBarText("SLOW!", "#ffb300"); setBarVisibility(true);
+                            playSignalSound('YELLOW');
+                        
+                        } else if (lightState === 'YELLOW') {
+                            // 黄 -> 红
+                            lightState = 'RED';
+                            redLightTimer = 60 + Math.random() * 90; 
+                            screen.classList.add('bg-red');
+                            updateBarText("STOP!", "#ff5252"); setBarVisibility(true);
+                            playSignalSound('RED');
+
+                        } else if (lightState === 'RED') {
+                            // 红 -> 绿
+                            lightState = 'GREEN';
+                            redLightTimer = 60 + Math.random() * 90; 
+                            screen.classList.add('bg-green');
+                            updateBarText("GO!", "#69f0ae"); 
+                            playSignalSound('GREEN');
+                            setTimeout(() => { if (lightState === 'GREEN') setBarVisibility(false); }, 500);
+                        }
+                    }
+                }
+
+                updatePoniesMovement(); checkRaceEnd();
+            } else if (gameState === 'ROAMING') {
+                hud.style.display = 'block'; hud.innerText = "NOWHERE TO RUN";
+                document.getElementById('game-screen').className = ''; 
+                if (ponyQueue.length > 0) { alert.style.display = 'block'; alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`; } else { alert.style.display = 'none'; }
+                updatePoniesMovement();
+            }
+            const active = ponies.filter(p => p.state === 'racing');
+            if (active.length === 0 && Math.random() < 0.2) {
+                const segmentSize = 500; const totalSegments = Math.ceil(GAME_W / segmentSize);
+                for(let i=0; i<totalSegments; i++) {
+                    const startX = i * segmentSize; const endX = (i + 1) * segmentSize;
+                    const count = grass.filter(g => g.x >= startX && g.x < endX).length;
+                    if (count < 2 && Math.random() < 0.05) { grass.push({ x: startX + Math.random() * segmentSize, y: 20 + Math.random() * (GAME_H - 40) }); }
+                }
+            }
+        }
+
+        function checkRaceEnd() {
+            const finished = ponies.filter(p => p.state === 'finished'); let raceOverTrigger = false;
+            if (ponies.length > 10) { if (finished.length >= 10) raceOverTrigger = true; } else { if (ponies.length > 0 && finished.length === ponies.length) raceOverTrigger = true; }
+            if (raceOverTrigger) {
+                if (ponies.length > 10) {
+                    const losers = ponies.filter(p => p.state === 'racing'); losers.forEach(p => explode(p));
+                    ponies = ponies.filter(p => p.state === 'finished');
+                }
+                ponies.forEach(p => { p.state = 'roaming'; p.timer = 0; p.targetX = null; p.targetY = null; p.isWalkAnimating = false; p.isTurbo = false; p.turboCharge = 0; });
+                if (ponyQueue.length > 0) { gameState = 'WAITING_TO_START'; waitTimer = 180; } else {
+                    gameState = 'ROAMING'; broadcast({ type: 'sync_ui', label: 'START RACE', mode: 'start' });
+                    setTimeout(() => { if (gameState === 'ROAMING') broadcast({ type: 'sync_ui', label: 'START RACE', mode: 'start' }); }, 3000);
+                }
+                document.getElementById('game-screen').className = '';
+                setBarVisibility(false);
+            }
+        }
+
+        function spawnTrail(p) {
+            const fxLayer = document.getElementById('layer-fx');
+            const count = Math.random() < 0.5 ? 1 : 2; 
+            for (let i = 0; i < count; i++) {
+                const el = document.createElement('div');
+                el.className = 'trail-segment';
+                el.style.left = (p.x - 20 + Math.random() * 10) + 'px';
+                el.style.top = (p.y + 15 + Math.random() * 15) + 'px';
+                el.style.background = p.color;
+                el.style.boxShadow = `0 0 0px ${p.color}`;
+                fxLayer.appendChild(el);
+                setTimeout(() => el.remove(), 400);
+            }
+        }
+
+        function spawnSnow() {
+            const snowLayer = document.getElementById('layer-snow'); const count = Math.random() < 0.5 ? 1 : 2;
+            for(let i=0; i<count; i++) {
+                const el = document.createElement('div'); el.className = 'snowflake';
+                el.style.left = (Math.random() * GAME_W) + 'px'; const size = 2 + Math.random() * 3;
+                el.style.width = size + 'px'; el.style.height = size + 'px'; el.style.opacity = 0.4 + Math.random() * 0.6;
+                const duration = 2000 + Math.random() * 2000; el.style.animationDuration = duration + 'ms';
+                snowLayer.appendChild(el); setTimeout(() => el.remove(), duration + 100);
+            }
+        }
+
+        function updatePoniesMovement() {
+            let winnerFoundThisFrame = false; const finishedCount = ponies.filter(p => p.state === 'finished').length;
+            ponies.forEach(p => {
+                p.frame++; p.isWalkAnimating = false; p.isTurbo = false;
+                if (p.manualAnimTimer > 0) p.manualAnimTimer--; p.turboCharge = Math.max(0, p.turboCharge - 1);
+                
+                if (p.invincibleTimer > 0) p.invincibleTimer--;
+
+                if (p.state === 'ready') { p.x = 20; return; }
+                if (p.state === 'racing') {
+                    if (p.isStunned) {
+                        p.stunTimer--;
+                        if (p.stunTimer <= 0) p.isStunned = false;
+                        p.isWalkAnimating = false; 
+                        if (p.manualSpeed < 0) { p.x += p.manualSpeed; p.manualSpeed *= 0.9; }
+                    } else {
+                        if (p.playerUUID) {
+                            if (p.isManual) {
+                                if (Date.now() - p.lastTapTime > 10000) { p.isManual = false; if (!p.name.includes("(BOT)")) p.name += " (BOT)"; }
+                            }
+                        }
+                        if (p.isManual) {
+                            p.manualSpeed *= 0.95; if (p.manualSpeed < 0.1) p.manualSpeed = 0;
+                            p.x += p.manualSpeed; p.isWalkAnimating = p.manualSpeed > 0.1;
+                        } else {
+                            if (currentGameMode === 'RED_LIGHT' && lightState === 'RED') {
+                                if (Math.random() < 0.02) p.x += 2; 
+                            } else {
+                                p.x += p.speed * (0.9 + Math.random() * 0.2); p.isWalkAnimating = true;
+                                if (currentGameMode === 'HURDLE' && !p.isJumping) {
+                                    const nearestObs = obstacles.find(o => o.x > p.x && o.x < p.x + 150); 
+                                    if (nearestObs && Math.random() < 0.15) { 
+                                        p.isJumping = true; p.vz = 12; 
+                                    }
+                                }
+                            }
+                        }
+
+                        if (p.isJumping) {
+                            p.z += p.vz;
+                            p.vz -= 0.8; 
+                            if (p.z <= 0) {
+                                p.z = 0; p.vz = 0; p.isJumping = false;
+                            }
+                        }
+
+                        if (p.invincibleTimer <= 0) {
+                            if (currentGameMode === 'HURDLE') {
+                                obstacles.forEach(obs => {
+                                    if (p.x + 40 > obs.x && p.x < obs.x + obs.width) {
+                                        if (p.z < 20) { 
+                                            p.isStunned = true;
+                                            p.stunTimer = 30; 
+                                            p.invincibleTimer = 90; 
+                                            p.manualSpeed = 0; 
+                                            p.x = obs.x - 10; 
+                                            triggerPonyEmoji(p.playerUUID, 'POOP'); 
+                                        }
+                                    }
+                                });
+                            }
+                        }
+
+                        if (p.turboCharge > 60 && Math.random() < 0.4) spawnTrail(p);
+                        if (p.turboCharge > 30) p.isTurbo = true;
+                        p.facing = 1;
+                        if (p.x >= FINISH_X) {
+                            if (p.state === 'racing') {
+                                p.state = 'finished';
+                                p.isTurbo = false;
+                                if (p.playerUUID) {
+                                    broadcast({ type: 'player_finished', uuid: p.playerUUID });
+                                }
+                                if (finishedCount === 0 && !winnerFoundThisFrame && gameState === 'RACING') {
+                                    winnerFoundThisFrame = true; if (p.hasCrown) p.isStreak = true; else { p.hasCrown = true; p.isStreak = false; }
+                                    ponies.forEach(o => { if(o.id !== p.id) { o.hasCrown = false; o.isStreak = false; }});
+                                }
+                            }
+                        }
+                    }
+                } else if (p.state === 'finished') {
+                    p.z = 0;
+                    if (p.x < GAME_W - 50) { p.x += 0.8; p.finishedWalking = true; p.isWalkAnimating = true; }
+                    else { p.finishedWalking = false; aiBehavior(p, true); }
+                } else { p.finishedWalking = false; aiBehavior(p, false); }
+                p.x = Math.max(0, Math.min(GAME_W - 38, p.x)); p.y = Math.max(p.hasCrown ? 35 : 20, Math.min(GAME_H - 44 - 6, p.y));
+            });
+        }
+
+        function aiBehavior(p, restrictFinish) {
+            const minX = restrictFinish ? FINISH_X : 0; const maxX = GAME_W - 38; const maxY = GAME_H - 44; const minY = p.hasCrown ? 35 : 20;
+            if (p.state === 'roaming' || p.state === 'finished') {
+                for(let i=0; i<grass.length; i++) {
+                    const g = grass[i];
+                    if (Math.abs(g.x - p.x) < 50 && Math.abs(g.y - p.y) < 50) { p.state = 'eating'; p.timer = 50; grass.splice(i, 1); p.targetX = null; p.targetY = null; return; }
+                }
+                if (p.timer-- <= 0) {
+                    const action = Math.random();
+                    if (action < 0.3) { p.targetX = (p.x < GAME_W / 2) ? GAME_W - 100 - Math.random() * 400 : 50 + Math.random() * 400; p.targetY = minY + Math.random() * (maxY - minY); p.timer = 400 + Math.random() * 400; p.roamSpeed = 2.0; }
+                    else if (action < 0.8) { p.targetX = p.x + (Math.random() - 0.5) * 600; p.targetY = minY + Math.random() * (maxY - minY); p.timer = 100 + Math.random() * 200; p.roamSpeed = 0.8; }
+                    else { p.targetX = null; p.targetY = null; p.timer = 60 + Math.random() * 120; p.roamSpeed = 0; }
+                }
+                if (p.targetX !== null && p.targetY !== null) {
+                    const dx = p.targetX - p.x; const dy = p.targetY - p.y; const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 5) { p.targetX = null; p.targetY = null; p.timer = 0; }
+                    else { const speed = p.roamSpeed || 0.5; p.x += (dx / dist) * speed; p.y += (dy / dist) * speed; p.facing = Math.sign(dx) || 1; p.isWalkAnimating = true; }
+                }
+            } else if (p.state === 'eating') { if (p.timer-- <= 0) p.state = 'roaming'; }
+        }
+
+        function explode(p) {
+            const fx = document.getElementById('layer-fx');
+            for(let i=0; i<20; i++) {
+                const el = document.createElement('div'); el.className = 'explosion';
+                el.style.left = (p.x + 19) + 'px'; el.style.top = (p.y + 19) + 'px'; el.style.background = p.color; fx.appendChild(el);
+                const angle = Math.random() * 6.28, spd = 3 + Math.random() * 5;
+                let vx = Math.cos(angle) * spd, vy = Math.sin(angle) * spd, life = 40;
+                const tick = () => { if (life-- <= 0) return el.remove(); el.style.left = (parseFloat(el.style.left) + vx) + 'px'; el.style.top = (parseFloat(el.style.top) + vy) + 'px'; el.style.opacity = life/40; requestAnimationFrame(tick); };
+                tick();
+            }
+            const grassCount = Math.floor(Math.random() * 3) + 1; for(let i=0; i<grassCount; i++) { grass.push({ x: p.x + (Math.random()-0.5) * 60, y: p.y + (Math.random()-0.5) * 40 }); }
+            if (p.playerUUID) { broadcast({ type: 'eliminated', uuid: p.playerUUID }); }
+        }
+
+        function draw() {
+            // 渲染障碍物和草地
+            const grassL = document.getElementById('layer-grass'); 
+            let htmlContent = grass.map(g => `<div class="grass" style="left:${g.x}px; top:${g.y}px"></div>`).join('');
+            if (gameState === 'RACING' || gameState === 'COOLDOWN') {
+                htmlContent += obstacles.map(o => `<div class="obstacle" style="left:${o.x}px; height:30px;"></div>`).join('');
+            }
+            grassL.innerHTML = htmlContent;
+
+            const ponyL = document.getElementById('layer-pony'); const nodes = Array.from(ponyL.children); const ids = new Set(ponies.map(p => p.id));
+            nodes.forEach(n => { if(!ids.has(n.id)) n.remove(); });
+            ponies.forEach(p => {
+                let el = document.getElementById(p.id);
+                if (!el) {
+                    el = document.createElement('div'); el.id = p.id; el.className = 'entity';
+                    el.innerHTML = `<div class="aura"></div><div class="crown-container" style="display: none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path></svg></div><div class="name-tag">${p.name}</div><div class="p-grid" style="display:grid; grid-template-columns:repeat(11,1fr); width:100%; height:100%;"></div>`;
+                    ponyL.appendChild(el);
+                }
+                
+                el.style.transform = `translate(${p.x}px, ${p.y - p.z}px) scale(1.1)`; 
+                el.style.zIndex = Math.floor(p.y);
+                
+                if (p.isStunned) {
+                    el.style.filter = "grayscale(100%) opacity(0.5)";
+                } else if (p.invincibleTimer > 0) {
+                    el.style.filter = (Math.floor(p.invincibleTimer / 5) % 2 === 0) ? "opacity(0.3)" : "opacity(0.8)";
+                } else {
+                    el.style.filter = "none";
+                }
+
+                const crownC = el.querySelector('.crown-container'); if (p.hasCrown) { crownC.style.display = 'flex'; } else { crownC.style.display = 'none'; }
+                el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none'; el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
+                const gridEl = el.querySelector('.p-grid');
+                if (p.isTurbo) { gridEl.classList.add('trail-active'); gridEl.style.setProperty('--trail-c', p.color); } else { gridEl.classList.remove('trail-active'); gridEl.style.removeProperty('--trail-c'); }
+                let frameStep = 0; if (p.isManual && p.state === 'racing') { frameStep = (p.manualAnimTimer > 0) ? 1 : 0; } else if (p.isWalkAnimating) { frameStep = Math.floor(p.frame / 5) % 2; }
+                gridEl.style.transform = `scaleX(${p.facing || 1})`;
+                let html = '';
+                for(let y=0; y<11; y++) {
+                    let row = p.pixels[y];
+                    if (p.state === 'eating') { if (y <= 5) { row = (y >= 2) ? p.pixels[y - 2] : [0,0,0,0,0,0,0,0,0,0,0]; } }
+                    else if (frameStep === 1 && y > 8) { row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[0]]; }
+                    for(let x=0; x<11; x++) { if (row[x]) html += `<div style="background:${p.color}; width:100%; height:100%; grid-column:${x+1}; grid-row:${y+1}"></div>`; }
+                }
+                gridEl.innerHTML = html;
+            });
+        }
+
+        function initMobile() {
+            playerUUID = localStorage.getItem('horse_uuid'); if (!playerUUID) { playerUUID = 'user_' + Math.random().toString(36).substr(2, 9); localStorage.setItem('horse_uuid', playerUUID); }
+            initEditor('m-grid', 'm-colors', mobileGrid);
+            try {
+                peer = new Peer(null, PEER_CONFIG);
+                peer.on('open', () => {
+                    conn = peer.connect(new URLSearchParams(window.location.search).get('host'));
+                    conn.on('open', () => { document.getElementById('m-status').innerText = "CONNECTED"; document.getElementById('m-status').style.color = "#69f0ae"; conn.send({ type: 'check_reconnect', uuid: playerUUID }); });
+                    conn.on('data', data => {
+                        if (data.type === 'reconnect_success') { document.getElementById('m-editor-ui').style.display = 'none'; document.getElementById('m-controller').style.display = 'flex'; }
+                        else if (data.type === 'sync_ui') {
+                            const btn = document.getElementById('m-btn'); 
+                            const info = document.getElementById('m-info'); 
+                            const modeWrapper = document.getElementById('m-mode-wrapper');
+
+                            mobileBtnState = data.mode; 
+                            
+                            // 默认：隐藏模式选择器，显示按钮
+                            btn.style.display = 'flex';
+                            modeWrapper.style.display = 'none';
+                            btn.className = 'push-btn'; 
+
+                            if (data.mode === 'wait') { 
+                                btn.classList.add('btn-wait'); btn.innerText = data.label; info.innerText = "GET READY..."; 
+                            }
+                            else if (data.mode === 'mash') { 
+                                btn.classList.add('btn-mash'); 
+                                btn.innerText = "RUN"; 
+                                info.innerText = data.infoText || "TAP TO RUN"; 
+                                randomizeMusic();
+                            }
+                            else if (data.mode === 'start') { 
+                                // === 比赛结束状态 ===
+                                btn.classList.add('btn-start'); 
+                                btn.innerText = "START RACE";
+                                info.innerText = "RACE FINISHED";
+                                // 显示模式选择器
+                                modeWrapper.style.display = 'flex';
+                            }
+                        } else if (data.type === 'eliminated' && data.uuid === playerUUID) {
+                            const btn = document.getElementById('m-btn'); const info = document.getElementById('m-info'); 
+                            mobileBtnState = 'dead'; 
+                            btn.className = 'push-btn btn-dead'; 
+                            btn.innerText = "TRY\nAGAIN"; 
+                            info.innerText = "ELIMINATED";
+                        } else if (data.type === 'player_finished' && data.uuid === playerUUID) {
+                            mobileBtnState = 'finished';
+                            const btn = document.getElementById('m-btn');
+                            btn.className = 'push-btn btn-wait';
+                            btn.innerText = "DONE";
+                            document.getElementById('m-info').innerText = "WAITING...";
+                        }
+                    });
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        /* === 手机端：初始化手势监听 === */
+        const mBtn = document.getElementById('m-btn');
+        mBtn.addEventListener('touchstart', (e) => {
+            if (mobileBtnState === 'dead') { resetMobile(); return; }
+            if (mobileBtnState === 'finished') return;
+            
+            // 比赛结束后的 "START RACE" 按钮逻辑
+            if (mobileBtnState === 'start') { 
+                e.preventDefault();
+                mBtn.style.transform = 'scale(0.95)'; setTimeout(() => mBtn.style.transform = 'scale(1)', 100);
+                // 读取选中的模式
+                const selectedMode = document.getElementById('m-mode-select').value;
+                if(conn) conn.send({ type: 'force_start', mode: selectedMode });
+                return; 
+            }
+
+            if (mobileBtnState !== 'mash') return;
+
+            e.preventDefault(); 
+            touchStartY = e.touches[0].clientY;
+            isSwiping = false;
+            
+            mBtn.style.transform = 'scale(0.95)'; 
+            setTimeout(() => { mBtn.style.transform = 'scale(1)'; }, 50);
+
+            if(conn) conn.send({ type: 'tap', uuid: playerUUID }); 
+            initAudio(); playNextNote(); 
+        }, {passive: false});
+
+        mBtn.addEventListener('touchmove', (e) => {
+            if (mobileBtnState !== 'mash') return;
+            e.preventDefault(); 
+            const currentY = e.touches[0].clientY;
+            if (!isSwiping && touchStartY - currentY > 50) {
+                isSwiping = true;
+                if(conn) conn.send({ type: 'jump', uuid: playerUUID }); 
+            }
+        }, {passive: false});
+
+        function sendMobile() {
+            if(!conn) return alert("Not Connected!");
+            const nameInput = document.getElementById('m-name'); let name = nameInput.value.trim().replace(/[^a-zA-Z0-9]/g, ''); if (!name) name = "PLAYER"; name = name.toUpperCase();
+            let hasPixels = false; for(let r=0; r<11; r++) { for(let c=0; c<11; c++) { if (mobileGrid[r][c] === 1) { hasPixels = true; break; } } if(hasPixels) break; }
+            if (!hasPixels) { alert("CANVAS IS EMPTY"); return; }
+            initAudio(); randomizeMusic();
+            conn.send({ type: 'spawn', payload: { name: name, pixels: mobileGrid, color: selectedColor, uuid: playerUUID } });
+            document.getElementById('m-editor-ui').style.display = 'none'; document.getElementById('m-controller').style.display = 'flex';
+        }
+
+        function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
+
+        /* === 修改后：处理 FACE 为文字 ? === */
+        function triggerPonyEmoji(uuid, emojiType) {
+            const pony = ponies.find(p => p.playerUUID === uuid); if (!pony) return;
+            const pEl = document.getElementById(pony.id); if (!pEl) return;
+            
+            let container;
+            if (emojiType === 'FACE') {
+                container = document.createElement('div');
+                container.className = 'pop-text';
+                container.innerText = "?";
+                container.style.color = pony.color;
+            } else {
+                container = document.createElement('div');
+                container.className = 'pixel-emoji-container';
+                container.appendChild(createPixelIcon(emojiType, 2, pony.color));
+            }
+
+            pEl.appendChild(container);
+            if (audioCtx && audioCtx.state === 'running') {
+                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'triangle'; osc.frequency.setValueAtTime(800, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            }
+            setTimeout(() => container.remove(), 2500);
+        }
+
+        function sendEmoji(type) {
+            if(!conn) return; conn.send({ type: 'emoji', uuid: playerUUID, content: type });
+            const btn = event.currentTarget; btn.style.transform = 'scale(0.8)'; setTimeout(() => btn.style.transform = 'scale(1)', 100);
+        }
+
+        function resetMobile() { document.getElementById('m-controller').style.display = 'none'; document.getElementById('m-editor-ui').style.display = 'block'; document.getElementById('m-name').value = ''; restoreGridData(mobileGrid); renderGrid('m-grid', mobileGrid, selectedColor); mobileBtnState = 'wait'; }
+        function clearMobile() { clearGridData(mobileGrid); renderGrid('m-grid', mobileGrid, selectedColor); }
+        function clearDesktop() { clearGridData(pcGrid); renderGrid('pc-grid', pcGrid, selectedColor); }
+        function clearGridData(grid) { for(let r=0; r<11; r++) for(let c=0; c<11; c++) grid[r][c] = 0; }
+        function restoreGridData(grid) { for(let r=0; r<11; r++) for(let c=0; c<11; c++) grid[r][c] = DEFAULT_PIXELS[r][c]; }
+        function openDesktopEditor() { renderGrid('pc-grid', pcGrid, selectedColor); document.getElementById('modal-editor').style.display = 'flex'; }
+        function savePCPony() { let name = document.getElementById('pc-name').value.trim().replace(/[^a-zA-Z0-9]/g, ''); if (!name) name = "PLAYER"; name = name.toUpperCase(); requestSpawnPony(name, pcGrid, selectedColor); document.getElementById('modal-editor').style.display = 'none'; }
+
+        function initEditor(gridId, colorId, dataGrid) {
+            const gridEl = document.getElementById(gridId); const colorEl = document.getElementById(colorId); colorEl.innerHTML = '';
+            Object.values(COLORS).forEach(c => { const dot = document.createElement('div'); dot.className = `c-dot ${c === selectedColor ? 'active' : ''}`; dot.style.background = c; dot.onclick = () => { selectedColor = c; renderGrid(gridId, dataGrid, selectedColor); Array.from(colorEl.children).forEach(d => d.classList.remove('active')); dot.classList.add('active'); }; colorEl.appendChild(dot); });
+            renderGrid(gridId, dataGrid, selectedColor);
+            let drawing = false, eraseMode = false;
+            const getCellCoords = (e) => { const t = e.touches ? e.touches[0] : e; const el = document.elementFromPoint(t.clientX, t.clientY); if (el && el.classList.contains('editor-cell')) { return { r: parseInt(el.dataset.r), c: parseInt(el.dataset.c), el: el }; } return null; };
+            const startDraw = (e) => { if(e.cancelable) e.preventDefault(); drawing = true; const cell = getCellCoords(e); if (cell) { eraseMode = dataGrid[cell.r][cell.c] === 1; updateCell(cell.r, cell.c, cell.el); } };
+            const moveDraw = (e) => { if (!drawing) return; if(e.cancelable) e.preventDefault(); const cell = getCellCoords(e); if (cell) { updateCell(cell.r, cell.c, cell.el); } };
+            const endDraw = () => { drawing = false; };
+            const updateCell = (r, c, el) => { const targetVal = eraseMode ? 0 : 1; if (dataGrid[r][c] !== targetVal) { dataGrid[r][c] = targetVal; if (targetVal === 1) { el.style.background = selectedColor; el.style.boxShadow = `0 0 5px ${selectedColor}`; } else { el.style.background = '#000'; el.style.boxShadow = 'none'; } } };
+            gridEl.onmousedown = gridEl.ontouchstart = startDraw; window.onmousemove = window.ontouchmove = moveDraw; window.onmouseup = window.ontouchend = endDraw;
+        }
+
+        function renderGrid(id, data, color) {
+            const el = document.getElementById(id); el.innerHTML = '';
+            data.forEach((row, r) => row.forEach((val, c) => { const cell = document.createElement('div'); cell.className = 'editor-cell'; cell.dataset.r = r; cell.dataset.c = c; if(val) { cell.style.background = color; cell.style.boxShadow = `0 0 5px ${color}`; } else { cell.style.background = '#000'; } el.appendChild(cell); }));
+        }
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>HORSE RUNRUN - PARTY PACK v13</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
