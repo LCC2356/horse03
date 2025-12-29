@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - BATTLE ROYALE</title>
-    <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
-    <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <title>HORSE RUNRUN - PARTY EDITION</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 
     <style>
@@ -56,28 +56,13 @@
             box-shadow: none;
             overflow: hidden;
             flex-shrink: 0;
-            transition: background-color 0.05s; /* 更快的闪烁响应 */
+            transition: background-color 0.1s;
         }
 
-        /* === 模式背景样式 === */
+        /* === 红绿灯模式背景样式 === */
         .bg-green { background: #002200 !important; box-shadow: inset 0 0 50px #00ff00 !important; border-color: #00ff00 !important; }
         .bg-yellow { background: #332200 !important; box-shadow: inset 0 0 50px #ffb300 !important; border-color: #ffb300 !important; }
         .bg-red { background: #440000 !important; box-shadow: inset 0 0 100px #ff0000 !important; border-color: #ff0000 !important; }
-
-        /* === 激光死线样式 === */
-        #death-wall {
-            position: absolute;
-            top: 0; bottom: 0; left: 0;
-            width: 0px; 
-            background: rgba(255, 0, 0, 0.3);
-            border-right: 4px solid #ff0000;
-            box-shadow: 0 0 20px #ff0000;
-            z-index: 50;
-            pointer-events: none;
-            display: none;
-            transition: width 0.1s linear;
-        }
-        .wall-active { display: block !important; }
 
         #track-wrapper {
             display: flex;
@@ -111,7 +96,9 @@
             text-shadow: 1px 1px 0 #000;
         }
 
-        .flash-active { animation: track-flash 0.2s ease-out; }
+        .flash-active {
+            animation: track-flash 0.2s ease-out;
+        }
         @keyframes track-flash {
             0% { background-color: rgba(255, 255, 255, 0.4); box-shadow: inset 0 0 150px var(--primary); border-color: #fff; }
             100% { background-color: #000; box-shadow: none; border-color: var(--primary); }
@@ -130,6 +117,7 @@
             background-size: 12px 12px; opacity: 0.8; z-index: 0;
         }
 
+        /* HUD */
         .hud { position: absolute; bottom: 4px; right: 10px; font-size: 32px; opacity: 0.5; letter-spacing: 2px; z-index: 110; }
 
         #track-display-bar {
@@ -142,16 +130,35 @@
             pointer-events: none;
         }
 
-        .bar-container { width: 100%; display: flex; align-items: center; justify-content: center; }
+        .bar-container {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
         .bar-text-item {
-            font-size: 80px; letter-spacing: 2px; text-shadow: 0 0 20px currentColor; font-weight: bold;
-            width: 260px; display: flex; justify-content: center; flex-shrink: 0; margin: 0;
+            font-size: 80px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px currentColor;
+            font-weight: bold;
+            width: 260px;
+            display: flex;
+            justify-content: center;
+            flex-shrink: 0;
+            margin: 0;
             animation: text-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
 
-        @keyframes text-pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1.0); opacity: 1; } }
-        @keyframes text-vanish { 0% { opacity: 1; } 100% { opacity: 0; } }
+        @keyframes text-pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1.0); opacity: 1; }
+        }
+
+        @keyframes text-vanish {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
 
         .queue-alert {
             position: absolute; top: 10px; right: 20px;
@@ -160,15 +167,30 @@
         }
 
         #vfd-overlay {
-            position: absolute; inset: 0; display: flex; align-items: center; justify-content: flex-start;
-            overflow: hidden; opacity: 0; pointer-events: none; z-index: 95; padding-left: 0;
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: flex-start;
+            overflow: hidden;
+            opacity: 0;
+            pointer-events: none; z-index: 95;
+            padding-left: 0;
         }
+
         #vfd-overlay i {
-            display: inline-block; width: 0; height: 0; border-top: 15px solid transparent; border-bottom: 15px solid transparent; border-left: 80px solid var(--primary);
-            margin-right: 20px; flex-shrink: 0; opacity: 0; transform: scale(0.8) skewX(-20deg); filter: drop-shadow(0 0 5px var(--primary));
+            display: inline-block;
+            width: 0; height: 0;
+            border-top: 15px solid transparent;
+            border-bottom: 15px solid transparent;
+            border-left: 80px solid var(--primary);
+            margin-right: 20px;
+            flex-shrink: 0;
+            opacity: 0;
+            transform: scale(0.8) skewX(-20deg);
+            filter: drop-shadow(0 0 5px var(--primary));
         }
+
         .vfd-active { opacity: 1 !important; }
         .vfd-active i { animation: vfd-flash 0.4s ease-out forwards calc(var(--d) * 1s); }
+
         @keyframes vfd-flash {
             0% { opacity: 0; transform: scale(0.8) translateX(0); }
             10% { opacity: 1; transform: scale(1.2) translateX(10px); filter: drop-shadow(0 0 15px var(--primary)) drop-shadow(0 0 30px #fff); }
@@ -177,15 +199,25 @@
         }
 
         .entity { position: absolute; width: 44px; height: 44px; will-change: transform; }
-        .pixel-grid { display: grid; grid-template-columns: repeat(11, 1fr); width: 100%; height: 100%; transform-origin: bottom center; transition: transform 0.2s; }
+        .pixel-grid {
+            display: grid;
+            grid-template-columns: repeat(11, 1fr);
+            width: 100%; height: 100%;
+            transform-origin: bottom center;
+            transition: transform 0.2s;
+        }
 
         .crown-container {
-            position: absolute; top: -31px; left: 50%; transform: translateX(-50%); width: 18px; height: 18px;
-            animation: bounce 1s infinite; z-index: 10; display: flex; flex-direction: column-reverse; align-items: center;
+            position: absolute; top: -31px; left: 50%; transform: translateX(-50%);
+            width: 18px; height: 18px;
+            animation: bounce 1s infinite; z-index: 10;
+            display: flex; flex-direction: column-reverse; align-items: center;
         }
         .aura {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 160%; height: 160%; border-radius: 50%;
-            background: radial-gradient(circle, rgba(250,204,21,0.4) 0%, transparent 70%); box-shadow: 0 0 10px #facc15; z-index: -1;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 160%; height: 160%; border-radius: 50%;
+            background: radial-gradient(circle, rgba(250,204,21,0.4) 0%, transparent 70%);
+            box-shadow: 0 0 10px #facc15; z-index: -1;
             animation: pulse 0.5s infinite alternate; display: none;
         }
         @keyframes pulse { from { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } }
@@ -195,55 +227,103 @@
             font-size: 20px; white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000;
         }
         .grass { position: absolute; width: 6px; height: 6px; background: #69f0ae; box-shadow: 0 0 4px #69f0ae; }
+        
         .obstacle {
-            position: absolute; width: 10px; height: 30px; background: #ff5252; border: 2px solid #fff; box-shadow: 0 0 10px #ff5252; z-index: 5; bottom: 5px;
+            position: absolute;
+            width: 10px; height: 30px; 
+            background: #ff5252;
+            border: 2px solid #fff;
+            box-shadow: 0 0 10px #ff5252;
+            z-index: 5;
+            bottom: 5px;
         }
+
         .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
         @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
 
         #layer-snow { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
         .snowflake {
-            position: absolute; top: -10px; background: #ffffff; border-radius: 50%; box-shadow: 0 0 4px #ffffff;
+            position: absolute; top: -10px;
+            background: #ffffff; border-radius: 50%; box-shadow: 0 0 4px #ffffff;
             animation-name: snowfall; animation-timing-function: linear; animation-fill-mode: forwards;
         }
         @keyframes snowfall { to { transform: translateY(calc(var(--game-h) + 20px)); } }
 
         .trail-segment {
-            position: absolute; height: 4px; width: 50px; border-radius: 0px; pointer-events: none; opacity: 0.8;
-            animation: trail-fade 0.4s ease-out forwards; z-index: 90; mix-blend-mode: screen; 
+            position: absolute; height: 4px; width: 50px; border-radius: 0px; 
+            pointer-events: none; opacity: 0.8;
+            animation: trail-fade 0.4s ease-out forwards;
+            z-index: 90; mix-blend-mode: screen; 
         }
         @keyframes trail-fade { to { opacity: 0; transform: translateX(-40px) scaleX(0.5); } }
 
         .trail-active .p-grid {
             filter: drop-shadow(-10px 0 5px var(--trail-c)) drop-shadow(-20px 0 10px var(--trail-c)) opacity(0.95);
-            transform: scaleX(1.3) skewX(-15deg); transition: filter 0.1s ease-out, transform 0.1s ease-out;
+            transform: scaleX(1.3) skewX(-15deg);
+            transition: filter 0.1s ease-out, transform 0.1s ease-out;
         }
 
-        .pixel-emoji-container { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 200; animation: pixel-float-smooth 2.5s linear forwards; }
+        .pixel-emoji-container {
+            position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+            pointer-events: none; z-index: 200;
+            animation: pixel-float-smooth 2.5s linear forwards;
+        }
+
         .pop-text {
-            position: absolute; top: -24px; left: 50%; transform: translateX(-50%); color: var(--accent); font-size: 28px; letter-spacing: 2px;
-            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000; white-space: nowrap; pointer-events: none; z-index: 210;
-            font-family: 'VT323', monospace; animation: pixel-float-smooth 2.5s linear forwards;
-        }
-        .pixel-icon-base { background: transparent; position: relative; }
-        @keyframes pixel-float-smooth {
-            0% { opacity: 0; transform: translate(-50%, 10px) scale(0.5); } 10% { opacity: 1; transform: translate(-50%, -10px) scale(1); }
-            25% { transform: translate(calc(-50% + 20px), -40px) scale(1); } 50% { transform: translate(calc(-50% - 20px), -80px) scale(1); }
-            75% { transform: translate(calc(-50% + 15px), -120px) scale(1); opacity: 0.8; } 100% { transform: translate(-50%, -160px) scale(1); opacity: 0; }
+            position: absolute; top: -24px; left: 50%; transform: translateX(-50%);
+            color: var(--accent); font-size: 28px; letter-spacing: 2px;
+            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+            white-space: nowrap; pointer-events: none; z-index: 210;
+            font-family: 'VT323', monospace;
+            animation: pixel-float-smooth 2.5s linear forwards;
         }
 
-        .emoji-bar { display: none !important; }
+        .pixel-icon-base { background: transparent; position: relative; }
+
+        @keyframes pixel-float-smooth {
+            0% { opacity: 0; transform: translate(-50%, 10px) scale(0.5); }
+            10% { opacity: 1; transform: translate(-50%, -10px) scale(1); }
+            25% { transform: translate(calc(-50% + 20px), -40px) scale(1); }
+            50% { transform: translate(calc(-50% - 20px), -80px) scale(1); }
+            75% { transform: translate(calc(-50% + 15px), -120px) scale(1); opacity: 0.8; }
+            100% { transform: translate(-50%, -160px) scale(1); opacity: 0; }
+        }
+
+        .emoji-bar {
+            display: none !important; /* 隐藏表情栏 */
+            gap: 15px; margin-top: 40px; pointer-events: auto; z-index: 22001; justify-content: center;
+        }
+        .emoji-btn {
+            background: #222; border: 2px solid #555; color: #fff;
+            width: 60px; height: 60px; border-radius: 12px; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            transition: transform 0.1s; -webkit-tap-highlight-color: transparent;
+            overflow: hidden; font-family: 'VT323', monospace;
+        }
+        .emoji-btn:active { transform: scale(0.8); background: #fff; border-color: #fff; color: #000; }
+        .emoji-btn:active .pixel-icon-base { filter: invert(1); }
 
         #bottom-controls {
-            position: fixed; bottom: 20px; left: 20px; display: flex; align-items: center; gap: 15px;
-            padding: 15px; background: rgba(0, 0, 0, 0.85); border: 1px solid var(--border); border-radius: 8px; z-index: 1000; box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            position: fixed; bottom: 20px; left: 20px;
+            display: flex; align-items: center; gap: 15px;
+            padding: 15px; background: rgba(0, 0, 0, 0.85);
+            border: 1px solid var(--border); border-radius: 8px;
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
         }
         #qrcode {
-            background: white; padding: 3px; width: 90px; height: 90px; display: flex; justify-content: center; align-items: center; border-radius: 2px;
+            background: white; padding: 3px;
+            width: 90px; height: 90px;
+            display: flex; justify-content: center; align-items: center;
+            border-radius: 2px;
         }
         #qrcode img { display: block; width: 100%; height: 100%; }
 
-        .control-group { display: flex; flex-direction: column; gap: 5px; border-left: 1px solid #333; padding-left: 15px; width: 140px; }
+        .control-group {
+            display: flex; flex-direction: column;
+            gap: 5px; border-left: 1px solid #333; padding-left: 15px;
+            width: 140px;
+        }
         .control-label { font-size: 0.8rem; color: #888; letter-spacing: 1px; }
         .input-wrapper { display: flex; align-items: center; gap: 5px; width: 100%; }
 
@@ -251,28 +331,36 @@
         input[type=range]:focus { outline: none; }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: #333; border-radius: 3px; border: 1px solid #555; }
         input[type=range]::-webkit-slider-thumb { height: 16px; width: 16px; border-radius: 2px; background: var(--accent); cursor: pointer; -webkit-appearance: none; margin-top: -6px; box-shadow: 0 0 5px var(--accent); }
+        
         input[type="number"] { background: #222; border: 1px solid var(--border); color: var(--primary); font-family: 'VT323', monospace; font-size: 1.4rem; width: 60px; text-align: center; padding: 2px; border-radius: 4px; }
         .unit-label { font-size: 1.2rem; color: #555; }
 
         select {
-            background: #222; border: 2px solid var(--border); color: white; padding: 8px; font-family: 'VT323', monospace; font-size: 1.2rem; margin-right: 10px; cursor: pointer;
+            background: #222; border: 2px solid var(--border); color: white;
+            padding: 8px; font-family: 'VT323', monospace; font-size: 1.2rem;
+            margin-right: 10px; cursor: pointer;
         }
 
         .btn {
-            background: #222; border: 2px solid var(--primary); color: var(--primary); padding: 10px 20px; font-family: 'VT323', monospace; font-size: 1.2rem;
-            cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(255, 255, 255, 0.2); transition: all 0.2s; margin-left: 5px;
+            background: #222; border: 2px solid var(--primary); color: var(--primary);
+            padding: 10px 20px; font-family: 'VT323', monospace; font-size: 1.2rem;
+            cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            transition: all 0.2s; margin-left: 5px;
         }
         .btn:hover { background: var(--primary); color: #000; }
         .btn:active { transform: translateY(2px); }
 
         #modal-editor {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; display: none; justify-content: center; align-items: center;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000;
+            display: none; justify-content: center; align-items: center;
         }
         .modal-content {
-            background: #1a1c20; border: 2px solid var(--primary); padding: 30px; display: flex; flex-direction: column; align-items: center; gap: 20px;
+            background: #1a1c20; border: 2px solid var(--primary); padding: 30px;
+            display: flex; flex-direction: column; align-items: center; gap: 20px;
         }
         .editor-grid {
-            display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr); gap: 2px; background: #333; border: 2px solid #555; touch-action: none;
+            display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr);
+            gap: 2px; background: #333; border: 2px solid #555; touch-action: none;
         }
         .editor-cell { width: 28px; height: 28px; background: #000; }
         .color-picker { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
@@ -282,33 +370,51 @@
         .btn-flex { flex: 1; display: flex; justify-content: center; align-items: center; }
 
         #mobile-view {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111; display: flex; flex-direction: column; z-index: 20000; padding: 20px; align-items: center;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #111; display: flex; flex-direction: column; z-index: 20000;
+            padding: 20px; align-items: center;
         }
         .m-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; flex-shrink: 0; width: 100%; max-width: 400px; }
         .m-title { font-size: 1.5rem; color: #fff; }
         .m-status { background: #222; padding: 4px 8px; border-radius: 4px; font-size: 1rem; color: #fff; border: 1px solid #444; }
         .m-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; flex-shrink: 0; width: 100%; max-width: 400px; }
         input[type="text"] {
-            background: #222; border: 1px solid #444; color: white; padding: 12px; font-family: inherit; text-align: center; font-size: 1.5rem; width: 100%; border-radius: 4px;
+            background: #222; border: 1px solid #444; color: white; padding: 12px;
+            font-family: inherit; text-align: center; font-size: 1.5rem; width: 100%; border-radius: 4px;
         }
         .m-canvas-container {
-            flex: 1; display: flex; justify-content: center; align-items: center; background: #1a1a1a; border-radius: 8px; margin-bottom: 20px; overflow: hidden; width: 100%; max-width: 400px;
+            flex: 1; display: flex; justify-content: center; align-items: center;
+            background: #1a1a1a; border-radius: 8px; margin-bottom: 20px;
+            overflow: hidden; width: 100%; max-width: 400px;
         }
         .m-footer { display: flex; gap: 15px; height: 60px; flex-shrink: 0; width: 100%; max-width: 400px; }
 
         #m-controller {
-            position: fixed; inset: 0; background: #111; z-index: 22000; display: none; flex-direction: column; align-items: center; justify-content: center;
+            position: fixed; inset: 0; background: #111; z-index: 22000;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
         }
         
-        #m-mode-wrapper { margin-bottom: 20px; width: 100%; max-width: 300px; display: none; justify-content: center; }
+        /* 手机端选择框容器 */
+        #m-mode-wrapper {
+            margin-bottom: 20px; width: 100%; max-width: 300px; display: none; justify-content: center;
+        }
         #m-mode-select {
-            background: #222; border: 2px solid #555; color: #fff; padding: 10px; font-family: 'VT323'; font-size: 1.8rem; width: 100%; text-align: center; border-radius: 8px;
+            background: #222; border: 2px solid #555; color: #fff; padding: 10px;
+            font-family: 'VT323'; font-size: 1.8rem; width: 100%; text-align: center;
+            border-radius: 8px;
         }
 
         .push-btn {
-            width: 250px; height: 250px; border-radius: 50%; background: #222; border: 8px solid #444; color: #888; font-size: 4rem; font-family: 'VT323', monospace;
-            display: flex; justify-content: center; align-items: center; box-shadow: 0 0 50px rgba(0,0,0, 0.4); transition: all 0.1s; user-select: none;
-            cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none; text-align: center; line-height: 1; padding: 20px;
+            width: 250px; height: 250px; 
+            border-radius: 50%;
+            background: #222; border: 8px solid #444;
+            color: #888; font-size: 4rem; font-family: 'VT323', monospace;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 0 50px rgba(0,0,0, 0.4);
+            transition: all 0.1s; user-select: none;
+            cursor: pointer; -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+            text-align: center; line-height: 1; padding: 20px;
         }
         .push-btn:active { transform: scale(0.95); }
         .controller-info { font-size: 1.5rem; color: #888; margin-bottom: 30px; text-align: center; }
@@ -326,7 +432,6 @@
                 <div id="game-screen">
                     <div class="grid-bg"></div>
                     <div class="finish-line"></div>
-                    <div id="death-wall"></div>
 
                     <div id="hud" class="hud">NOWHERE TO RUN</div>
 
@@ -374,7 +479,6 @@
                     <option value="CLASSIC">RUN</option>
                     <option value="HURDLE">JUMP</option>
                     <option value="RED_LIGHT">STOP?</option>
-                    <option value="ELIMINATION">ELIMINATION</option>
                 </select>
             </div>
 
@@ -425,11 +529,17 @@
                     <option value="CLASSIC">RUN</option>
                     <option value="HURDLE">JUMP</option>
                     <option value="RED_LIGHT">STOP?</option>
-                    <option value="ELIMINATION">ELIMINATION</option>
                 </select>
             </div>
 
             <div id="m-btn" class="push-btn btn-wait">WAIT</div>
+            
+            <div class="emoji-bar">
+                <div class="emoji-btn" onclick="sendEmoji('HEART')" data-icon="HEART"></div>
+                <div class="emoji-btn" onclick="sendEmoji('POOP')" data-icon="POOP"></div>
+                <div class="emoji-btn" onclick="sendEmoji('BOLT')" data-icon="BOLT"></div>
+                <div class="emoji-btn" onclick="sendEmoji('FACE')" style="font-size: 2rem;">?</div>
+            </div>
         </div>
     </div>
 
@@ -484,12 +594,6 @@
         let currentGameMode = 'CLASSIC'; 
         let redLightTimer = 0;
         let lightState = 'GREEN'; 
-        
-        // Elimination Mode Vars
-        let deathWallX = 0;
-        let wallSpeed = 0;
-        let eliminationState = 'IDLE'; // IDLE, WARNING, ACTIVE
-        let eliminationFlashTimer = 0;
 
         let peer = null, conn = null;
         let pcGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
@@ -507,7 +611,7 @@
 
         let touchStartY = 0;
         let isSwiping = false;
-        let lastShakeTime = 0;
+        let lastShakeTime = 0; // 摇一摇防抖
 
         const PEER_CONFIG = {
             debug: 2,
@@ -560,6 +664,7 @@
                 osc.frequency.setValueAtTime(400, now);
                 gain.gain.setValueAtTime(0.2, now);
                 gain.gain.linearRampToValueAtTime(0, now + 0.1);
+                
                 osc.start(now); osc.stop(now + 0.1);
                 
                 const osc2 = audioCtx.createOscillator();
@@ -579,12 +684,6 @@
                 gain.gain.setValueAtTime(0.3, now);
                 gain.gain.linearRampToValueAtTime(0, now + 0.5);
                 osc.start(now); osc.stop(now + 0.5);
-            } else if (type === 'TICK') {
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(800, now);
-                gain.gain.setValueAtTime(0.1, now);
-                gain.gain.linearRampToValueAtTime(0, now + 0.05);
-                osc.start(now); osc.stop(now + 0.05);
             }
         }
 
@@ -700,10 +799,17 @@
                 peer = new Peer(null, PEER_CONFIG);
                 peer.on('open', id => {
                     const url = `${location.href}?host=${id}`;
-                    new QRCode(document.getElementById("qrcode"), {
+                    // 清空并生成新的二维码
+                    const qrEl = document.getElementById("qrcode");
+                    qrEl.innerHTML = '';
+                    new QRCode(qrEl, {
                         text: url, width: 86, height: 86,
                         colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L
                     });
+                });
+                peer.on('error', (err) => { 
+                    console.error("PeerJS Error:", err); 
+                    alert("Connection Error: " + err.type + "\nPlease check internet or try refreshing."); 
                 });
                 peer.on('connection', c => {
                     c.on('data', data => {
@@ -730,7 +836,6 @@
                         }
                     });
                 });
-                peer.on('error', (err) => { console.error("PeerJS Error:", err); alert("Network Error: " + err.type + "\nTry refreshing."); });
             } catch(e) { console.error(e); }
         }
 
@@ -782,9 +887,6 @@
 
         function getConnByUUID(uuid) {
             if(!peer || !peer.connections) return null;
-            // 简单遍历找到连接，因为没有建立 uuid->conn 的映射，只能广播检查
-            // 为了准确性，我们假设 peerjs 连接对象上有 metadata，但没设置。
-            // 这里我们广播震动指令给所有连接，客户端检查 UUID 是否匹配
             Object.values(peer.connections).forEach(conns => {
                 conns.forEach(c => {
                     if(c.open) c.send({ type: 'vibrate_check', target_uuid: uuid });
@@ -814,7 +916,7 @@
         function startCooldown() {
             const selected = document.getElementById('mode-select').value;
             if (selected === 'RANDOM') {
-                const modes = ['CLASSIC', 'HURDLE', 'RED_LIGHT', 'ELIMINATION'];
+                const modes = ['CLASSIC', 'HURDLE', 'RED_LIGHT'];
                 currentGameMode = modes[Math.floor(Math.random() * modes.length)];
             } else {
                 currentGameMode = selected;
@@ -835,14 +937,12 @@
             if (currentGameMode === 'RED_LIGHT') modeName = "STOP?";
             else if (currentGameMode === 'HURDLE') modeName = "JUMP";
             else if (currentGameMode === 'CLASSIC') modeName = "RUN";
-            else if (currentGameMode === 'ELIMINATION') modeName = "SURVIVE";
 
             updateBarText(modeName, "#ffb300"); 
             broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
             
             obstacles = [];
             document.getElementById('game-screen').className = ''; 
-            document.getElementById('death-wall').classList.remove('wall-active'); 
             lightState = 'GREEN';
         }
 
@@ -867,19 +967,6 @@
                 redLightTimer = (120 + Math.random() * 100) * 0.8; 
                 document.getElementById('game-screen').classList.add('bg-green');
                 playSignalSound('GREEN');
-            } else if (currentGameMode === 'ELIMINATION') {
-                statusText = "STATUS: SURVIVE!";
-                mobileInfo = "RUN OR DIE!";
-                obstacles = [];
-                for(let ox = 800; ox < GAME_W * 5; ox += (500 + Math.random() * 300)) {
-                    obstacles.push({ x: ox, width: 10, passed: false });
-                }
-                deathWallX = 0;
-                wallSpeed = 2.0; 
-                document.getElementById('death-wall').style.width = '0px';
-                // 预警模式
-                eliminationState = 'WARNING';
-                eliminationFlashTimer = 90; // 1.5s
             } else {
                 statusText = "STATUS: RUN";
                 obstacles = [];
@@ -933,7 +1020,7 @@
                             lightState = 'YELLOW';
                             redLightTimer = 30; 
                             screen.classList.add('bg-yellow');
-                            updateBarText("STOP?", "#ffb300"); 
+                            updateBarText("STOP?", "#ffb300"); // 黄灯提示
                             setBarVisibility(true);
                             playSignalSound('YELLOW');
                         } else if (lightState === 'YELLOW') {
@@ -951,53 +1038,12 @@
                             setTimeout(() => { if (lightState === 'GREEN') setBarVisibility(false); }, 500);
                         }
                     }
-                } else if (currentGameMode === 'ELIMINATION') {
-                    // === 淘汰赛逻辑 ===
-                    if (eliminationState === 'WARNING') {
-                        eliminationFlashTimer--;
-                        // 闪烁逻辑 (每30帧闪一次红)
-                        if (eliminationFlashTimer % 30 > 20) {
-                            document.getElementById('game-screen').classList.add('bg-red');
-                            if (eliminationFlashTimer % 30 === 29) playSignalSound('TICK');
-                        } else {
-                            document.getElementById('game-screen').classList.remove('bg-red');
-                        }
-                        
-                        if (eliminationFlashTimer <= 0) {
-                            eliminationState = 'ACTIVE';
-                            document.getElementById('death-wall').classList.add('wall-active');
-                            playSignalSound('RED');
-                        }
-                    } else if (eliminationState === 'ACTIVE') {
-                        wallSpeed += 0.002; 
-                        deathWallX += wallSpeed;
-                        document.getElementById('death-wall').style.width = deathWallX + 'px';
-                        
-                        // 检查淘汰
-                        ponies.forEach(p => {
-                            if (p.state === 'racing' && p.x < deathWallX) {
-                                p.state = 'eliminated'; // 标记为淘汰
-                                explode(p);
-                                const conn = getConnByUUID(p.playerUUID);
-                                if(conn) conn.send({ type: 'vibrate', duration: 500 });
-                            }
-                        });
-
-                        // 检查胜利
-                        const survivors = ponies.filter(p => p.state === 'racing');
-                        if (survivors.length <= 1 && ponies.length > 1) {
-                            setTimeout(() => {
-                                if (gameState === 'RACING') ponies.forEach(p => { if(p.state === 'racing') p.state = 'finished'; });
-                            }, 2000);
-                        }
-                    }
                 }
 
                 updatePoniesMovement(); checkRaceEnd();
             } else if (gameState === 'ROAMING') {
                 hud.style.display = 'block'; hud.innerText = "NOWHERE TO RUN";
                 document.getElementById('game-screen').className = ''; 
-                document.getElementById('death-wall').classList.remove('wall-active');
                 if (ponyQueue.length > 0) { alert.style.display = 'block'; alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`; } else { alert.style.display = 'none'; }
                 updatePoniesMovement();
             }
@@ -1015,13 +1061,7 @@
         function checkRaceEnd() {
             const finished = ponies.filter(p => p.state === 'finished'); let raceOverTrigger = false;
             
-            if (currentGameMode === 'ELIMINATION') {
-                const survivors = ponies.filter(p => p.state === 'racing');
-                if (survivors.length === 0 && ponies.length > 0 && eliminationState === 'ACTIVE') raceOverTrigger = true; 
-                else if (finished.length > 0) raceOverTrigger = true; 
-            } else {
-                if (ponies.length > 10) { if (finished.length >= 10) raceOverTrigger = true; } else { if (ponies.length > 0 && finished.length === ponies.length) raceOverTrigger = true; }
-            }
+            if (ponies.length > 10) { if (finished.length >= 10) raceOverTrigger = true; } else { if (ponies.length > 0 && finished.length === ponies.length) raceOverTrigger = true; }
 
             if (raceOverTrigger) {
                 if (ponies.length > 10) {
@@ -1038,7 +1078,6 @@
             }
         }
 
-        /* === 光线拖影特效 === */
         function spawnTrail(p) {
             const fxLayer = document.getElementById('layer-fx');
             const count = Math.random() < 0.5 ? 1 : 2; 
@@ -1093,7 +1132,7 @@
                                 if (Math.random() < 0.02) p.x += 2; 
                             } else {
                                 p.x += p.speed * (0.9 + Math.random() * 0.2); p.isWalkAnimating = true;
-                                if ((currentGameMode === 'HURDLE' || currentGameMode === 'ELIMINATION') && !p.isJumping) {
+                                if (currentGameMode === 'HURDLE' && !p.isJumping) {
                                     const nearestObs = obstacles.find(o => o.x > p.x && o.x < p.x + 150); 
                                     if (nearestObs && Math.random() < 0.15) { 
                                         p.isJumping = true; p.vz = 12; 
@@ -1111,7 +1150,7 @@
                         }
 
                         if (p.invincibleTimer <= 0) {
-                            if (currentGameMode === 'HURDLE' || currentGameMode === 'ELIMINATION') {
+                            if (currentGameMode === 'HURDLE') {
                                 obstacles.forEach(obs => {
                                     if (p.x + 40 > obs.x && p.x < obs.x + obs.width) {
                                         if (p.z < 20) { 
@@ -1154,62 +1193,188 @@
             });
         }
 
-        function draw() {
-            const grassL = document.getElementById('layer-grass'); 
-            let htmlContent = grass.map(g => `<div class="grass" style="left:${g.x}px; top:${g.y}px"></div>`).join('');
-            if (gameState === 'RACING' || gameState === 'COOLDOWN') {
-                htmlContent += obstacles.map(o => `<div class="obstacle" style="left:${o.x}px; height:30px;"></div>`).join('');
-            }
-            grassL.innerHTML = htmlContent;
+        function initMobile() {
+            playerUUID = localStorage.getItem('horse_uuid'); if (!playerUUID) { playerUUID = 'user_' + Math.random().toString(36).substr(2, 9); localStorage.setItem('horse_uuid', playerUUID); }
+            initEditor('m-grid', 'm-colors', mobileGrid);
+            try {
+                peer = new Peer(null, PEER_CONFIG);
+                peer.on('open', () => {
+                    conn = peer.connect(new URLSearchParams(window.location.search).get('host'));
+                    conn.on('open', () => { document.getElementById('m-status').innerText = "CONNECTED"; document.getElementById('m-status').style.color = "#69f0ae"; conn.send({ type: 'check_reconnect', uuid: playerUUID }); });
+                    conn.on('data', data => {
+                        if (data.type === 'reconnect_success') { document.getElementById('m-editor-ui').style.display = 'none'; document.getElementById('m-controller').style.display = 'flex'; }
+                        else if (data.type === 'sync_ui') {
+                            const btn = document.getElementById('m-btn'); 
+                            const info = document.getElementById('m-info'); 
+                            const modeWrapper = document.getElementById('m-mode-wrapper');
+                            
+                            mobileBtnState = data.mode; 
+                            btn.className = 'push-btn'; 
+                            modeWrapper.style.display = 'none';
 
-            const ponyL = document.getElementById('layer-pony'); const nodes = Array.from(ponyL.children); const ids = new Set(ponies.map(p => p.id));
-            nodes.forEach(n => { if(!ids.has(n.id)) n.remove(); });
-            
-            ponies.forEach(p => {
-                // 如果已淘汰，移除DOM元素（或不渲染）
-                if (p.state === 'eliminated') {
-                    const el = document.getElementById(p.id);
-                    if (el) el.remove();
-                    return;
-                }
-
-                let el = document.getElementById(p.id);
-                if (!el) {
-                    el = document.createElement('div'); el.id = p.id; el.className = 'entity';
-                    el.innerHTML = `<div class="aura"></div><div class="crown-container" style="display: none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path></svg></div><div class="name-tag">${p.name}</div><div class="p-grid" style="display:grid; grid-template-columns:repeat(11,1fr); width:100%; height:100%;"></div>`;
-                    ponyL.appendChild(el);
-                }
-                
-                el.style.transform = `translate(${p.x}px, ${p.y - p.z}px) scale(1.1)`; 
-                el.style.zIndex = Math.floor(p.y);
-                
-                if (p.isStunned) {
-                    el.style.filter = "grayscale(100%) opacity(0.5)";
-                } else if (p.invincibleTimer > 0) {
-                    el.style.filter = (Math.floor(p.invincibleTimer / 5) % 2 === 0) ? "opacity(0.3)" : "opacity(0.8)";
-                } else {
-                    el.style.filter = "none";
-                }
-
-                const crownC = el.querySelector('.crown-container'); if (p.hasCrown) { crownC.style.display = 'flex'; } else { crownC.style.display = 'none'; }
-                el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none'; el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
-                const gridEl = el.querySelector('.p-grid');
-                if (p.isTurbo) { gridEl.classList.add('trail-active'); gridEl.style.setProperty('--trail-c', p.color); } else { gridEl.classList.remove('trail-active'); gridEl.style.removeProperty('--trail-c'); }
-                let frameStep = 0; if (p.isManual && p.state === 'racing') { frameStep = (p.manualAnimTimer > 0) ? 1 : 0; } else if (p.isWalkAnimating) { frameStep = Math.floor(p.frame / 5) % 2; }
-                gridEl.style.transform = `scaleX(${p.facing || 1})`;
-                let html = '';
-                for(let y=0; y<11; y++) {
-                    let row = p.pixels[y];
-                    if (p.state === 'eating') { if (y <= 5) { row = (y >= 2) ? p.pixels[y - 2] : [0,0,0,0,0,0,0,0,0,0,0]; } }
-                    else if (frameStep === 1 && y > 8) { row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[0]]; }
-                    for(let x=0; x<11; x++) { if (row[x]) html += `<div style="background:${p.color}; width:100%; height:100%; grid-column:${x+1}; grid-row:${y+1}"></div>`; }
-                }
-                gridEl.innerHTML = html;
-            });
+                            if (data.mode === 'wait') { 
+                                btn.classList.add('btn-wait'); btn.innerText = data.label; info.innerText = "GET READY..."; 
+                            }
+                            else if (data.mode === 'mash') { 
+                                btn.classList.add('btn-mash'); 
+                                btn.innerText = "RUN"; 
+                                info.innerText = data.infoText || "TAP TO RUN"; 
+                                randomizeMusic();
+                            }
+                            else if (data.mode === 'start') { 
+                                btn.classList.add('btn-start'); btn.innerText = data.label; info.innerText = "RACE FINISHED"; 
+                                modeWrapper.style.display = 'flex';
+                            }
+                        } else if (data.type === 'eliminated' && data.uuid === playerUUID) {
+                            const btn = document.getElementById('m-btn'); const info = document.getElementById('m-info'); 
+                            mobileBtnState = 'dead'; 
+                            btn.className = 'push-btn btn-dead'; 
+                            btn.innerText = "TRY\nAGAIN"; 
+                            info.innerText = "ELIMINATED";
+                            document.getElementById('m-mode-wrapper').style.display = 'none';
+                            if(navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 500]); 
+                        } else if (data.type === 'player_finished' && data.uuid === playerUUID) {
+                            mobileBtnState = 'finished';
+                            const btn = document.getElementById('m-btn');
+                            btn.className = 'push-btn btn-wait';
+                            btn.innerText = "DONE";
+                            document.getElementById('m-info').innerText = "WAITING...";
+                            document.getElementById('m-mode-wrapper').style.display = 'none';
+                        } else if (data.type === 'vibrate' || (data.type === 'vibrate_check' && data.target_uuid === playerUUID)) {
+                            if(navigator.vibrate) navigator.vibrate(data.duration || 200);
+                        }
+                    });
+                });
+            } catch(e) { console.error(e); }
         }
 
-        // 覆盖原来的initMobile
-        initMobile = initMobilePeer;
+        /* === 手机端：摇一摇监测函数 === */
+        function handleMotion(event) {
+            const acc = event.acceleration; 
+            if (!acc) return;
+            const magnitude = Math.sqrt(acc.x*acc.x + acc.y*acc.y + acc.z*acc.z);
+            if (magnitude > 15) { // 阈值
+                const now = Date.now();
+                if (now - lastShakeTime > 500) { 
+                    lastShakeTime = now;
+                    if(conn) conn.send({ type: 'jump', uuid: playerUUID }); 
+                }
+            }
+        }
+
+        /* === 手机端：初始化监听 === */
+        const mBtn = document.getElementById('m-btn');
+        mBtn.addEventListener('touchstart', (e) => {
+            if (mobileBtnState === 'dead') { resetMobile(); return; }
+            if (mobileBtnState === 'finished') return;
+            if (mobileBtnState === 'start') { 
+                const selectedMode = document.getElementById('m-mode-select').value;
+                if(conn) conn.send({ type: 'force_start', mode: selectedMode }); 
+                return; 
+            }
+            if (mobileBtnState !== 'mash') return;
+
+            e.preventDefault(); 
+            // 触感反馈（轻微）
+            if(navigator.vibrate) navigator.vibrate(30);
+            
+            mBtn.style.transform = 'scale(0.95)'; 
+            setTimeout(() => { mBtn.style.transform = 'scale(1)'; }, 50);
+
+            if(conn) conn.send({ type: 'tap', uuid: playerUUID }); 
+            initAudio(); playNextNote(); 
+        }, {passive: false});
+
+        mBtn.addEventListener('touchmove', (e) => {
+            if (mobileBtnState !== 'mash') return;
+            e.preventDefault(); 
+            const currentY = e.touches[0].clientY;
+            if (!isSwiping && touchStartY - currentY > 50) {
+                isSwiping = true;
+                if(conn) conn.send({ type: 'jump', uuid: playerUUID }); 
+            }
+        }, {passive: false});
+
+        function sendMobile() {
+            if(!conn) return alert("Not Connected!");
+            const nameInput = document.getElementById('m-name'); let name = nameInput.value.trim().replace(/[^a-zA-Z0-9]/g, ''); if (!name) name = "PLAYER"; name = name.toUpperCase();
+            let hasPixels = false; for(let r=0; r<11; r++) { for(let c=0; c<11; c++) { if (mobileGrid[r][c] === 1) { hasPixels = true; break; } } if(hasPixels) break; }
+            if (!hasPixels) { alert("CANVAS IS EMPTY"); return; }
+            
+            initAudio(); randomizeMusic();
+
+            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                DeviceMotionEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            window.addEventListener('devicemotion', handleMotion);
+                        }
+                    })
+                    .catch(console.error);
+            } else {
+                window.addEventListener('devicemotion', handleMotion);
+            }
+
+            conn.send({ type: 'spawn', payload: { name: name, pixels: mobileGrid, color: selectedColor, uuid: playerUUID } });
+            document.getElementById('m-editor-ui').style.display = 'none'; document.getElementById('m-controller').style.display = 'flex';
+        }
+
+        function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
+
+        /* === 修改后：处理 FACE 为文字 ? === */
+        function triggerPonyEmoji(uuid, emojiType) {
+            const pony = ponies.find(p => p.playerUUID === uuid); if (!pony) return;
+            const pEl = document.getElementById(pony.id); if (!pEl) return;
+            
+            let container;
+            if (emojiType === 'FACE') {
+                container = document.createElement('div');
+                container.className = 'pop-text';
+                container.innerText = "?";
+                container.style.color = pony.color;
+            } else {
+                container = document.createElement('div');
+                container.className = 'pixel-emoji-container';
+                container.appendChild(createPixelIcon(emojiType, 2, pony.color));
+            }
+
+            pEl.appendChild(container);
+            if (audioCtx && audioCtx.state === 'running') {
+                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'triangle'; osc.frequency.setValueAtTime(800, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            }
+            setTimeout(() => container.remove(), 2500);
+        }
+
+        function sendEmoji(type) {
+            if(!conn) return; conn.send({ type: 'emoji', uuid: playerUUID, content: type });
+            const btn = event.currentTarget; btn.style.transform = 'scale(0.8)'; setTimeout(() => btn.style.transform = 'scale(1)', 100);
+        }
+
+        function resetMobile() { document.getElementById('m-controller').style.display = 'none'; document.getElementById('m-editor-ui').style.display = 'block'; document.getElementById('m-name').value = ''; restoreGridData(mobileGrid); renderGrid('m-grid', mobileGrid, selectedColor); mobileBtnState = 'wait'; }
+        function clearMobile() { clearGridData(mobileGrid); renderGrid('m-grid', mobileGrid, selectedColor); }
+        function clearDesktop() { clearGridData(pcGrid); renderGrid('pc-grid', pcGrid, selectedColor); }
+        function clearGridData(grid) { for(let r=0; r<11; r++) for(let c=0; c<11; c++) grid[r][c] = 0; }
+        function restoreGridData(grid) { for(let r=0; r<11; r++) for(let c=0; c<11; c++) grid[r][c] = DEFAULT_PIXELS[r][c]; }
+        function openDesktopEditor() { renderGrid('pc-grid', pcGrid, selectedColor); document.getElementById('modal-editor').style.display = 'flex'; }
+        function savePCPony() { let name = document.getElementById('pc-name').value.trim().replace(/[^a-zA-Z0-9]/g, ''); if (!name) name = "PLAYER"; name = name.toUpperCase(); requestSpawnPony(name, pcGrid, selectedColor); document.getElementById('modal-editor').style.display = 'none'; }
+
+        function initEditor(gridId, colorId, dataGrid) {
+            const gridEl = document.getElementById(gridId); const colorEl = document.getElementById(colorId); colorEl.innerHTML = '';
+            Object.values(COLORS).forEach(c => { const dot = document.createElement('div'); dot.className = `c-dot ${c === selectedColor ? 'active' : ''}`; dot.style.background = c; dot.onclick = () => { selectedColor = c; renderGrid(gridId, dataGrid, selectedColor); Array.from(colorEl.children).forEach(d => d.classList.remove('active')); dot.classList.add('active'); }; colorEl.appendChild(dot); });
+            renderGrid(gridId, dataGrid, selectedColor);
+            let drawing = false, eraseMode = false;
+            const getCellCoords = (e) => { const t = e.touches ? e.touches[0] : e; const el = document.elementFromPoint(t.clientX, t.clientY); if (el && el.classList.contains('editor-cell')) { return { r: parseInt(el.dataset.r), c: parseInt(el.dataset.c), el: el }; } return null; };
+            const startDraw = (e) => { if(e.cancelable) e.preventDefault(); drawing = true; const cell = getCellCoords(e); if (cell) { eraseMode = dataGrid[cell.r][cell.c] === 1; updateCell(cell.r, cell.c, cell.el); } };
+            const moveDraw = (e) => { if (!drawing) return; if(e.cancelable) e.preventDefault(); const cell = getCellCoords(e); if (cell) { updateCell(cell.r, cell.c, cell.el); } };
+            const endDraw = () => { drawing = false; };
+            const updateCell = (r, c, el) => { const targetVal = eraseMode ? 0 : 1; if (dataGrid[r][c] !== targetVal) { dataGrid[r][c] = targetVal; if (targetVal === 1) { el.style.background = selectedColor; el.style.boxShadow = `0 0 5px ${selectedColor}`; } else { el.style.background = '#000'; el.style.boxShadow = 'none'; } } };
+            gridEl.onmousedown = gridEl.ontouchstart = startDraw; window.onmousemove = window.ontouchmove = moveDraw; window.onmouseup = window.ontouchend = endDraw;
+        }
+
+        function renderGrid(id, data, color) {
+            const el = document.getElementById(id); el.innerHTML = '';
+            data.forEach((row, r) => row.forEach((val, c) => { const cell = document.createElement('div'); cell.className = 'editor-cell'; cell.dataset.r = r; cell.dataset.c = c; if(val) { cell.style.background = color; cell.style.boxShadow = `0 0 5px ${color}`; } else { cell.style.background = '#000'; } el.appendChild(cell); }));
+        }
     </script>
 </body>
 </html>
