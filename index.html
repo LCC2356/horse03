@@ -56,7 +56,7 @@
             box-shadow: none;
             overflow: hidden;
             flex-shrink: 0;
-            transition: background-color 0.1s;
+            transition: background-color 0.05s; /* 更快的闪烁响应 */
         }
 
         /* === 模式背景样式 === */
@@ -68,7 +68,7 @@
         #death-wall {
             position: absolute;
             top: 0; bottom: 0; left: 0;
-            width: 0px; /* 动态控制宽度 */
+            width: 0px; 
             background: rgba(255, 0, 0, 0.3);
             border-right: 4px solid #ff0000;
             box-shadow: 0 0 20px #ff0000;
@@ -232,7 +232,7 @@
             75% { transform: translate(calc(-50% + 15px), -120px) scale(1); opacity: 0.8; } 100% { transform: translate(-50%, -160px) scale(1); opacity: 0; }
         }
 
-        .emoji-bar { display: none !important; } /* Hidden */
+        .emoji-bar { display: none !important; }
 
         #bottom-controls {
             position: fixed; bottom: 20px; left: 20px; display: flex; align-items: center; gap: 15px;
@@ -371,8 +371,11 @@
                 <span class="control-label">GAME MODE</span>
                 <select id="mode-select">
                     <option value="RANDOM">RANDOM</option>
-                    <option value="CLASSIC">RUN</option> <option value="HURDLE">JUMP</option>
-                    <option value="RED_LIGHT">STOP?</option> <option value="ELIMINATION">ELIMINATION</option> </select>
+                    <option value="CLASSIC">RUN</option>
+                    <option value="HURDLE">JUMP</option>
+                    <option value="RED_LIGHT">STOP?</option>
+                    <option value="ELIMINATION">ELIMINATION</option>
+                </select>
             </div>
 
             <button class="btn" onclick="spawnTestPony()">+ BOT</button>
@@ -485,6 +488,8 @@
         // Elimination Mode Vars
         let deathWallX = 0;
         let wallSpeed = 0;
+        let eliminationState = 'IDLE'; // IDLE, WARNING, ACTIVE
+        let eliminationFlashTimer = 0;
 
         let peer = null, conn = null;
         let pcGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
@@ -574,6 +579,12 @@
                 gain.gain.setValueAtTime(0.3, now);
                 gain.gain.linearRampToValueAtTime(0, now + 0.5);
                 osc.start(now); osc.stop(now + 0.5);
+            } else if (type === 'TICK') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(800, now);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.05);
+                osc.start(now); osc.stop(now + 0.05);
             }
         }
 
@@ -743,7 +754,6 @@
                         pony.invincibleTimer = 90;
                         pony.manualSpeed = -15; 
                         triggerPonyEmoji(p.playerUUID, 'POOP');
-                        // 震动反馈
                         const conn = getConnByUUID(uuid);
                         if(conn) conn.send({ type: 'vibrate', duration: 300 });
                     }
@@ -772,12 +782,11 @@
 
         function getConnByUUID(uuid) {
             if(!peer || !peer.connections) return null;
-            let target = null;
+            // 简单遍历找到连接，因为没有建立 uuid->conn 的映射，只能广播检查
+            // 为了准确性，我们假设 peerjs 连接对象上有 metadata，但没设置。
+            // 这里我们广播震动指令给所有连接，客户端检查 UUID 是否匹配
             Object.values(peer.connections).forEach(conns => {
                 conns.forEach(c => {
-                    // 这里简化处理， PeerJS的metadata存UUID最好，但目前用遍历
-                    // 实际需要一个Map，这里简单广播震动给所有人也行，但最好单点
-                    // 由于没有保存connection和uuid映射，这里暂时广播给所有连接，客户端判断
                     if(c.open) c.send({ type: 'vibrate_check', target_uuid: uuid });
                 });
             });
@@ -833,7 +842,7 @@
             
             obstacles = [];
             document.getElementById('game-screen').className = ''; 
-            document.getElementById('death-wall').classList.remove('wall-active'); // 重置死线
+            document.getElementById('death-wall').classList.remove('wall-active'); 
             lightState = 'GREEN';
         }
 
@@ -843,7 +852,6 @@
             let statusText = "STATUS: RUN";
             let mobileInfo = "RUN (TAP)";
 
-            // 初始化特定模式逻辑
             if (currentGameMode === 'HURDLE') {
                 statusText = "STATUS: JUMP";
                 mobileInfo = "TAP: RUN / SHAKE: JUMP"; 
@@ -863,14 +871,15 @@
                 statusText = "STATUS: SURVIVE!";
                 mobileInfo = "RUN OR DIE!";
                 obstacles = [];
-                // 淘汰赛也会生成障碍物增加难度
                 for(let ox = 800; ox < GAME_W * 5; ox += (500 + Math.random() * 300)) {
                     obstacles.push({ x: ox, width: 10, passed: false });
                 }
                 deathWallX = 0;
-                wallSpeed = 2.0; // 初始速度
+                wallSpeed = 2.0; 
                 document.getElementById('death-wall').style.width = '0px';
-                document.getElementById('death-wall').classList.add('wall-active');
+                // 预警模式
+                eliminationState = 'WARNING';
+                eliminationFlashTimer = 90; // 1.5s
             } else {
                 statusText = "STATUS: RUN";
                 obstacles = [];
@@ -924,7 +933,7 @@
                             lightState = 'YELLOW';
                             redLightTimer = 30; 
                             screen.classList.add('bg-yellow');
-                            updateBarText("STOP?", "#ffb300"); // 黄灯提示：STOP?
+                            updateBarText("STOP?", "#ffb300"); 
                             setBarVisibility(true);
                             playSignalSound('YELLOW');
                         } else if (lightState === 'YELLOW') {
@@ -944,27 +953,43 @@
                     }
                 } else if (currentGameMode === 'ELIMINATION') {
                     // === 淘汰赛逻辑 ===
-                    wallSpeed += 0.002; // 缓慢加速
-                    deathWallX += wallSpeed;
-                    document.getElementById('death-wall').style.width = deathWallX + 'px';
-                    
-                    // 检查淘汰
-                    const survivors = ponies.filter(p => p.state === 'racing');
-                    survivors.forEach(p => {
-                        if (p.x < deathWallX) {
-                            explode(p);
-                            const conn = getConnByUUID(p.playerUUID);
-                            if(conn) conn.send({ type: 'vibrate', duration: 500 }); // 淘汰长震动
+                    if (eliminationState === 'WARNING') {
+                        eliminationFlashTimer--;
+                        // 闪烁逻辑 (每30帧闪一次红)
+                        if (eliminationFlashTimer % 30 > 20) {
+                            document.getElementById('game-screen').classList.add('bg-red');
+                            if (eliminationFlashTimer % 30 === 29) playSignalSound('TICK');
+                        } else {
+                            document.getElementById('game-screen').classList.remove('bg-red');
                         }
-                    });
+                        
+                        if (eliminationFlashTimer <= 0) {
+                            eliminationState = 'ACTIVE';
+                            document.getElementById('death-wall').classList.add('wall-active');
+                            playSignalSound('RED');
+                        }
+                    } else if (eliminationState === 'ACTIVE') {
+                        wallSpeed += 0.002; 
+                        deathWallX += wallSpeed;
+                        document.getElementById('death-wall').style.width = deathWallX + 'px';
+                        
+                        // 检查淘汰
+                        ponies.forEach(p => {
+                            if (p.state === 'racing' && p.x < deathWallX) {
+                                p.state = 'eliminated'; // 标记为淘汰
+                                explode(p);
+                                const conn = getConnByUUID(p.playerUUID);
+                                if(conn) conn.send({ type: 'vibrate', duration: 500 });
+                            }
+                        });
 
-                    // 检查胜利条件 (剩1人)
-                    if (survivors.length <= 1 && ponies.length > 1) {
-                        // 如果只剩1人，且总人数大于1，触发结束
-                        // 为了展示效果，让最后一人稍微跑一会儿
-                        setTimeout(() => {
-                            if (gameState === 'RACING') ponies.forEach(p => { if(p.state === 'racing') p.state = 'finished'; });
-                        }, 2000);
+                        // 检查胜利
+                        const survivors = ponies.filter(p => p.state === 'racing');
+                        if (survivors.length <= 1 && ponies.length > 1) {
+                            setTimeout(() => {
+                                if (gameState === 'RACING') ponies.forEach(p => { if(p.state === 'racing') p.state = 'finished'; });
+                            }, 2000);
+                        }
                     }
                 }
 
@@ -989,11 +1014,11 @@
 
         function checkRaceEnd() {
             const finished = ponies.filter(p => p.state === 'finished'); let raceOverTrigger = false;
-            // 淘汰赛特殊结束逻辑
+            
             if (currentGameMode === 'ELIMINATION') {
                 const survivors = ponies.filter(p => p.state === 'racing');
-                if (survivors.length === 0 && ponies.length > 0) raceOverTrigger = true; // 全灭
-                else if (finished.length > 0) raceOverTrigger = true; // 有人到达终点（如果有终点的话）
+                if (survivors.length === 0 && ponies.length > 0 && eliminationState === 'ACTIVE') raceOverTrigger = true; 
+                else if (finished.length > 0) raceOverTrigger = true; 
             } else {
                 if (ponies.length > 10) { if (finished.length >= 10) raceOverTrigger = true; } else { if (ponies.length > 0 && finished.length === ponies.length) raceOverTrigger = true; }
             }
@@ -1013,6 +1038,7 @@
             }
         }
 
+        /* === 光线拖影特效 === */
         function spawnTrail(p) {
             const fxLayer = document.getElementById('layer-fx');
             const count = Math.random() < 0.5 ? 1 : 2; 
@@ -1093,7 +1119,6 @@
                                             p.stunTimer = 30; p.invincibleTimer = 90;
                                             p.manualSpeed = 0; p.x = obs.x - 10; 
                                             triggerPonyEmoji(p.playerUUID, 'POOP');
-                                            // 撞墙震动
                                             const conn = getConnByUUID(p.playerUUID);
                                             if(conn) conn.send({ type: 'vibrate', duration: 200 }); 
                                         }
@@ -1106,8 +1131,6 @@
                         if (p.turboCharge > 30) p.isTurbo = true;
                         p.facing = 1;
                         
-                        // 淘汰赛如果不设终点，可以一直跑。这里为了代码统一，保留终点逻辑，但可以把终点设很远
-                        // 或者到达终点就算幸存者胜利
                         if (p.x >= FINISH_X) {
                             if (p.state === 'racing') {
                                 p.state = 'finished';
@@ -1131,43 +1154,7 @@
             });
         }
 
-        function aiBehavior(p, restrictFinish) {
-            const minX = restrictFinish ? FINISH_X : 0; const maxX = GAME_W - 38; const maxY = GAME_H - 44; const minY = p.hasCrown ? 35 : 20;
-            if (p.state === 'roaming' || p.state === 'finished') {
-                for(let i=0; i<grass.length; i++) {
-                    const g = grass[i];
-                    if (Math.abs(g.x - p.x) < 50 && Math.abs(g.y - p.y) < 50) { p.state = 'eating'; p.timer = 50; grass.splice(i, 1); p.targetX = null; p.targetY = null; return; }
-                }
-                if (p.timer-- <= 0) {
-                    const action = Math.random();
-                    if (action < 0.3) { p.targetX = (p.x < GAME_W / 2) ? GAME_W - 100 - Math.random() * 400 : 50 + Math.random() * 400; p.targetY = minY + Math.random() * (maxY - minY); p.timer = 400 + Math.random() * 400; p.roamSpeed = 2.0; }
-                    else if (action < 0.8) { p.targetX = p.x + (Math.random() - 0.5) * 600; p.targetY = minY + Math.random() * (maxY - minY); p.timer = 100 + Math.random() * 200; p.roamSpeed = 0.8; }
-                    else { p.targetX = null; p.targetY = null; p.timer = 60 + Math.random() * 120; p.roamSpeed = 0; }
-                }
-                if (p.targetX !== null && p.targetY !== null) {
-                    const dx = p.targetX - p.x; const dy = p.targetY - p.y; const dist = Math.sqrt(dx*dx + dy*dy);
-                    if (dist < 5) { p.targetX = null; p.targetY = null; p.timer = 0; }
-                    else { const speed = p.roamSpeed || 0.5; p.x += (dx / dist) * speed; p.y += (dy / dist) * speed; p.facing = Math.sign(dx) || 1; p.isWalkAnimating = true; }
-                }
-            } else if (p.state === 'eating') { if (p.timer-- <= 0) p.state = 'roaming'; }
-        }
-
-        function explode(p) {
-            const fx = document.getElementById('layer-fx');
-            for(let i=0; i<20; i++) {
-                const el = document.createElement('div'); el.className = 'explosion';
-                el.style.left = (p.x + 19) + 'px'; el.style.top = (p.y + 19) + 'px'; el.style.background = p.color; fx.appendChild(el);
-                const angle = Math.random() * 6.28, spd = 3 + Math.random() * 5;
-                let vx = Math.cos(angle) * spd, vy = Math.sin(angle) * spd, life = 40;
-                const tick = () => { if (life-- <= 0) return el.remove(); el.style.left = (parseFloat(el.style.left) + vx) + 'px'; el.style.top = (parseFloat(el.style.top) + vy) + 'px'; el.style.opacity = life/40; requestAnimationFrame(tick); };
-                tick();
-            }
-            const grassCount = Math.floor(Math.random() * 3) + 1; for(let i=0; i<grassCount; i++) { grass.push({ x: p.x + (Math.random()-0.5) * 60, y: p.y + (Math.random()-0.5) * 40 }); }
-            if (p.playerUUID) { broadcast({ type: 'eliminated', uuid: p.playerUUID }); }
-        }
-
         function draw() {
-            // 渲染障碍物和草地
             const grassL = document.getElementById('layer-grass'); 
             let htmlContent = grass.map(g => `<div class="grass" style="left:${g.x}px; top:${g.y}px"></div>`).join('');
             if (gameState === 'RACING' || gameState === 'COOLDOWN') {
@@ -1177,7 +1164,15 @@
 
             const ponyL = document.getElementById('layer-pony'); const nodes = Array.from(ponyL.children); const ids = new Set(ponies.map(p => p.id));
             nodes.forEach(n => { if(!ids.has(n.id)) n.remove(); });
+            
             ponies.forEach(p => {
+                // 如果已淘汰，移除DOM元素（或不渲染）
+                if (p.state === 'eliminated') {
+                    const el = document.getElementById(p.id);
+                    if (el) el.remove();
+                    return;
+                }
+
                 let el = document.getElementById(p.id);
                 if (!el) {
                     el = document.createElement('div'); el.id = p.id; el.className = 'entity';
@@ -1213,195 +1208,8 @@
             });
         }
 
-        /* === 手机端：摇一摇监测函数 === */
-        function handleMotion(event) {
-            const acc = event.acceleration; 
-            if (!acc) return;
-            const magnitude = Math.sqrt(acc.x*acc.x + acc.y*acc.y + acc.z*acc.z);
-            if (magnitude > 15) { // 阈值
-                const now = Date.now();
-                if (now - lastShakeTime > 500) { 
-                    lastShakeTime = now;
-                    if(conn) conn.send({ type: 'jump', uuid: playerUUID }); 
-                }
-            }
-        }
-
-        /* === 手机端：初始化监听 === */
-        const mBtn = document.getElementById('m-btn');
-        mBtn.addEventListener('touchstart', (e) => {
-            if (mobileBtnState === 'dead') { resetMobile(); return; }
-            if (mobileBtnState === 'finished') return;
-            if (mobileBtnState === 'start') { 
-                const selectedMode = document.getElementById('m-mode-select').value;
-                if(conn) conn.send({ type: 'force_start', mode: selectedMode }); 
-                return; 
-            }
-            if (mobileBtnState !== 'mash') return;
-
-            e.preventDefault(); 
-            // 触感反馈（轻微）
-            if(navigator.vibrate) navigator.vibrate(30);
-            
-            // 视觉反馈
-            mBtn.style.transform = 'scale(0.95)'; 
-            setTimeout(() => { mBtn.style.transform = 'scale(1)'; }, 50);
-
-            if(conn) conn.send({ type: 'tap', uuid: playerUUID }); 
-            initAudio(); playNextNote(); 
-        }, {passive: false});
-
-        mBtn.addEventListener('touchmove', (e) => {
-            if (mobileBtnState !== 'mash') return;
-            e.preventDefault(); 
-            const currentY = e.touches[0].clientY;
-            if (!isSwiping && touchStartY - currentY > 50) {
-                isSwiping = true;
-                if(conn) conn.send({ type: 'jump', uuid: playerUUID }); 
-            }
-        }, {passive: false});
-
-        function sendMobile() {
-            if(!conn) return alert("Not Connected!");
-            const nameInput = document.getElementById('m-name'); let name = nameInput.value.trim().replace(/[^a-zA-Z0-9]/g, ''); if (!name) name = "PLAYER"; name = name.toUpperCase();
-            let hasPixels = false; for(let r=0; r<11; r++) { for(let c=0; c<11; c++) { if (mobileGrid[r][c] === 1) { hasPixels = true; break; } } if(hasPixels) break; }
-            if (!hasPixels) { alert("CANVAS IS EMPTY"); return; }
-            
-            initAudio(); randomizeMusic();
-
-            // === 请求传感器权限 (iOS 13+) ===
-            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-                DeviceMotionEvent.requestPermission()
-                    .then(permissionState => {
-                        if (permissionState === 'granted') {
-                            window.addEventListener('devicemotion', handleMotion);
-                        }
-                    })
-                    .catch(console.error);
-            } else {
-                window.addEventListener('devicemotion', handleMotion);
-            }
-
-            conn.send({ type: 'spawn', payload: { name: name, pixels: mobileGrid, color: selectedColor, uuid: playerUUID } });
-            document.getElementById('m-editor-ui').style.display = 'none'; document.getElementById('m-controller').style.display = 'flex';
-        }
-
-        // 处理从主机发来的震动指令
-        function initMobilePeer() {
-             playerUUID = localStorage.getItem('horse_uuid'); if (!playerUUID) { playerUUID = 'user_' + Math.random().toString(36).substr(2, 9); localStorage.setItem('horse_uuid', playerUUID); }
-            initEditor('m-grid', 'm-colors', mobileGrid);
-            try {
-                peer = new Peer(null, PEER_CONFIG);
-                peer.on('open', () => {
-                    conn = peer.connect(new URLSearchParams(window.location.search).get('host'));
-                    conn.on('open', () => { document.getElementById('m-status').innerText = "CONNECTED"; document.getElementById('m-status').style.color = "#69f0ae"; conn.send({ type: 'check_reconnect', uuid: playerUUID }); });
-                    conn.on('data', data => {
-                        if (data.type === 'reconnect_success') { document.getElementById('m-editor-ui').style.display = 'none'; document.getElementById('m-controller').style.display = 'flex'; }
-                        else if (data.type === 'sync_ui') {
-                            const btn = document.getElementById('m-btn'); 
-                            const info = document.getElementById('m-info'); 
-                            const modeWrapper = document.getElementById('m-mode-wrapper');
-                            
-                            mobileBtnState = data.mode; 
-                            btn.className = 'push-btn'; 
-                            modeWrapper.style.display = 'none';
-
-                            if (data.mode === 'wait') { 
-                                btn.classList.add('btn-wait'); btn.innerText = data.label; info.innerText = "GET READY..."; 
-                            }
-                            else if (data.mode === 'mash') { 
-                                btn.classList.add('btn-mash'); 
-                                btn.innerText = "RUN"; 
-                                info.innerText = data.infoText || "TAP TO RUN"; 
-                                randomizeMusic();
-                            }
-                            else if (data.mode === 'start') { 
-                                btn.classList.add('btn-start'); btn.innerText = data.label; info.innerText = "RACE FINISHED"; 
-                                modeWrapper.style.display = 'flex';
-                            }
-                        } else if (data.type === 'eliminated' && data.uuid === playerUUID) {
-                            const btn = document.getElementById('m-btn'); const info = document.getElementById('m-info'); 
-                            mobileBtnState = 'dead'; 
-                            btn.className = 'push-btn btn-dead'; 
-                            btn.innerText = "TRY\nAGAIN"; 
-                            info.innerText = "ELIMINATED";
-                            document.getElementById('m-mode-wrapper').style.display = 'none';
-                            if(navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 500]); // 死亡震动
-                        } else if (data.type === 'player_finished' && data.uuid === playerUUID) {
-                            mobileBtnState = 'finished';
-                            const btn = document.getElementById('m-btn');
-                            btn.className = 'push-btn btn-wait';
-                            btn.innerText = "DONE";
-                            document.getElementById('m-info').innerText = "WAITING...";
-                            document.getElementById('m-mode-wrapper').style.display = 'none';
-                        } else if (data.type === 'vibrate' || (data.type === 'vibrate_check' && data.target_uuid === playerUUID)) {
-                            // 接收震动指令
-                            if(navigator.vibrate) navigator.vibrate(data.duration || 200);
-                        }
-                    });
-                });
-            } catch(e) { console.error(e); }
-        }
-        
         // 覆盖原来的initMobile
         initMobile = initMobilePeer;
-
-        function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
-
-        /* === 修改后：处理 FACE 为文字 ? === */
-        function triggerPonyEmoji(uuid, emojiType) {
-            const pony = ponies.find(p => p.playerUUID === uuid); if (!pony) return;
-            const pEl = document.getElementById(pony.id); if (!pEl) return;
-            
-            let container;
-            if (emojiType === 'FACE') {
-                container = document.createElement('div');
-                container.className = 'pop-text';
-                container.innerText = "?";
-                container.style.color = pony.color;
-            } else {
-                container = document.createElement('div');
-                container.className = 'pixel-emoji-container';
-                container.appendChild(createPixelIcon(emojiType, 2, pony.color));
-            }
-
-            pEl.appendChild(container);
-            if (audioCtx && audioCtx.state === 'running') {
-                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'triangle'; osc.frequency.setValueAtTime(800, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-            }
-            setTimeout(() => container.remove(), 2500);
-        }
-
-        function sendEmoji(type) {
-            if(!conn) return; conn.send({ type: 'emoji', uuid: playerUUID, content: type });
-            const btn = event.currentTarget; btn.style.transform = 'scale(0.8)'; setTimeout(() => btn.style.transform = 'scale(1)', 100);
-        }
-
-        function resetMobile() { document.getElementById('m-controller').style.display = 'none'; document.getElementById('m-editor-ui').style.display = 'block'; document.getElementById('m-name').value = ''; restoreGridData(mobileGrid); renderGrid('m-grid', mobileGrid, selectedColor); mobileBtnState = 'wait'; }
-        function clearMobile() { clearGridData(mobileGrid); renderGrid('m-grid', mobileGrid, selectedColor); }
-        function clearDesktop() { clearGridData(pcGrid); renderGrid('pc-grid', pcGrid, selectedColor); }
-        function clearGridData(grid) { for(let r=0; r<11; r++) for(let c=0; c<11; c++) grid[r][c] = 0; }
-        function restoreGridData(grid) { for(let r=0; r<11; r++) for(let c=0; c<11; c++) grid[r][c] = DEFAULT_PIXELS[r][c]; }
-        function openDesktopEditor() { renderGrid('pc-grid', pcGrid, selectedColor); document.getElementById('modal-editor').style.display = 'flex'; }
-        function savePCPony() { let name = document.getElementById('pc-name').value.trim().replace(/[^a-zA-Z0-9]/g, ''); if (!name) name = "PLAYER"; name = name.toUpperCase(); requestSpawnPony(name, pcGrid, selectedColor); document.getElementById('modal-editor').style.display = 'none'; }
-
-        function initEditor(gridId, colorId, dataGrid) {
-            const gridEl = document.getElementById(gridId); const colorEl = document.getElementById(colorId); colorEl.innerHTML = '';
-            Object.values(COLORS).forEach(c => { const dot = document.createElement('div'); dot.className = `c-dot ${c === selectedColor ? 'active' : ''}`; dot.style.background = c; dot.onclick = () => { selectedColor = c; renderGrid(gridId, dataGrid, selectedColor); Array.from(colorEl.children).forEach(d => d.classList.remove('active')); dot.classList.add('active'); }; colorEl.appendChild(dot); });
-            renderGrid(gridId, dataGrid, selectedColor);
-            let drawing = false, eraseMode = false;
-            const getCellCoords = (e) => { const t = e.touches ? e.touches[0] : e; const el = document.elementFromPoint(t.clientX, t.clientY); if (el && el.classList.contains('editor-cell')) { return { r: parseInt(el.dataset.r), c: parseInt(el.dataset.c), el: el }; } return null; };
-            const startDraw = (e) => { if(e.cancelable) e.preventDefault(); drawing = true; const cell = getCellCoords(e); if (cell) { eraseMode = dataGrid[cell.r][cell.c] === 1; updateCell(cell.r, cell.c, cell.el); } };
-            const moveDraw = (e) => { if (!drawing) return; if(e.cancelable) e.preventDefault(); const cell = getCellCoords(e); if (cell) { updateCell(cell.r, cell.c, cell.el); } };
-            const endDraw = () => { drawing = false; };
-            const updateCell = (r, c, el) => { const targetVal = eraseMode ? 0 : 1; if (dataGrid[r][c] !== targetVal) { dataGrid[r][c] = targetVal; if (targetVal === 1) { el.style.background = selectedColor; el.style.boxShadow = `0 0 5px ${selectedColor}`; } else { el.style.background = '#000'; el.style.boxShadow = 'none'; } } };
-            gridEl.onmousedown = gridEl.ontouchstart = startDraw; window.onmousemove = window.ontouchmove = moveDraw; window.onmouseup = window.ontouchend = endDraw;
-        }
-
-        function renderGrid(id, data, color) {
-            const el = document.getElementById(id); el.innerHTML = '';
-            data.forEach((row, r) => row.forEach((val, c) => { const cell = document.createElement('div'); cell.className = 'editor-cell'; cell.dataset.r = r; cell.dataset.c = c; if(val) { cell.style.background = color; cell.style.boxShadow = `0 0 5px ${color}`; } else { cell.style.background = '#000'; } el.appendChild(cell); }));
-        }
     </script>
 </body>
 </html>
