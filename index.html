@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - v10.0 FINAL UI</title>
+    <title>HORSE RUNRUN - HURDLE EDITION</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -223,6 +223,18 @@
             font-size: 20px; white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000;
         }
         .grass { position: absolute; width: 6px; height: 6px; background: #69f0ae; box-shadow: 0 0 4px #69f0ae; }
+        
+        /* === 新增：障碍物样式 === */
+        .obstacle {
+            position: absolute;
+            width: 10px; height: 30px; 
+            background: #ff5252;
+            border: 2px solid #fff;
+            box-shadow: 0 0 10px #ff5252;
+            z-index: 5;
+            transform: translateY(-50%);
+        }
+
         .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
         @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
 
@@ -439,34 +451,62 @@
         }
         .m-footer { display: flex; gap: 15px; height: 60px; flex-shrink: 0; width: 100%; max-width: 400px; }
 
+        /* === 修改：手机端控制区布局 === */
         #m-controller {
             position: fixed; inset: 0; background: #111; z-index: 22000;
             display: none; flex-direction: column; align-items: center; justify-content: center;
         }
+
+        /* 新增：按钮容器，让跑和跳并排 */
+        .btn-container {
+            display: flex; gap: 20px; align-items: center; justify-content: center;
+            width: 100%; max-width: 500px;
+        }
+
+        /* 修改：通用按钮样式 */
         .push-btn {
-            width: 250px; height: 250px; border-radius: 50%;
-            background: #222;
-            border: 8px solid #444;
-            color: #888; font-size: 4rem; font-family: 'VT323', monospace;
+            width: 140px; height: 140px; 
+            border-radius: 20px; /* 方形圆角 */
+            background: #222; border: 4px solid #444;
+            color: #888; font-size: 2.5rem; font-family: 'VT323', monospace;
             display: flex; justify-content: center; align-items: center;
-            box-shadow: 0 0 50px rgba(0,0,0, 0.4);
-            transition: all 0.2s; user-select: none;
+            box-shadow: 0 0 30px rgba(0,0,0, 0.4);
+            transition: all 0.1s; user-select: none;
             cursor: pointer; -webkit-tap-highlight-color: transparent;
-            text-align: center; line-height: 1; padding: 20px;
             touch-action: manipulation;
         }
-        .push-btn:active { transform: scale(0.95); }
+        .push-btn:active { transform: scale(0.9); }
+
+        /* JUMP 按钮特有样式 */
+        .btn-jump {
+            border-color: #ffb300 !important;
+            color: #ffb300 !important;
+            display: none; /* 默认隐藏，只有比赛时显示 */
+        }
+        .btn-jump:active { background: #ffb300 !important; color: #000 !important; }
+
         .controller-info { font-size: 1.5rem; color: #888; margin-bottom: 30px; text-align: center; }
 
         .btn-wait { background: #1a1a1a !important; border-color: #333 !important; color: #555 !important; }
-        .btn-mash { background: #fff !important; border-color: #ccc !important; color: #000 !important; box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; }
         
-        /* === 修改后：白色按钮 (START RACE / RESTART) 样式改为与 Run 按钮一致 === */
+        /* RUN 按钮在比赛时的样式 */
+        .btn-mash { 
+            width: 160px !important; height: 160px !important; 
+            background: #fff !important; border-color: #ccc !important; color: #000 !important; 
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.4) !important; 
+        }
+
+        /* 开始/结束 状态的大按钮 (占满一行) */
+        .btn-full {
+            width: 250px !important; height: 250px !important; border-radius: 50% !important;
+        }
+        
+        /* 白色按钮 (START RACE / RESTART) */
         .btn-start { 
             background: #ffffff !important; 
-            border: 8px solid #ccc !important; /* 调整：将黑色边框改为浅灰，与 Run 按钮一致 */
+            border: 8px solid #ccc !important; 
             color: #000000 !important; 
-            box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; /* 调整：增加发光，与 Run 按钮一致 */
+            box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; 
         }
 
         .btn-dead { 
@@ -571,7 +611,11 @@
 
         <div id="m-controller">
             <div id="m-info" class="controller-info">GET READY</div>
-            <div id="m-btn" class="push-btn btn-wait" ontouchstart="btnAction(event)" onmousedown="btnAction(event)">WAIT</div>
+            
+            <div class="btn-container">
+                <div id="m-btn-jump" class="push-btn btn-jump" ontouchstart="sendAction('jump', event)" onmousedown="sendAction('jump', event)">JUMP</div>
+                <div id="m-btn" class="push-btn btn-full btn-wait" ontouchstart="sendAction('tap', event)" onmousedown="sendAction('tap', event)">WAIT</div>
+            </div>
             
             <div class="emoji-bar">
                 <div class="emoji-btn" onclick="sendEmoji('HEART')" data-icon="HEART"></div>
@@ -605,33 +649,21 @@
         /* === 歌曲库 - 修改后：直接从耳熟能详的副歌开始 === */
         const SONGS = {
             'JINGLE': [
-                // Jingle bells (E-E-E)
                 329.6, 329.6, 329.6,  
-                // Jingle bells (E-E-E)
                 329.6, 329.6, 329.6,  
-                // Jingle all the way (E-G-C-D-E)
                 329.6, 392.0, 261.6, 293.7, 329.6,
-                // Oh what fun it is to ride (F-F-F-F-F-E-E)
                 349.2, 349.2, 349.2, 349.2, 349.2, 329.6, 329.6,
-                // In a one-horse open sleigh (E-D-D-E-D-G)
                 329.6, 293.7, 293.7, 329.6, 293.7, 392.0
             ],
             'MERRY': [
-                // We wish you a Merry Christmas (C-F-F-G-F-E-D)
                 261.6, 349.2, 349.2, 392.0, 349.2, 329.6, 293.7, 293.7,
-                // We wish you a Merry Christmas (D-G-G-A-G-F-E)
                 293.7, 392.0, 392.0, 440.0, 392.0, 349.2, 329.6, 261.6,
-                // We wish you a Merry Christmas (C-A-A-A#-A-G-F)
                 261.6, 440.0, 440.0, 466.2, 440.0, 392.0, 349.2, 293.7,
-                // And a Happy New Year (C-C-D-G-E-F)
                 261.6, 261.6, 293.7, 392.0, 329.6, 349.2
             ],
             'DECK': [
-                 // Deck the halls with boughs of holly (C-B-A-G-F-E-D-C)
                 523.3, 493.9, 440.0, 392.0, 349.2, 329.6, 293.7, 261.6,
-                // Fa la la la la (D-E-F-D)
                 293.7, 329.6, 349.2, 293.7,
-                // la la la (E-D-C) - 修正节奏
                 329.6, 293.7, 261.6
             ]
         };
@@ -655,6 +687,7 @@
         let ponies = [];
         let ponyQueue = [];
         let grass = [];
+        let obstacles = []; // 障碍物
         let gameState = 'ROAMING';
         let cooldownTimer = 0;
         let waitTimer = 0;
@@ -709,7 +742,6 @@
             const now = audioCtx.currentTime;
             
             const songArr = SONGS[myCurrentSongKey] || SONGS['JINGLE'];
-            // 跳过 0 频率的休止符
             let freq = songArr[noteIndex % songArr.length];
             while (freq === 0) {
                  noteIndex++;
@@ -727,9 +759,7 @@
             
             gain.connect(audioCtx.destination);
             gain.gain.setValueAtTime(0, now);
-            // Attack
             gain.gain.linearRampToValueAtTime(0.3, now + style.attack);
-            // Decay
             gain.gain.exponentialRampToValueAtTime(0.01, now + style.attack + style.decay); 
 
             osc.connect(gain);
@@ -742,7 +772,7 @@
             const songKeys = Object.keys(SONGS);
             myCurrentSongKey = songKeys[Math.floor(Math.random() * songKeys.length)];
             myStyleKey = STYLE_KEYS[Math.floor(Math.random() * STYLE_KEYS.length)];
-            noteIndex = 0; // 强制重置进度
+            noteIndex = 0; 
         }
 
         window.onload = function() {
@@ -849,6 +879,8 @@
                             if (!exists) requestSpawnPony(data.payload.name, data.payload.pixels, data.payload.color, uuid);
                         } else if (data.type === 'tap') {
                             handleTap(data.uuid);
+                        } else if (data.type === 'jump') {
+                            handleJump(data.uuid);
                         } else if (data.type === 'force_start') {
                             if (gameState === 'ROAMING' || gameState === 'WAITING_TO_START') startCooldown();
                         } else if (data.type === 'emoji') {
@@ -870,12 +902,23 @@
         function handleTap(uuid) {
             if (!uuid) return;
             const pony = ponies.find(p => p.playerUUID === uuid);
-            if (pony && pony.state === 'racing') {
+            if (pony && pony.state === 'racing' && !pony.isStunned) {
                 pony.isManual = true; pony.lastTapTime = Date.now(); pony.tapCount++;
                 pony.name = pony.name.replace(" (BOT)", "");
                 pony.manualSpeed = Math.min(pony.manualSpeed + 2.4, 18);
                 pony.turboCharge = Math.min(pony.turboCharge + 20, 100);
                 if (pony.manualAnimTimer === 0) pony.manualAnimTimer = 10;
+            }
+        }
+        
+        function handleJump(uuid) {
+            if (!uuid) return;
+            const pony = ponies.find(p => p.playerUUID === uuid);
+            // 只有在没晕、没跳的时候才能跳
+            if (pony && pony.state === 'racing' && !pony.isStunned && !pony.isJumping) {
+                pony.isJumping = true;
+                pony.vz = 12; // 起跳初始速度
+                pony.isManual = true; 
             }
         }
 
@@ -887,7 +930,13 @@
                 x: 20, y: 30 + Math.random() * (GAME_H - PONY_SIZE - 20), speed: 3.0, state: 'racing',
                 hasCrown: false, isStreak: false, crownCount: 0, timer: 0, frame: 0, finishedWalking: false,
                 targetX: null, targetY: null, isWalkAnimating: false, manualAnimTimer: 0, roamSpeed: 0.5,
-                isTurbo: false, turboCharge: 0 
+                isTurbo: false, turboCharge: 0,
+                /* === 新增：跳跃与状态属性 === */
+                z: 0,           // 高度
+                vz: 0,          // 垂直速度
+                isJumping: false,
+                isStunned: false, // 是否被撞晕
+                stunTimer: 0
             };
             if (gameState === 'RACING' || gameState === 'COOLDOWN' || gameState === 'WAITING_TO_START') {
                 ponyQueue.push(newPony); updateHUD();
@@ -903,6 +952,7 @@
                 p.x = 20; p.y = 30 + Math.random() * (GAME_H - PONY_SIZE - 30); p.targetX = null; p.targetY = null;
                 p.facing = 1; p.state = 'ready'; p.manualSpeed = 0; p.tapCount = 0;
                 p.isWalkAnimating = false; p.manualAnimTimer = 0; p.isTurbo = false; p.turboCharge = 0;
+                p.z = 0; p.vz = 0; p.isStunned = false; p.stunTimer = 0;
             });
             document.getElementById('hud').style.display = 'none'; document.getElementById('queue-text').style.display = 'none';
             setBarVisibility(true); updateBarText("READY", "#ffffff"); broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
@@ -910,14 +960,29 @@
 
         function startRace() {
             updateBarText("RUN", "#ffffff");
-            const hud = document.getElementById('hud'); hud.style.display = 'block'; hud.innerText = "STATUS: RACING!!!";
+            const hud = document.getElementById('hud'); hud.style.display = 'block'; hud.innerText = "STATUS: HURDLE RACE!"; 
             const vfdOverlay = document.getElementById('vfd-overlay');
             vfdOverlay.classList.remove('vfd-active'); void vfdOverlay.offsetWidth; vfdOverlay.classList.add('vfd-active');
             const textItems = document.querySelectorAll('.bar-text-item');
             textItems.forEach((item, index) => { item.style.animation = `text-vanish 0.05s linear forwards ${delay = 0.02 + (index * 0.06)}s`; });
             setTimeout(() => { if (gameState === 'RACING') { setBarVisibility(false); vfdOverlay.classList.remove('vfd-active'); } }, 1500);
-            ponies.forEach(p => { p.speed = 3.0 + Math.random() * 2.5; p.state = 'racing'; p.finishedWalking = false; if(p.isManual) p.lastTapTime = Date.now(); });
-            grass = []; gameState = 'RACING'; broadcast({ type: 'sync_ui', label: 'RUN!', mode: 'mash' });
+            
+            /* === 新增：生成障碍物 === */
+            obstacles = [];
+            // 每隔 400-700px 生成一排障碍物
+            for(let ox = 500; ox < FINISH_X - 200; ox += (400 + Math.random() * 300)) {
+                obstacles.push({ x: ox, width: 10, passed: false });
+            }
+
+            ponies.forEach(p => { 
+                p.speed = 3.0 + Math.random() * 2.5; 
+                p.state = 'racing'; 
+                p.finishedWalking = false; 
+                p.z = 0; p.vz = 0; p.isStunned = false; p.stunTimer = 0;
+                if(p.isManual) p.lastTapTime = Date.now(); 
+            });
+            grass = []; gameState = 'RACING'; 
+            broadcast({ type: 'sync_ui', label: 'RUN!', mode: 'mash' });
         }
 
         function gameLoop() { updateGameLogic(); draw(); requestAnimationFrame(gameLoop); }
@@ -1008,36 +1073,77 @@
                 if (p.manualAnimTimer > 0) p.manualAnimTimer--; p.turboCharge = Math.max(0, p.turboCharge - 1);
                 if (p.state === 'ready') { p.x = 20; return; }
                 if (p.state === 'racing') {
-                    if (p.playerUUID) {
-                        if (p.isManual) {
-                            if (Date.now() - p.lastTapTime > 10000) { p.isManual = false; if (!p.name.includes("(BOT)")) p.name += " (BOT)"; }
-                        }
-                    }
-                    if (p.isManual) {
-                        p.manualSpeed *= 0.95; if (p.manualSpeed < 0.1) p.manualSpeed = 0;
-                        p.x += p.manualSpeed; p.isWalkAnimating = p.manualSpeed > 0.1;
+                    // === 1. 眩晕逻辑 ===
+                    if (p.isStunned) {
+                        p.stunTimer--;
+                        if (p.stunTimer <= 0) p.isStunned = false;
+                        p.isWalkAnimating = false; // 晕了不能动
                     } else {
-                        p.x += p.speed * (0.9 + Math.random() * 0.2); p.isWalkAnimating = true;
-                    }
-                    /* 当热度大于 60 时触发 */
-                    if (p.turboCharge > 60 && Math.random() < 0.4) spawnTrail(p);
-                    if (p.turboCharge > 30) p.isTurbo = true;
-                    p.facing = 1;
-                    /* === 修改后：检测终点，只触发一次 === */
-                    if (p.x >= FINISH_X) {
-                        if (p.state === 'racing') {
-                            p.state = 'finished';
-                            p.isTurbo = false;
-                            if (p.playerUUID) {
-                                broadcast({ type: 'player_finished', uuid: p.playerUUID });
+                        // === 2. 正常移动逻辑 ===
+                        if (p.playerUUID) {
+                            if (p.isManual) {
+                                if (Date.now() - p.lastTapTime > 10000) { p.isManual = false; if (!p.name.includes("(BOT)")) p.name += " (BOT)"; }
                             }
-                            if (finishedCount === 0 && !winnerFoundThisFrame && gameState === 'RACING') {
-                                winnerFoundThisFrame = true; if (p.hasCrown) p.isStreak = true; else { p.hasCrown = true; p.isStreak = false; }
-                                ponies.forEach(o => { if(o.id !== p.id) { o.hasCrown = false; o.isStreak = false; }});
+                        }
+                        if (p.isManual) {
+                            p.manualSpeed *= 0.95; if (p.manualSpeed < 0.1) p.manualSpeed = 0;
+                            p.x += p.manualSpeed; p.isWalkAnimating = p.manualSpeed > 0.1;
+                        } else {
+                            // AI 逻辑：遇到障碍物自动跳
+                            p.x += p.speed * (0.9 + Math.random() * 0.2); p.isWalkAnimating = true;
+                            // AI 简单的障碍物探测
+                            if (!p.isJumping) {
+                                const nearestObs = obstacles.find(o => o.x > p.x && o.x < p.x + 150); 
+                                if (nearestObs && Math.random() < 0.15) { // AI 有几率跳跃
+                                    p.isJumping = true; p.vz = 12; 
+                                }
+                            }
+                        }
+
+                        // === 3. 跳跃物理 ===
+                        if (p.isJumping) {
+                            p.z += p.vz;
+                            p.vz -= 0.8; // 重力
+                            if (p.z <= 0) {
+                                p.z = 0; p.vz = 0; p.isJumping = false;
+                            }
+                        }
+
+                        // === 4. 碰撞检测 ===
+                        // 只有在地面 (z < 10) 且碰到障碍物 x 坐标时才算撞击
+                        obstacles.forEach(obs => {
+                            if (p.x + 40 > obs.x && p.x < obs.x + obs.width) {
+                                if (p.z < 20) { // 如果高度不够（没跳起来）
+                                    p.isStunned = true;
+                                    p.stunTimer = 60; // 眩晕 60 帧 (约1秒)
+                                    p.manualSpeed = 0; // 速度清零
+                                    p.x = obs.x - 10; // 被挡在障碍物前
+                                    triggerPonyEmoji(p.playerUUID, 'POOP'); // 自动发个便便表情
+                                }
+                            }
+                        });
+
+                        // === 特效 ===
+                        if (p.turboCharge > 60 && Math.random() < 0.4) spawnTrail(p);
+                        if (p.turboCharge > 30) p.isTurbo = true;
+                        p.facing = 1;
+                        /* === 修改后：检测终点，只触发一次 === */
+                        if (p.x >= FINISH_X) {
+                            if (p.state === 'racing') {
+                                p.state = 'finished';
+                                p.isTurbo = false;
+                                if (p.playerUUID) {
+                                    broadcast({ type: 'player_finished', uuid: p.playerUUID });
+                                }
+                                if (finishedCount === 0 && !winnerFoundThisFrame && gameState === 'RACING') {
+                                    winnerFoundThisFrame = true; if (p.hasCrown) p.isStreak = true; else { p.hasCrown = true; p.isStreak = false; }
+                                    ponies.forEach(o => { if(o.id !== p.id) { o.hasCrown = false; o.isStreak = false; }});
+                                }
                             }
                         }
                     }
                 } else if (p.state === 'finished') {
+                    p.z = 0;
                     if (p.x < GAME_W - 50) { p.x += 0.8; p.finishedWalking = true; p.isWalkAnimating = true; }
                     else { p.finishedWalking = false; aiBehavior(p, true); }
                 } else { p.finishedWalking = false; aiBehavior(p, false); }
@@ -1081,7 +1187,14 @@
         }
 
         function draw() {
-            const grassL = document.getElementById('layer-grass'); grassL.innerHTML = grass.map(g => `<div class="grass" style="left:${g.x}px; top:${g.y}px"></div>`).join('');
+            // 渲染障碍物和草地
+            const grassL = document.getElementById('layer-grass'); 
+            let htmlContent = grass.map(g => `<div class="grass" style="left:${g.x}px; top:${g.y}px"></div>`).join('');
+            if (gameState === 'RACING' || gameState === 'COOLDOWN') {
+                htmlContent += obstacles.map(o => `<div class="obstacle" style="left:${o.x}px; top:50%; height:40px;"></div>`).join('');
+            }
+            grassL.innerHTML = htmlContent;
+
             const ponyL = document.getElementById('layer-pony'); const nodes = Array.from(ponyL.children); const ids = new Set(ponies.map(p => p.id));
             nodes.forEach(n => { if(!ids.has(n.id)) n.remove(); });
             ponies.forEach(p => {
@@ -1091,7 +1204,15 @@
                     el.innerHTML = `<div class="aura"></div><div class="crown-container" style="display: none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path></svg></div><div class="name-tag">${p.name}</div><div class="p-grid" style="display:grid; grid-template-columns:repeat(11,1fr); width:100%; height:100%;"></div>`;
                     ponyL.appendChild(el);
                 }
-                el.style.transform = `translate(${p.x}px, ${p.y}px) scale(1.1)`; el.style.zIndex = Math.floor(p.y);
+                
+                // === Z轴跳跃偏移 ===
+                el.style.transform = `translate(${p.x}px, ${p.y - p.z}px) scale(1.1)`; 
+                el.style.zIndex = Math.floor(p.y);
+                
+                // 眩晕滤镜
+                if (p.isStunned) el.style.filter = "grayscale(100%) opacity(0.5)";
+                else el.style.filter = "none";
+
                 const crownC = el.querySelector('.crown-container'); if (p.hasCrown) { crownC.style.display = 'flex'; } else { crownC.style.display = 'none'; }
                 el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none'; el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
                 const gridEl = el.querySelector('.p-grid');
@@ -1120,13 +1241,33 @@
                     conn.on('data', data => {
                         if (data.type === 'reconnect_success') { document.getElementById('m-editor-ui').style.display = 'none'; document.getElementById('m-controller').style.display = 'flex'; }
                         else if (data.type === 'sync_ui') {
-                            const btn = document.getElementById('m-btn'); const info = document.getElementById('m-info'); mobileBtnState = data.mode; btn.className = 'push-btn'; btn.onclick = null;
-                            if (data.mode === 'wait') { btn.classList.add('btn-wait'); btn.innerText = data.label; info.innerText = "GET READY..."; }
-                            else if (data.mode === 'mash') { 
-                                btn.classList.add('btn-mash'); btn.innerText = data.label; info.innerText = "TAP FAST!!!"; 
-                                randomizeMusic(); // 确保每局开始前都随机一次
+                            const btn = document.getElementById('m-btn'); 
+                            const jumpBtn = document.getElementById('m-btn-jump'); 
+                            const info = document.getElementById('m-info'); 
+                            
+                            mobileBtnState = data.mode; 
+                            btn.onclick = null;
+                            
+                            // 重置样式
+                            btn.className = 'push-btn btn-full'; 
+                            jumpBtn.style.display = 'none'; 
+
+                            if (data.mode === 'wait') { 
+                                btn.classList.add('btn-wait'); btn.innerText = data.label; info.innerText = "GET READY..."; 
                             }
-                            else if (data.mode === 'start') { btn.classList.add('btn-start'); btn.innerText = data.label; info.innerText = "RACE FINISHED"; }
+                            else if (data.mode === 'mash') { 
+                                // 比赛模式：显示跳跃按钮，调整 RUN 按钮样式
+                                btn.classList.remove('btn-full'); 
+                                btn.classList.add('btn-mash'); 
+                                btn.innerText = "RUN"; 
+                                
+                                jumpBtn.style.display = 'flex'; 
+                                info.innerText = "RUN & JUMP!"; 
+                                randomizeMusic();
+                            }
+                            else if (data.mode === 'start') { 
+                                btn.classList.add('btn-start'); btn.innerText = data.label; info.innerText = "RACE FINISHED"; 
+                            }
                         } else if (data.type === 'eliminated' && data.uuid === playerUUID) {
                             const btn = document.getElementById('m-btn'); const info = document.getElementById('m-info'); 
                             mobileBtnState = 'dead'; 
@@ -1134,7 +1275,6 @@
                             btn.innerText = "TRY\nAGAIN"; 
                             info.innerText = "ELIMINATED";
                         } else if (data.type === 'player_finished' && data.uuid === playerUUID) {
-                            /* === 修改后：玩家到达终点 === */
                             mobileBtnState = 'finished';
                             const btn = document.getElementById('m-btn');
                             btn.className = 'push-btn btn-wait';
@@ -1158,19 +1298,23 @@
 
         function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
 
-        function btnAction(e) {
-            e.preventDefault(); const btn = document.getElementById('m-btn'); btn.style.transform = 'scale(0.95)'; setTimeout(() => { btn.style.transform = 'scale(1)'; }, 50);
-            
-            if (mobileBtnState === 'dead') { 
-                resetMobile(); 
-                return; 
-            }
-            if (mobileBtnState === 'finished') return; // 到达终点后禁止点击
+        /* === 替换原来的 btnAction === */
+        function sendAction(actionType, e) {
+            e.preventDefault(); 
+            // 视觉反馈
+            const target = e.currentTarget;
+            target.style.transform = 'scale(0.9)'; setTimeout(() => { target.style.transform = 'scale(1)'; }, 50);
+
+            if (mobileBtnState === 'dead') { resetMobile(); return; }
+            if (mobileBtnState === 'finished') return;
 
             if (mobileBtnState === 'mash') { 
-                if(conn) conn.send({ type: 'tap', uuid: playerUUID }); 
-                initAudio();
-                playNextNote(); 
+                if (actionType === 'jump') {
+                    if(conn) conn.send({ type: 'jump', uuid: playerUUID }); 
+                } else {
+                    if(conn) conn.send({ type: 'tap', uuid: playerUUID }); 
+                    initAudio(); playNextNote(); 
+                }
             }
             else if (mobileBtnState === 'start') { if(conn) conn.send({ type: 'force_start' }); }
         }
