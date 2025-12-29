@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>HORSE RUNRUN - PARTY EDITION</title>
+    
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 
     <style>
@@ -59,7 +61,7 @@
             transition: background-color 0.1s;
         }
 
-        /* === 红绿灯模式背景样式 === */
+        /* === 模式背景样式 === */
         .bg-green { background: #002200 !important; box-shadow: inset 0 0 50px #00ff00 !important; border-color: #00ff00 !important; }
         .bg-yellow { background: #332200 !important; box-shadow: inset 0 0 50px #ffb300 !important; border-color: #ffb300 !important; }
         .bg-red { background: #440000 !important; box-shadow: inset 0 0 100px #ff0000 !important; border-color: #ff0000 !important; }
@@ -96,9 +98,7 @@
             text-shadow: 1px 1px 0 #000;
         }
 
-        .flash-active {
-            animation: track-flash 0.2s ease-out;
-        }
+        .flash-active { animation: track-flash 0.2s ease-out; }
         @keyframes track-flash {
             0% { background-color: rgba(255, 255, 255, 0.4); box-shadow: inset 0 0 150px var(--primary); border-color: #fff; }
             100% { background-color: #000; box-shadow: none; border-color: var(--primary); }
@@ -117,7 +117,6 @@
             background-size: 12px 12px; opacity: 0.8; z-index: 0;
         }
 
-        /* HUD */
         .hud { position: absolute; bottom: 4px; right: 10px; font-size: 32px; opacity: 0.5; letter-spacing: 2px; z-index: 110; }
 
         #track-display-bar {
@@ -130,35 +129,16 @@
             pointer-events: none;
         }
 
-        .bar-container {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        .bar-container { width: 100%; display: flex; align-items: center; justify-content: center; }
 
         .bar-text-item {
-            font-size: 80px;
-            letter-spacing: 2px;
-            text-shadow: 0 0 20px currentColor;
-            font-weight: bold;
-            width: 260px;
-            display: flex;
-            justify-content: center;
-            flex-shrink: 0;
-            margin: 0;
+            font-size: 80px; letter-spacing: 2px; text-shadow: 0 0 20px currentColor; font-weight: bold;
+            width: 260px; display: flex; justify-content: center; flex-shrink: 0; margin: 0;
             animation: text-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
 
-        @keyframes text-pop {
-            0% { transform: scale(0.5); opacity: 0; }
-            100% { transform: scale(1.0); opacity: 1; }
-        }
-
-        @keyframes text-vanish {
-            0% { opacity: 1; }
-            100% { opacity: 0; }
-        }
+        @keyframes text-pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1.0); opacity: 1; } }
+        @keyframes text-vanish { 0% { opacity: 1; } 100% { opacity: 0; } }
 
         .queue-alert {
             position: absolute; top: 10px; right: 20px;
@@ -167,30 +147,15 @@
         }
 
         #vfd-overlay {
-            position: absolute; inset: 0;
-            display: flex; align-items: center; justify-content: flex-start;
-            overflow: hidden;
-            opacity: 0;
-            pointer-events: none; z-index: 95;
-            padding-left: 0;
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: flex-start;
+            overflow: hidden; opacity: 0; pointer-events: none; z-index: 95; padding-left: 0;
         }
-
         #vfd-overlay i {
-            display: inline-block;
-            width: 0; height: 0;
-            border-top: 15px solid transparent;
-            border-bottom: 15px solid transparent;
-            border-left: 80px solid var(--primary);
-            margin-right: 20px;
-            flex-shrink: 0;
-            opacity: 0;
-            transform: scale(0.8) skewX(-20deg);
-            filter: drop-shadow(0 0 5px var(--primary));
+            display: inline-block; width: 0; height: 0; border-top: 15px solid transparent; border-bottom: 15px solid transparent; border-left: 80px solid var(--primary);
+            margin-right: 20px; flex-shrink: 0; opacity: 0; transform: scale(0.8) skewX(-20deg); filter: drop-shadow(0 0 5px var(--primary));
         }
-
         .vfd-active { opacity: 1 !important; }
         .vfd-active i { animation: vfd-flash 0.4s ease-out forwards calc(var(--d) * 1s); }
-
         @keyframes vfd-flash {
             0% { opacity: 0; transform: scale(0.8) translateX(0); }
             10% { opacity: 1; transform: scale(1.2) translateX(10px); filter: drop-shadow(0 0 15px var(--primary)) drop-shadow(0 0 30px #fff); }
@@ -199,25 +164,15 @@
         }
 
         .entity { position: absolute; width: 44px; height: 44px; will-change: transform; }
-        .pixel-grid {
-            display: grid;
-            grid-template-columns: repeat(11, 1fr);
-            width: 100%; height: 100%;
-            transform-origin: bottom center;
-            transition: transform 0.2s;
-        }
+        .pixel-grid { display: grid; grid-template-columns: repeat(11, 1fr); width: 100%; height: 100%; transform-origin: bottom center; transition: transform 0.2s; }
 
         .crown-container {
-            position: absolute; top: -31px; left: 50%; transform: translateX(-50%);
-            width: 18px; height: 18px;
-            animation: bounce 1s infinite; z-index: 10;
-            display: flex; flex-direction: column-reverse; align-items: center;
+            position: absolute; top: -31px; left: 50%; transform: translateX(-50%); width: 18px; height: 18px;
+            animation: bounce 1s infinite; z-index: 10; display: flex; flex-direction: column-reverse; align-items: center;
         }
         .aura {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 160%; height: 160%; border-radius: 50%;
-            background: radial-gradient(circle, rgba(250,204,21,0.4) 0%, transparent 70%);
-            box-shadow: 0 0 10px #facc15; z-index: -1;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 160%; height: 160%; border-radius: 50%;
+            background: radial-gradient(circle, rgba(250,204,21,0.4) 0%, transparent 70%); box-shadow: 0 0 10px #facc15; z-index: -1;
             animation: pulse 0.5s infinite alternate; display: none;
         }
         @keyframes pulse { from { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } }
@@ -227,103 +182,55 @@
             font-size: 20px; white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000;
         }
         .grass { position: absolute; width: 6px; height: 6px; background: #69f0ae; box-shadow: 0 0 4px #69f0ae; }
-        
         .obstacle {
-            position: absolute;
-            width: 10px; height: 30px; 
-            background: #ff5252;
-            border: 2px solid #fff;
-            box-shadow: 0 0 10px #ff5252;
-            z-index: 5;
-            bottom: 5px;
+            position: absolute; width: 10px; height: 30px; background: #ff5252; border: 2px solid #fff; box-shadow: 0 0 10px #ff5252; z-index: 5; bottom: 5px;
         }
-
         .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
         @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
 
         #layer-snow { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
         .snowflake {
-            position: absolute; top: -10px;
-            background: #ffffff; border-radius: 50%; box-shadow: 0 0 4px #ffffff;
+            position: absolute; top: -10px; background: #ffffff; border-radius: 50%; box-shadow: 0 0 4px #ffffff;
             animation-name: snowfall; animation-timing-function: linear; animation-fill-mode: forwards;
         }
         @keyframes snowfall { to { transform: translateY(calc(var(--game-h) + 20px)); } }
 
         .trail-segment {
-            position: absolute; height: 4px; width: 50px; border-radius: 0px; 
-            pointer-events: none; opacity: 0.8;
-            animation: trail-fade 0.4s ease-out forwards;
-            z-index: 90; mix-blend-mode: screen; 
+            position: absolute; height: 4px; width: 50px; border-radius: 0px; pointer-events: none; opacity: 0.8;
+            animation: trail-fade 0.4s ease-out forwards; z-index: 90; mix-blend-mode: screen; 
         }
         @keyframes trail-fade { to { opacity: 0; transform: translateX(-40px) scaleX(0.5); } }
 
         .trail-active .p-grid {
             filter: drop-shadow(-10px 0 5px var(--trail-c)) drop-shadow(-20px 0 10px var(--trail-c)) opacity(0.95);
-            transform: scaleX(1.3) skewX(-15deg);
-            transition: filter 0.1s ease-out, transform 0.1s ease-out;
+            transform: scaleX(1.3) skewX(-15deg); transition: filter 0.1s ease-out, transform 0.1s ease-out;
         }
 
-        .pixel-emoji-container {
-            position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
-            pointer-events: none; z-index: 200;
-            animation: pixel-float-smooth 2.5s linear forwards;
-        }
-
+        .pixel-emoji-container { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 200; animation: pixel-float-smooth 2.5s linear forwards; }
         .pop-text {
-            position: absolute; top: -24px; left: 50%; transform: translateX(-50%);
-            color: var(--accent); font-size: 28px; letter-spacing: 2px;
-            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
-            white-space: nowrap; pointer-events: none; z-index: 210;
-            font-family: 'VT323', monospace;
-            animation: pixel-float-smooth 2.5s linear forwards;
+            position: absolute; top: -24px; left: 50%; transform: translateX(-50%); color: var(--accent); font-size: 28px; letter-spacing: 2px;
+            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000; white-space: nowrap; pointer-events: none; z-index: 210;
+            font-family: 'VT323', monospace; animation: pixel-float-smooth 2.5s linear forwards;
         }
-
         .pixel-icon-base { background: transparent; position: relative; }
-
         @keyframes pixel-float-smooth {
-            0% { opacity: 0; transform: translate(-50%, 10px) scale(0.5); }
-            10% { opacity: 1; transform: translate(-50%, -10px) scale(1); }
-            25% { transform: translate(calc(-50% + 20px), -40px) scale(1); }
-            50% { transform: translate(calc(-50% - 20px), -80px) scale(1); }
-            75% { transform: translate(calc(-50% + 15px), -120px) scale(1); opacity: 0.8; }
-            100% { transform: translate(-50%, -160px) scale(1); opacity: 0; }
+            0% { opacity: 0; transform: translate(-50%, 10px) scale(0.5); } 10% { opacity: 1; transform: translate(-50%, -10px) scale(1); }
+            25% { transform: translate(calc(-50% + 20px), -40px) scale(1); } 50% { transform: translate(calc(-50% - 20px), -80px) scale(1); }
+            75% { transform: translate(calc(-50% + 15px), -120px) scale(1); opacity: 0.8; } 100% { transform: translate(-50%, -160px) scale(1); opacity: 0; }
         }
 
-        .emoji-bar {
-            display: none !important; /* 隐藏表情栏 */
-            gap: 15px; margin-top: 40px; pointer-events: auto; z-index: 22001; justify-content: center;
-        }
-        .emoji-btn {
-            background: #222; border: 2px solid #555; color: #fff;
-            width: 60px; height: 60px; border-radius: 12px; cursor: pointer;
-            display: flex; justify-content: center; align-items: center;
-            transition: transform 0.1s; -webkit-tap-highlight-color: transparent;
-            overflow: hidden; font-family: 'VT323', monospace;
-        }
-        .emoji-btn:active { transform: scale(0.8); background: #fff; border-color: #fff; color: #000; }
-        .emoji-btn:active .pixel-icon-base { filter: invert(1); }
+        .emoji-bar { display: none !important; }
 
         #bottom-controls {
-            position: fixed; bottom: 20px; left: 20px;
-            display: flex; align-items: center; gap: 15px;
-            padding: 15px; background: rgba(0, 0, 0, 0.85);
-            border: 1px solid var(--border); border-radius: 8px;
-            z-index: 1000;
-            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            position: fixed; bottom: 20px; left: 20px; display: flex; align-items: center; gap: 15px;
+            padding: 15px; background: rgba(0, 0, 0, 0.85); border: 1px solid var(--border); border-radius: 8px; z-index: 1000; box-shadow: 0 0 20px rgba(0,0,0,0.8);
         }
         #qrcode {
-            background: white; padding: 3px;
-            width: 90px; height: 90px;
-            display: flex; justify-content: center; align-items: center;
-            border-radius: 2px;
+            background: white; padding: 3px; width: 90px; height: 90px; display: flex; justify-content: center; align-items: center; border-radius: 2px;
         }
         #qrcode img { display: block; width: 100%; height: 100%; }
 
-        .control-group {
-            display: flex; flex-direction: column;
-            gap: 5px; border-left: 1px solid #333; padding-left: 15px;
-            width: 140px;
-        }
+        .control-group { display: flex; flex-direction: column; gap: 5px; border-left: 1px solid #333; padding-left: 15px; width: 140px; }
         .control-label { font-size: 0.8rem; color: #888; letter-spacing: 1px; }
         .input-wrapper { display: flex; align-items: center; gap: 5px; width: 100%; }
 
@@ -331,36 +238,28 @@
         input[type=range]:focus { outline: none; }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: #333; border-radius: 3px; border: 1px solid #555; }
         input[type=range]::-webkit-slider-thumb { height: 16px; width: 16px; border-radius: 2px; background: var(--accent); cursor: pointer; -webkit-appearance: none; margin-top: -6px; box-shadow: 0 0 5px var(--accent); }
-        
         input[type="number"] { background: #222; border: 1px solid var(--border); color: var(--primary); font-family: 'VT323', monospace; font-size: 1.4rem; width: 60px; text-align: center; padding: 2px; border-radius: 4px; }
         .unit-label { font-size: 1.2rem; color: #555; }
 
         select {
-            background: #222; border: 2px solid var(--border); color: white;
-            padding: 8px; font-family: 'VT323', monospace; font-size: 1.2rem;
-            margin-right: 10px; cursor: pointer;
+            background: #222; border: 2px solid var(--border); color: white; padding: 8px; font-family: 'VT323', monospace; font-size: 1.2rem; margin-right: 10px; cursor: pointer;
         }
 
         .btn {
-            background: #222; border: 2px solid var(--primary); color: var(--primary);
-            padding: 10px 20px; font-family: 'VT323', monospace; font-size: 1.2rem;
-            cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
-            transition: all 0.2s; margin-left: 5px;
+            background: #222; border: 2px solid var(--primary); color: var(--primary); padding: 10px 20px; font-family: 'VT323', monospace; font-size: 1.2rem;
+            cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(255, 255, 255, 0.2); transition: all 0.2s; margin-left: 5px;
         }
         .btn:hover { background: var(--primary); color: #000; }
         .btn:active { transform: translateY(2px); }
 
         #modal-editor {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000;
-            display: none; justify-content: center; align-items: center;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; display: none; justify-content: center; align-items: center;
         }
         .modal-content {
-            background: #1a1c20; border: 2px solid var(--primary); padding: 30px;
-            display: flex; flex-direction: column; align-items: center; gap: 20px;
+            background: #1a1c20; border: 2px solid var(--primary); padding: 30px; display: flex; flex-direction: column; align-items: center; gap: 20px;
         }
         .editor-grid {
-            display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr);
-            gap: 2px; background: #333; border: 2px solid #555; touch-action: none;
+            display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr); gap: 2px; background: #333; border: 2px solid #555; touch-action: none;
         }
         .editor-cell { width: 28px; height: 28px; background: #000; }
         .color-picker { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
@@ -370,51 +269,33 @@
         .btn-flex { flex: 1; display: flex; justify-content: center; align-items: center; }
 
         #mobile-view {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #111; display: flex; flex-direction: column; z-index: 20000;
-            padding: 20px; align-items: center;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111; display: flex; flex-direction: column; z-index: 20000; padding: 20px; align-items: center;
         }
         .m-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; flex-shrink: 0; width: 100%; max-width: 400px; }
         .m-title { font-size: 1.5rem; color: #fff; }
         .m-status { background: #222; padding: 4px 8px; border-radius: 4px; font-size: 1rem; color: #fff; border: 1px solid #444; }
         .m-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; flex-shrink: 0; width: 100%; max-width: 400px; }
         input[type="text"] {
-            background: #222; border: 1px solid #444; color: white; padding: 12px;
-            font-family: inherit; text-align: center; font-size: 1.5rem; width: 100%; border-radius: 4px;
+            background: #222; border: 1px solid #444; color: white; padding: 12px; font-family: inherit; text-align: center; font-size: 1.5rem; width: 100%; border-radius: 4px;
         }
         .m-canvas-container {
-            flex: 1; display: flex; justify-content: center; align-items: center;
-            background: #1a1a1a; border-radius: 8px; margin-bottom: 20px;
-            overflow: hidden; width: 100%; max-width: 400px;
+            flex: 1; display: flex; justify-content: center; align-items: center; background: #1a1a1a; border-radius: 8px; margin-bottom: 20px; overflow: hidden; width: 100%; max-width: 400px;
         }
         .m-footer { display: flex; gap: 15px; height: 60px; flex-shrink: 0; width: 100%; max-width: 400px; }
 
         #m-controller {
-            position: fixed; inset: 0; background: #111; z-index: 22000;
-            display: none; flex-direction: column; align-items: center; justify-content: center;
+            position: fixed; inset: 0; background: #111; z-index: 22000; display: none; flex-direction: column; align-items: center; justify-content: center;
         }
         
-        /* 手机端选择框容器 */
-        #m-mode-wrapper {
-            margin-bottom: 20px; width: 100%; max-width: 300px; display: none; justify-content: center;
-        }
+        #m-mode-wrapper { margin-bottom: 20px; width: 100%; max-width: 300px; display: none; justify-content: center; }
         #m-mode-select {
-            background: #222; border: 2px solid #555; color: #fff; padding: 10px;
-            font-family: 'VT323'; font-size: 1.8rem; width: 100%; text-align: center;
-            border-radius: 8px;
+            background: #222; border: 2px solid #555; color: #fff; padding: 10px; font-family: 'VT323'; font-size: 1.8rem; width: 100%; text-align: center; border-radius: 8px;
         }
 
         .push-btn {
-            width: 250px; height: 250px; 
-            border-radius: 50%;
-            background: #222; border: 8px solid #444;
-            color: #888; font-size: 4rem; font-family: 'VT323', monospace;
-            display: flex; justify-content: center; align-items: center;
-            box-shadow: 0 0 50px rgba(0,0,0, 0.4);
-            transition: all 0.1s; user-select: none;
-            cursor: pointer; -webkit-tap-highlight-color: transparent;
-            touch-action: none;
-            text-align: center; line-height: 1; padding: 20px;
+            width: 250px; height: 250px; border-radius: 50%; background: #222; border: 8px solid #444; color: #888; font-size: 4rem; font-family: 'VT323', monospace;
+            display: flex; justify-content: center; align-items: center; box-shadow: 0 0 50px rgba(0,0,0, 0.4); transition: all 0.1s; user-select: none;
+            cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none; text-align: center; line-height: 1; padding: 20px;
         }
         .push-btn:active { transform: scale(0.95); }
         .controller-info { font-size: 1.5rem; color: #888; margin-bottom: 30px; text-align: center; }
@@ -533,13 +414,6 @@
             </div>
 
             <div id="m-btn" class="push-btn btn-wait">WAIT</div>
-            
-            <div class="emoji-bar">
-                <div class="emoji-btn" onclick="sendEmoji('HEART')" data-icon="HEART"></div>
-                <div class="emoji-btn" onclick="sendEmoji('POOP')" data-icon="POOP"></div>
-                <div class="emoji-btn" onclick="sendEmoji('BOLT')" data-icon="BOLT"></div>
-                <div class="emoji-btn" onclick="sendEmoji('FACE')" style="font-size: 2rem;">?</div>
-            </div>
         </div>
     </div>
 
@@ -660,6 +534,7 @@
                 gain.gain.linearRampToValueAtTime(0, now + 0.3);
                 osc.start(now); osc.stop(now + 0.3);
             } else if (type === 'YELLOW') {
+                // 恢复黄灯音效
                 osc.type = 'square';
                 osc.frequency.setValueAtTime(400, now);
                 gain.gain.setValueAtTime(0.2, now);
@@ -799,17 +674,16 @@
                 peer = new Peer(null, PEER_CONFIG);
                 peer.on('open', id => {
                     const url = `${location.href}?host=${id}`;
-                    // 清空并生成新的二维码
-                    const qrEl = document.getElementById("qrcode");
-                    qrEl.innerHTML = '';
-                    new QRCode(qrEl, {
+                    // 清空并重新生成二维码
+                    document.getElementById("qrcode").innerHTML = "";
+                    new QRCode(document.getElementById("qrcode"), {
                         text: url, width: 86, height: 86,
                         colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L
                     });
                 });
                 peer.on('error', (err) => { 
                     console.error("PeerJS Error:", err); 
-                    alert("Connection Error: " + err.type + "\nPlease check internet or try refreshing."); 
+                    alert("Connection Error: " + err.type + "\nPlease refresh the page."); 
                 });
                 peer.on('connection', c => {
                     c.on('data', data => {
@@ -1020,7 +894,7 @@
                             lightState = 'YELLOW';
                             redLightTimer = 30; 
                             screen.classList.add('bg-yellow');
-                            updateBarText("STOP?", "#ffb300"); // 黄灯提示
+                            updateBarText("STOP?", "#ffb300"); // 黄灯提示 STOP?
                             setBarVisibility(true);
                             playSignalSound('YELLOW');
                         } else if (lightState === 'YELLOW') {
@@ -1193,6 +1067,91 @@
             });
         }
 
+        function aiBehavior(p, restrictFinish) {
+            const minX = restrictFinish ? FINISH_X : 0; const maxX = GAME_W - 38; const maxY = GAME_H - 44; const minY = p.hasCrown ? 35 : 20;
+            if (p.state === 'roaming' || p.state === 'finished') {
+                for(let i=0; i<grass.length; i++) {
+                    const g = grass[i];
+                    if (Math.abs(g.x - p.x) < 50 && Math.abs(g.y - p.y) < 50) { p.state = 'eating'; p.timer = 50; grass.splice(i, 1); p.targetX = null; p.targetY = null; return; }
+                }
+                if (p.timer-- <= 0) {
+                    const action = Math.random();
+                    if (action < 0.3) { p.targetX = (p.x < GAME_W / 2) ? GAME_W - 100 - Math.random() * 400 : 50 + Math.random() * 400; p.targetY = minY + Math.random() * (maxY - minY); p.timer = 400 + Math.random() * 400; p.roamSpeed = 2.0; }
+                    else if (action < 0.8) { p.targetX = p.x + (Math.random() - 0.5) * 600; p.targetY = minY + Math.random() * (maxY - minY); p.timer = 100 + Math.random() * 200; p.roamSpeed = 0.8; }
+                    else { p.targetX = null; p.targetY = null; p.timer = 60 + Math.random() * 120; p.roamSpeed = 0; }
+                }
+                if (p.targetX !== null && p.targetY !== null) {
+                    const dx = p.targetX - p.x; const dy = p.targetY - p.y; const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 5) { p.targetX = null; p.targetY = null; p.timer = 0; }
+                    else { const speed = p.roamSpeed || 0.5; p.x += (dx / dist) * speed; p.y += (dy / dist) * speed; p.facing = Math.sign(dx) || 1; p.isWalkAnimating = true; }
+                }
+            } else if (p.state === 'eating') { if (p.timer-- <= 0) p.state = 'roaming'; }
+        }
+
+        function explode(p) {
+            const fx = document.getElementById('layer-fx');
+            for(let i=0; i<20; i++) {
+                const el = document.createElement('div'); el.className = 'explosion';
+                el.style.left = (p.x + 19) + 'px'; el.style.top = (p.y + 19) + 'px'; el.style.background = p.color; fx.appendChild(el);
+                const angle = Math.random() * 6.28, spd = 3 + Math.random() * 5;
+                let vx = Math.cos(angle) * spd, vy = Math.sin(angle) * spd, life = 40;
+                const tick = () => { if (life-- <= 0) return el.remove(); el.style.left = (parseFloat(el.style.left) + vx) + 'px'; el.style.top = (parseFloat(el.style.top) + vy) + 'px'; el.style.opacity = life/40; requestAnimationFrame(tick); };
+                tick();
+            }
+            const grassCount = Math.floor(Math.random() * 3) + 1; for(let i=0; i<grassCount; i++) { grass.push({ x: p.x + (Math.random()-0.5) * 60, y: p.y + (Math.random()-0.5) * 40 }); }
+            if (p.playerUUID) { broadcast({ type: 'eliminated', uuid: p.playerUUID }); }
+        }
+
+        function draw() {
+            // 渲染障碍物和草地
+            const grassL = document.getElementById('layer-grass'); 
+            let htmlContent = grass.map(g => `<div class="grass" style="left:${g.x}px; top:${g.y}px"></div>`).join('');
+            if (gameState === 'RACING' || gameState === 'COOLDOWN') {
+                htmlContent += obstacles.map(o => `<div class="obstacle" style="left:${o.x}px; height:30px;"></div>`).join('');
+            }
+            grassL.innerHTML = htmlContent;
+
+            const ponyL = document.getElementById('layer-pony'); const nodes = Array.from(ponyL.children); const ids = new Set(ponies.map(p => p.id));
+            nodes.forEach(n => { if(!ids.has(n.id)) n.remove(); });
+            ponies.forEach(p => {
+                let el = document.getElementById(p.id);
+                if (!el) {
+                    el = document.createElement('div'); el.id = p.id; el.className = 'entity';
+                    el.innerHTML = `<div class="aura"></div><div class="crown-container" style="display: none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path></svg></div><div class="name-tag">${p.name}</div><div class="p-grid" style="display:grid; grid-template-columns:repeat(11,1fr); width:100%; height:100%;"></div>`;
+                    ponyL.appendChild(el);
+                }
+                
+                // === Z轴跳跃偏移 ===
+                el.style.transform = `translate(${p.x}px, ${p.y - p.z}px) scale(1.1)`; 
+                el.style.zIndex = Math.floor(p.y);
+                
+                // 眩晕与无敌效果
+                if (p.isStunned) {
+                    el.style.filter = "grayscale(100%) opacity(0.5)";
+                } else if (p.invincibleTimer > 0) {
+                    // 无敌闪烁：每5帧切换一次透明度
+                    el.style.filter = (Math.floor(p.invincibleTimer / 5) % 2 === 0) ? "opacity(0.3)" : "opacity(0.8)";
+                } else {
+                    el.style.filter = "none";
+                }
+
+                const crownC = el.querySelector('.crown-container'); if (p.hasCrown) { crownC.style.display = 'flex'; } else { crownC.style.display = 'none'; }
+                el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none'; el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
+                const gridEl = el.querySelector('.p-grid');
+                if (p.isTurbo) { gridEl.classList.add('trail-active'); gridEl.style.setProperty('--trail-c', p.color); } else { gridEl.classList.remove('trail-active'); gridEl.style.removeProperty('--trail-c'); }
+                let frameStep = 0; if (p.isManual && p.state === 'racing') { frameStep = (p.manualAnimTimer > 0) ? 1 : 0; } else if (p.isWalkAnimating) { frameStep = Math.floor(p.frame / 5) % 2; }
+                gridEl.style.transform = `scaleX(${p.facing || 1})`;
+                let html = '';
+                for(let y=0; y<11; y++) {
+                    let row = p.pixels[y];
+                    if (p.state === 'eating') { if (y <= 5) { row = (y >= 2) ? p.pixels[y - 2] : [0,0,0,0,0,0,0,0,0,0,0]; } }
+                    else if (frameStep === 1 && y > 8) { row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[0]]; }
+                    for(let x=0; x<11; x++) { if (row[x]) html += `<div style="background:${p.color}; width:100%; height:100%; grid-column:${x+1}; grid-row:${y+1}"></div>`; }
+                }
+                gridEl.innerHTML = html;
+            });
+        }
+
         function initMobile() {
             playerUUID = localStorage.getItem('horse_uuid'); if (!playerUUID) { playerUUID = 'user_' + Math.random().toString(36).substr(2, 9); localStorage.setItem('horse_uuid', playerUUID); }
             initEditor('m-grid', 'm-colors', mobileGrid);
@@ -1218,6 +1177,7 @@
                             else if (data.mode === 'mash') { 
                                 btn.classList.add('btn-mash'); 
                                 btn.innerText = "RUN"; 
+                                // 根据传入的 infoText 显示提示
                                 info.innerText = data.infoText || "TAP TO RUN"; 
                                 randomizeMusic();
                             }
