@@ -290,7 +290,8 @@
         }
 
         .emoji-bar {
-            display: flex; gap: 15px; margin-top: 40px; pointer-events: auto; z-index: 22001; justify-content: center;
+            display: none !important; /* 修改：隐藏表情栏 */
+            gap: 15px; margin-top: 40px; pointer-events: auto; z-index: 22001; justify-content: center;
         }
         .emoji-btn {
             background: #222; border: 2px solid #555; color: #fff;
@@ -471,8 +472,8 @@
                 <select id="mode-select">
                     <option value="RANDOM">RANDOM</option>
                     <option value="CLASSIC">CLASSIC</option>
-                    <option value="HURDLE">JUMP</option> <option value="RED_LIGHT">RED LIGHT</option>
-                </select>
+                    <option value="HURDLE">JUMP</option>
+                    <option value="RED_LIGHT">DANGER</option> </select>
             </div>
 
             <button class="btn" onclick="spawnTestPony()">+ BOT</button>
@@ -521,8 +522,7 @@
                     <option value="RANDOM">RANDOM</option>
                     <option value="CLASSIC">CLASSIC</option>
                     <option value="HURDLE">JUMP</option>
-                    <option value="RED_LIGHT">RED LIGHT</option>
-                </select>
+                    <option value="RED_LIGHT">DANGER</option> </select>
             </div>
 
             <div id="m-btn" class="push-btn btn-wait">WAIT</div>
@@ -914,8 +914,8 @@
             });
             document.getElementById('hud').style.display = 'none'; document.getElementById('queue-text').style.display = 'none';
             setBarVisibility(true); 
-            // 显示模式名称
-            let modeName = currentGameMode === 'RED_LIGHT' ? "RED LIGHT" : (currentGameMode === 'HURDLE' ? "JUMP" : "CLASSIC");
+            // 修改：显示 DANGER 而不是 RED LIGHT
+            let modeName = currentGameMode === 'RED_LIGHT' ? "DANGER" : (currentGameMode === 'HURDLE' ? "JUMP" : "CLASSIC");
             updateBarText(modeName, "#ffb300"); 
             broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
             
@@ -940,8 +940,8 @@
                     obstacles.push({ x: ox, width: 10, passed: false });
                 }
             } else if (currentGameMode === 'RED_LIGHT') {
-                statusText = "STATUS: RED LIGHT!";
-                mobileInfo = "WATCH!"; // 修改为 WATCH!
+                statusText = "STATUS: DANGER!"; // 修改：显示 DANGER
+                mobileInfo = "WATCH!"; 
                 obstacles = []; 
                 lightState = 'GREEN';
                 // 绿灯时间缩短20%
@@ -1003,7 +1003,7 @@
                             lightState = 'YELLOW';
                             redLightTimer = 30; // 黄灯固定0.5s (30帧)
                             screen.classList.add('bg-yellow');
-                            updateBarText("WATCH!", "#ffb300"); // 修改为 WATCH!
+                            updateBarText("WATCH!", "#ffb300"); 
                             setBarVisibility(true);
                             playSignalSound('YELLOW');
                         
