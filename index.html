@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - PARTY EDITION</title>
-    
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    
+    <title>HORSE RUNRUN - HAPTIC EDITION</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 
     <style>
@@ -61,7 +59,7 @@
             transition: background-color 0.1s;
         }
 
-        /* === 模式背景样式 === */
+        /* === 红绿灯模式背景样式 === */
         .bg-green { background: #002200 !important; box-shadow: inset 0 0 50px #00ff00 !important; border-color: #00ff00 !important; }
         .bg-yellow { background: #332200 !important; box-shadow: inset 0 0 50px #ffb300 !important; border-color: #ffb300 !important; }
         .bg-red { background: #440000 !important; box-shadow: inset 0 0 100px #ff0000 !important; border-color: #ff0000 !important; }
@@ -98,7 +96,9 @@
             text-shadow: 1px 1px 0 #000;
         }
 
-        .flash-active { animation: track-flash 0.2s ease-out; }
+        .flash-active {
+            animation: track-flash 0.2s ease-out;
+        }
         @keyframes track-flash {
             0% { background-color: rgba(255, 255, 255, 0.4); box-shadow: inset 0 0 150px var(--primary); border-color: #fff; }
             100% { background-color: #000; box-shadow: none; border-color: var(--primary); }
@@ -117,6 +117,7 @@
             background-size: 12px 12px; opacity: 0.8; z-index: 0;
         }
 
+        /* HUD */
         .hud { position: absolute; bottom: 4px; right: 10px; font-size: 32px; opacity: 0.5; letter-spacing: 2px; z-index: 110; }
 
         #track-display-bar {
@@ -129,16 +130,35 @@
             pointer-events: none;
         }
 
-        .bar-container { width: 100%; display: flex; align-items: center; justify-content: center; }
+        .bar-container {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
         .bar-text-item {
-            font-size: 80px; letter-spacing: 2px; text-shadow: 0 0 20px currentColor; font-weight: bold;
-            width: 260px; display: flex; justify-content: center; flex-shrink: 0; margin: 0;
+            font-size: 80px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px currentColor;
+            font-weight: bold;
+            width: 260px;
+            display: flex;
+            justify-content: center;
+            flex-shrink: 0;
+            margin: 0;
             animation: text-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
 
-        @keyframes text-pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1.0); opacity: 1; } }
-        @keyframes text-vanish { 0% { opacity: 1; } 100% { opacity: 0; } }
+        @keyframes text-pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1.0); opacity: 1; }
+        }
+
+        @keyframes text-vanish {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
 
         .queue-alert {
             position: absolute; top: 10px; right: 20px;
@@ -147,15 +167,30 @@
         }
 
         #vfd-overlay {
-            position: absolute; inset: 0; display: flex; align-items: center; justify-content: flex-start;
-            overflow: hidden; opacity: 0; pointer-events: none; z-index: 95; padding-left: 0;
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: flex-start;
+            overflow: hidden;
+            opacity: 0;
+            pointer-events: none; z-index: 95;
+            padding-left: 0;
         }
+
         #vfd-overlay i {
-            display: inline-block; width: 0; height: 0; border-top: 15px solid transparent; border-bottom: 15px solid transparent; border-left: 80px solid var(--primary);
-            margin-right: 20px; flex-shrink: 0; opacity: 0; transform: scale(0.8) skewX(-20deg); filter: drop-shadow(0 0 5px var(--primary));
+            display: inline-block;
+            width: 0; height: 0;
+            border-top: 15px solid transparent;
+            border-bottom: 15px solid transparent;
+            border-left: 80px solid var(--primary);
+            margin-right: 20px;
+            flex-shrink: 0;
+            opacity: 0;
+            transform: scale(0.8) skewX(-20deg);
+            filter: drop-shadow(0 0 5px var(--primary));
         }
+
         .vfd-active { opacity: 1 !important; }
         .vfd-active i { animation: vfd-flash 0.4s ease-out forwards calc(var(--d) * 1s); }
+
         @keyframes vfd-flash {
             0% { opacity: 0; transform: scale(0.8) translateX(0); }
             10% { opacity: 1; transform: scale(1.2) translateX(10px); filter: drop-shadow(0 0 15px var(--primary)) drop-shadow(0 0 30px #fff); }
@@ -164,15 +199,25 @@
         }
 
         .entity { position: absolute; width: 44px; height: 44px; will-change: transform; }
-        .pixel-grid { display: grid; grid-template-columns: repeat(11, 1fr); width: 100%; height: 100%; transform-origin: bottom center; transition: transform 0.2s; }
+        .pixel-grid {
+            display: grid;
+            grid-template-columns: repeat(11, 1fr);
+            width: 100%; height: 100%;
+            transform-origin: bottom center;
+            transition: transform 0.2s;
+        }
 
         .crown-container {
-            position: absolute; top: -31px; left: 50%; transform: translateX(-50%); width: 18px; height: 18px;
-            animation: bounce 1s infinite; z-index: 10; display: flex; flex-direction: column-reverse; align-items: center;
+            position: absolute; top: -31px; left: 50%; transform: translateX(-50%);
+            width: 18px; height: 18px;
+            animation: bounce 1s infinite; z-index: 10;
+            display: flex; flex-direction: column-reverse; align-items: center;
         }
         .aura {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 160%; height: 160%; border-radius: 50%;
-            background: radial-gradient(circle, rgba(250,204,21,0.4) 0%, transparent 70%); box-shadow: 0 0 10px #facc15; z-index: -1;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 160%; height: 160%; border-radius: 50%;
+            background: radial-gradient(circle, rgba(250,204,21,0.4) 0%, transparent 70%);
+            box-shadow: 0 0 10px #facc15; z-index: -1;
             animation: pulse 0.5s infinite alternate; display: none;
         }
         @keyframes pulse { from { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } }
@@ -182,55 +227,98 @@
             font-size: 20px; white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000;
         }
         .grass { position: absolute; width: 6px; height: 6px; background: #69f0ae; box-shadow: 0 0 4px #69f0ae; }
+        
         .obstacle {
-            position: absolute; width: 10px; height: 30px; background: #ff5252; border: 2px solid #fff; box-shadow: 0 0 10px #ff5252; z-index: 5; bottom: 5px;
+            position: absolute;
+            width: 10px; height: 30px; 
+            background: #ff5252;
+            border: 2px solid #fff;
+            box-shadow: 0 0 10px #ff5252;
+            z-index: 5;
+            bottom: 5px;
         }
+
         .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
         @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
 
         #layer-snow { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
         .snowflake {
-            position: absolute; top: -10px; background: #ffffff; border-radius: 50%; box-shadow: 0 0 4px #ffffff;
+            position: absolute; top: -10px;
+            background: #ffffff; border-radius: 50%; box-shadow: 0 0 4px #ffffff;
             animation-name: snowfall; animation-timing-function: linear; animation-fill-mode: forwards;
         }
         @keyframes snowfall { to { transform: translateY(calc(var(--game-h) + 20px)); } }
 
         .trail-segment {
-            position: absolute; height: 4px; width: 50px; border-radius: 0px; pointer-events: none; opacity: 0.8;
-            animation: trail-fade 0.4s ease-out forwards; z-index: 90; mix-blend-mode: screen; 
+            position: absolute; height: 4px; width: 50px; border-radius: 0px; 
+            pointer-events: none; opacity: 0.8;
+            animation: trail-fade 0.4s ease-out forwards;
+            z-index: 90; mix-blend-mode: screen; 
         }
         @keyframes trail-fade { to { opacity: 0; transform: translateX(-40px) scaleX(0.5); } }
 
         .trail-active .p-grid {
             filter: drop-shadow(-10px 0 5px var(--trail-c)) drop-shadow(-20px 0 10px var(--trail-c)) opacity(0.95);
-            transform: scaleX(1.3) skewX(-15deg); transition: filter 0.1s ease-out, transform 0.1s ease-out;
+            transform: scaleX(1.3) skewX(-15deg);
+            transition: filter 0.1s ease-out, transform 0.1s ease-out;
         }
 
-        .pixel-emoji-container { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 200; animation: pixel-float-smooth 2.5s linear forwards; }
+        .pixel-emoji-container {
+            position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+            pointer-events: none; z-index: 200;
+            animation: pixel-float-smooth 2.5s linear forwards;
+        }
+
         .pop-text {
-            position: absolute; top: -24px; left: 50%; transform: translateX(-50%); color: var(--accent); font-size: 28px; letter-spacing: 2px;
-            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000; white-space: nowrap; pointer-events: none; z-index: 210;
-            font-family: 'VT323', monospace; animation: pixel-float-smooth 2.5s linear forwards;
-        }
-        .pixel-icon-base { background: transparent; position: relative; }
-        @keyframes pixel-float-smooth {
-            0% { opacity: 0; transform: translate(-50%, 10px) scale(0.5); } 10% { opacity: 1; transform: translate(-50%, -10px) scale(1); }
-            25% { transform: translate(calc(-50% + 20px), -40px) scale(1); } 50% { transform: translate(calc(-50% - 20px), -80px) scale(1); }
-            75% { transform: translate(calc(-50% + 15px), -120px) scale(1); opacity: 0.8; } 100% { transform: translate(-50%, -160px) scale(1); opacity: 0; }
+            position: absolute; top: -24px; left: 50%; transform: translateX(-50%);
+            color: var(--accent); font-size: 28px; letter-spacing: 2px;
+            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+            white-space: nowrap; pointer-events: none; z-index: 210;
+            font-family: 'VT323', monospace;
+            animation: pixel-float-smooth 2.5s linear forwards;
         }
 
-        .emoji-bar { display: none !important; }
+        .pixel-icon-base { background: transparent; position: relative; }
+
+        @keyframes pixel-float-smooth {
+            0% { opacity: 0; transform: translate(-50%, 10px) scale(0.5); }
+            10% { opacity: 1; transform: translate(-50%, -10px) scale(1); }
+            25% { transform: translate(calc(-50% + 20px), -40px) scale(1); }
+            50% { transform: translate(calc(-50% - 20px), -80px) scale(1); }
+            75% { transform: translate(calc(-50% + 15px), -120px) scale(1); opacity: 0.8; }
+            100% { transform: translate(-50%, -160px) scale(1); opacity: 0; }
+        }
+
+        .emoji-bar {
+            display: none !important; /* 隐藏表情栏 */
+            gap: 15px; margin-top: 40px; pointer-events: auto; z-index: 22001; justify-content: center;
+        }
+        .emoji-btn {
+            background: #222; border: 2px solid #555; color: #fff;
+            width: 60px; height: 60px; border-radius: 12px; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            transition: transform 0.1s; -webkit-tap-highlight-color: transparent;
+            overflow: hidden; font-family: 'VT323', monospace;
+        }
+        .emoji-btn:active { transform: scale(0.8); background: #fff; border-color: #fff; color: #000; }
+        .emoji-btn:active .pixel-icon-base { filter: invert(1); }
 
         #bottom-controls {
-            position: fixed; bottom: 20px; left: 20px; display: flex; align-items: center; gap: 15px;
-            padding: 15px; background: rgba(0, 0, 0, 0.85); border: 1px solid var(--border); border-radius: 8px; z-index: 1000; box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            position: fixed; bottom: 20px; left: 20px;
+            display: flex; align-items: center; gap: 15px;
+            padding: 15px; background: rgba(0, 0, 0, 0.85);
+            border: 1px solid var(--border); border-radius: 8px; z-index: 1000;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
         }
         #qrcode {
-            background: white; padding: 3px; width: 90px; height: 90px; display: flex; justify-content: center; align-items: center; border-radius: 2px;
+            background: white; padding: 3px; width: 90px; height: 90px;
+            display: flex; justify-content: center; align-items: center; border-radius: 2px;
         }
         #qrcode img { display: block; width: 100%; height: 100%; }
 
-        .control-group { display: flex; flex-direction: column; gap: 5px; border-left: 1px solid #333; padding-left: 15px; width: 140px; }
+        .control-group {
+            display: flex; flex-direction: column; gap: 5px; border-left: 1px solid #333; padding-left: 15px; width: 140px;
+        }
         .control-label { font-size: 0.8rem; color: #888; letter-spacing: 1px; }
         .input-wrapper { display: flex; align-items: center; gap: 5px; width: 100%; }
 
@@ -238,28 +326,36 @@
         input[type=range]:focus { outline: none; }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: #333; border-radius: 3px; border: 1px solid #555; }
         input[type=range]::-webkit-slider-thumb { height: 16px; width: 16px; border-radius: 2px; background: var(--accent); cursor: pointer; -webkit-appearance: none; margin-top: -6px; box-shadow: 0 0 5px var(--accent); }
+        
         input[type="number"] { background: #222; border: 1px solid var(--border); color: var(--primary); font-family: 'VT323', monospace; font-size: 1.4rem; width: 60px; text-align: center; padding: 2px; border-radius: 4px; }
         .unit-label { font-size: 1.2rem; color: #555; }
 
         select {
-            background: #222; border: 2px solid var(--border); color: white; padding: 8px; font-family: 'VT323', monospace; font-size: 1.2rem; margin-right: 10px; cursor: pointer;
+            background: #222; border: 2px solid var(--border); color: white;
+            padding: 8px; font-family: 'VT323', monospace; font-size: 1.2rem;
+            margin-right: 10px; cursor: pointer;
         }
 
         .btn {
-            background: #222; border: 2px solid var(--primary); color: var(--primary); padding: 10px 20px; font-family: 'VT323', monospace; font-size: 1.2rem;
-            cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(255, 255, 255, 0.2); transition: all 0.2s; margin-left: 5px;
+            background: #222; border: 2px solid var(--primary); color: var(--primary);
+            padding: 10px 20px; font-family: 'VT323', monospace; font-size: 1.2rem;
+            cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            transition: all 0.2s; margin-left: 5px;
         }
         .btn:hover { background: var(--primary); color: #000; }
         .btn:active { transform: translateY(2px); }
 
         #modal-editor {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; display: none; justify-content: center; align-items: center;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000;
+            display: none; justify-content: center; align-items: center;
         }
         .modal-content {
-            background: #1a1c20; border: 2px solid var(--primary); padding: 30px; display: flex; flex-direction: column; align-items: center; gap: 20px;
+            background: #1a1c20; border: 2px solid var(--primary); padding: 30px;
+            display: flex; flex-direction: column; align-items: center; gap: 20px;
         }
         .editor-grid {
-            display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr); gap: 2px; background: #333; border: 2px solid #555; touch-action: none;
+            display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr);
+            gap: 2px; background: #333; border: 2px solid #555; touch-action: none;
         }
         .editor-cell { width: 28px; height: 28px; background: #000; }
         .color-picker { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
@@ -269,33 +365,51 @@
         .btn-flex { flex: 1; display: flex; justify-content: center; align-items: center; }
 
         #mobile-view {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111; display: flex; flex-direction: column; z-index: 20000; padding: 20px; align-items: center;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #111; display: flex; flex-direction: column; z-index: 20000;
+            padding: 20px; align-items: center;
         }
         .m-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; flex-shrink: 0; width: 100%; max-width: 400px; }
         .m-title { font-size: 1.5rem; color: #fff; }
         .m-status { background: #222; padding: 4px 8px; border-radius: 4px; font-size: 1rem; color: #fff; border: 1px solid #444; }
         .m-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; flex-shrink: 0; width: 100%; max-width: 400px; }
         input[type="text"] {
-            background: #222; border: 1px solid #444; color: white; padding: 12px; font-family: inherit; text-align: center; font-size: 1.5rem; width: 100%; border-radius: 4px;
+            background: #222; border: 1px solid #444; color: white; padding: 12px;
+            font-family: inherit; text-align: center; font-size: 1.5rem; width: 100%; border-radius: 4px;
         }
         .m-canvas-container {
-            flex: 1; display: flex; justify-content: center; align-items: center; background: #1a1a1a; border-radius: 8px; margin-bottom: 20px; overflow: hidden; width: 100%; max-width: 400px;
+            flex: 1; display: flex; justify-content: center; align-items: center;
+            background: #1a1a1a; border-radius: 8px; margin-bottom: 20px;
+            overflow: hidden; width: 100%; max-width: 400px;
         }
         .m-footer { display: flex; gap: 15px; height: 60px; flex-shrink: 0; width: 100%; max-width: 400px; }
 
         #m-controller {
-            position: fixed; inset: 0; background: #111; z-index: 22000; display: none; flex-direction: column; align-items: center; justify-content: center;
+            position: fixed; inset: 0; background: #111; z-index: 22000;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
         }
         
-        #m-mode-wrapper { margin-bottom: 20px; width: 100%; max-width: 300px; display: none; justify-content: center; }
+        /* 手机端选择框容器 */
+        #m-mode-wrapper {
+            margin-bottom: 20px; width: 100%; max-width: 300px; display: none; justify-content: center;
+        }
         #m-mode-select {
-            background: #222; border: 2px solid #555; color: #fff; padding: 10px; font-family: 'VT323'; font-size: 1.8rem; width: 100%; text-align: center; border-radius: 8px;
+            background: #222; border: 2px solid #555; color: #fff; padding: 10px;
+            font-family: 'VT323'; font-size: 1.8rem; width: 100%; text-align: center;
+            border-radius: 8px;
         }
 
         .push-btn {
-            width: 250px; height: 250px; border-radius: 50%; background: #222; border: 8px solid #444; color: #888; font-size: 4rem; font-family: 'VT323', monospace;
-            display: flex; justify-content: center; align-items: center; box-shadow: 0 0 50px rgba(0,0,0, 0.4); transition: all 0.1s; user-select: none;
-            cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none; text-align: center; line-height: 1; padding: 20px;
+            width: 250px; height: 250px; 
+            border-radius: 50%;
+            background: #222; border: 8px solid #444;
+            color: #888; font-size: 4rem; font-family: 'VT323', monospace;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 0 50px rgba(0,0,0, 0.4);
+            transition: all 0.1s; user-select: none;
+            cursor: pointer; -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+            text-align: center; line-height: 1; padding: 20px;
         }
         .push-btn:active { transform: scale(0.95); }
         .controller-info { font-size: 1.5rem; color: #888; margin-bottom: 30px; text-align: center; }
@@ -357,10 +471,8 @@
                 <span class="control-label">GAME MODE</span>
                 <select id="mode-select">
                     <option value="RANDOM">RANDOM</option>
-                    <option value="CLASSIC">RUN</option>
-                    <option value="HURDLE">JUMP</option>
-                    <option value="RED_LIGHT">STOP?</option>
-                </select>
+                    <option value="CLASSIC">RUN</option> <option value="HURDLE">JUMP</option>
+                    <option value="RED_LIGHT">STOP?</option> </select>
             </div>
 
             <button class="btn" onclick="spawnTestPony()">+ BOT</button>
@@ -407,13 +519,18 @@
             <div id="m-mode-wrapper">
                 <select id="m-mode-select">
                     <option value="RANDOM">RANDOM</option>
-                    <option value="CLASSIC">RUN</option>
-                    <option value="HURDLE">JUMP</option>
-                    <option value="RED_LIGHT">STOP?</option>
-                </select>
+                    <option value="CLASSIC">RUN</option> <option value="HURDLE">JUMP</option>
+                    <option value="RED_LIGHT">STOP?</option> </select>
             </div>
 
             <div id="m-btn" class="push-btn btn-wait">WAIT</div>
+            
+            <div class="emoji-bar">
+                <div class="emoji-btn" onclick="sendEmoji('HEART')" data-icon="HEART"></div>
+                <div class="emoji-btn" onclick="sendEmoji('POOP')" data-icon="POOP"></div>
+                <div class="emoji-btn" onclick="sendEmoji('BOLT')" data-icon="BOLT"></div>
+                <div class="emoji-btn" onclick="sendEmoji('FACE')" style="font-size: 2rem;">?</div>
+            </div>
         </div>
     </div>
 
@@ -483,8 +600,6 @@
         let currentBarText = '';
         let lastBroadcastText = '';
 
-        let touchStartY = 0;
-        let isSwiping = false;
         let lastShakeTime = 0; // 摇一摇防抖
 
         const PEER_CONFIG = {
@@ -498,6 +613,11 @@
         };
 
         /* ==================== FUNCTIONS ==================== */
+
+        // 震动辅助函数
+        function vibrate(pattern) {
+            if (navigator.vibrate) navigator.vibrate(pattern);
+        }
 
         function createPixelIcon(type, pixelSize = 2, color = '#fff') {
             const container = document.createElement('div');
@@ -594,6 +714,12 @@
         }
 
         window.onload = function() {
+            const btns = document.querySelectorAll('.emoji-btn');
+            btns.forEach(btn => {
+                const type = btn.getAttribute('data-icon');
+                if (type) { btn.appendChild(createPixelIcon(type, 3, '#fff')); }
+            });
+
             const zoomSlider = document.getElementById('zoom-slider');
             const zoomInput = document.getElementById('zoom-input');
             const ySlider = document.getElementById('y-slider');
@@ -674,16 +800,10 @@
                 peer = new Peer(null, PEER_CONFIG);
                 peer.on('open', id => {
                     const url = `${location.href}?host=${id}`;
-                    // 清空并重新生成二维码
-                    document.getElementById("qrcode").innerHTML = "";
                     new QRCode(document.getElementById("qrcode"), {
                         text: url, width: 86, height: 86,
                         colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L
                     });
-                });
-                peer.on('error', (err) => { 
-                    console.error("PeerJS Error:", err); 
-                    alert("Connection Error: " + err.type + "\nPlease refresh the page."); 
                 });
                 peer.on('connection', c => {
                     c.on('data', data => {
@@ -700,6 +820,7 @@
                         } else if (data.type === 'jump') {
                             handleJump(data.uuid);
                         } else if (data.type === 'force_start') {
+                            // 如果手机端发来了选择的模式，更新电脑端的设置
                             if (data.mode) {
                                 const modeSel = document.getElementById('mode-select');
                                 if(modeSel) modeSel.value = data.mode;
@@ -710,6 +831,7 @@
                         }
                     });
                 });
+                peer.on('error', (err) => { console.error("PeerJS Error:", err); alert("Network Error: " + err.type + "\nTry refreshing."); });
             } catch(e) { console.error(e); }
         }
 
@@ -733,8 +855,6 @@
                         pony.invincibleTimer = 90;
                         pony.manualSpeed = -15; 
                         triggerPonyEmoji(p.playerUUID, 'POOP');
-                        const conn = getConnByUUID(uuid);
-                        if(conn) conn.send({ type: 'vibrate', duration: 300 });
                     }
                     return;
                 }
@@ -759,16 +879,6 @@
             }
         }
 
-        function getConnByUUID(uuid) {
-            if(!peer || !peer.connections) return null;
-            Object.values(peer.connections).forEach(conns => {
-                conns.forEach(c => {
-                    if(c.open) c.send({ type: 'vibrate_check', target_uuid: uuid });
-                });
-            });
-            return null;
-        }
-
         function requestSpawnPony(name, pixels, color, uuid = null) {
             const newPony = {
                 id: Math.random().toString(36).substr(2, 9),
@@ -788,6 +898,7 @@
         }
 
         function startCooldown() {
+            /* === 决定游戏模式 === */
             const selected = document.getElementById('mode-select').value;
             if (selected === 'RANDOM') {
                 const modes = ['CLASSIC', 'HURDLE', 'RED_LIGHT'];
@@ -806,8 +917,8 @@
             });
             document.getElementById('hud').style.display = 'none'; document.getElementById('queue-text').style.display = 'none';
             setBarVisibility(true); 
-            
-            let modeName = "RUN";
+            // 修改：显示 FREEZE 而不是 RED LIGHT, RUN 而不是 CLASSIC
+            let modeName = "CLASSIC";
             if (currentGameMode === 'RED_LIGHT') modeName = "STOP?";
             else if (currentGameMode === 'HURDLE') modeName = "JUMP";
             else if (currentGameMode === 'CLASSIC') modeName = "RUN";
@@ -815,33 +926,37 @@
             updateBarText(modeName, "#ffb300"); 
             broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
             
+            // 清理状态
             obstacles = [];
-            document.getElementById('game-screen').className = ''; 
-            lightState = 'GREEN';
+            document.getElementById('game-screen').className = ''; // 重置背景
+            lightState = 'GREEN'; // 重置红绿灯状态
         }
 
         function startRace() {
             updateBarText("GO!", "#ffffff");
             
-            let statusText = "STATUS: RUN";
+            let statusText = "STATUS: RACING";
             let mobileInfo = "RUN (TAP)";
 
+            // 初始化特定模式逻辑
             if (currentGameMode === 'HURDLE') {
                 statusText = "STATUS: JUMP";
-                mobileInfo = "TAP: RUN / SHAKE: JUMP"; 
+                mobileInfo = "TAP: RUN / UP: JUMP"; // 修改：提示上滑跳跃
                 obstacles = [];
                 for(let ox = 500; ox < FINISH_X - 200; ox += (400 + Math.random() * 300)) {
                     obstacles.push({ x: ox, width: 10, passed: false });
                 }
             } else if (currentGameMode === 'RED_LIGHT') {
-                statusText = "STATUS: STOP?"; 
+                statusText = "STATUS: STOP?"; // 修改：显示 STOP?
                 mobileInfo = "WATCH!"; 
                 obstacles = []; 
                 lightState = 'GREEN';
+                // 绿灯时间缩短20%
                 redLightTimer = (120 + Math.random() * 100) * 0.8; 
                 document.getElementById('game-screen').classList.add('bg-green');
                 playSignalSound('GREEN');
             } else {
+                // Classic -> RUN
                 statusText = "STATUS: RUN";
                 obstacles = [];
             }
@@ -875,7 +990,7 @@
                 updatePoniesMovement(); if (waitTimer <= 0) startCooldown();
             } else if (gameState === 'COOLDOWN') {
                 cooldownTimer--; alert.style.display = 'none';
-                if (cooldownTimer > 180) { } else {
+                if (cooldownTimer > 180) { /* 显示模式名，已在startCooldown处理 */ } else {
                     const sec = Math.ceil(cooldownTimer / 60); updateBarText(sec.toString(), '#ffffff');
                     if (cooldownTimer % 60 === 59) triggerFlash();
                     if (sec > 0 && lastBroadcastText !== sec) { broadcast({ type: 'sync_ui', label: sec.toString(), mode: 'wait' }); lastBroadcastText = sec; }
@@ -884,31 +999,39 @@
             } else if (gameState === 'RACING') {
                 if (ponyQueue.length > 0) { alert.style.display = 'block'; alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`; } else { alert.style.display = 'none'; }
                 
+                // === 红绿灯逻辑（含黄灯） ===
                 if (currentGameMode === 'RED_LIGHT') {
                     redLightTimer--;
                     if (redLightTimer <= 0) {
                         const screen = document.getElementById('game-screen');
-                        screen.className = ''; 
+                        screen.className = ''; // 重置 class
 
                         if (lightState === 'GREEN') {
+                            // 绿 -> 黄 (恢复)
                             lightState = 'YELLOW';
-                            redLightTimer = 30; 
+                            redLightTimer = 30; // 黄灯固定0.5s (30帧)
                             screen.classList.add('bg-yellow');
-                            updateBarText("STOP?", "#ffb300"); // 黄灯提示 STOP?
+                            updateBarText("STOP?", "#ffb300"); // 黄灯提示：STOP?
                             setBarVisibility(true);
                             playSignalSound('YELLOW');
+                        
                         } else if (lightState === 'YELLOW') {
+                            // 黄 -> 红
                             lightState = 'RED';
-                            redLightTimer = 60 + Math.random() * 90; 
+                            redLightTimer = 60 + Math.random() * 90; // 红灯持续 1-2.5秒
                             screen.classList.add('bg-red');
                             updateBarText("STOP!", "#ff5252"); setBarVisibility(true);
                             playSignalSound('RED');
+
                         } else if (lightState === 'RED') {
+                            // 红 -> 绿
                             lightState = 'GREEN';
+                            // 绿灯时间缩短20%
                             redLightTimer = (100 + Math.random() * 150) * 0.8; 
                             screen.classList.add('bg-green');
                             updateBarText("GO!", "#69f0ae"); 
                             playSignalSound('GREEN');
+                            // 稍微延迟消失文字，以免遮挡
                             setTimeout(() => { if (lightState === 'GREEN') setBarVisibility(false); }, 500);
                         }
                     }
@@ -917,7 +1040,7 @@
                 updatePoniesMovement(); checkRaceEnd();
             } else if (gameState === 'ROAMING') {
                 hud.style.display = 'block'; hud.innerText = "NOWHERE TO RUN";
-                document.getElementById('game-screen').className = ''; 
+                document.getElementById('game-screen').className = ''; // 清除背景
                 if (ponyQueue.length > 0) { alert.style.display = 'block'; alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`; } else { alert.style.display = 'none'; }
                 updatePoniesMovement();
             }
@@ -934,9 +1057,7 @@
 
         function checkRaceEnd() {
             const finished = ponies.filter(p => p.state === 'finished'); let raceOverTrigger = false;
-            
             if (ponies.length > 10) { if (finished.length >= 10) raceOverTrigger = true; } else { if (ponies.length > 0 && finished.length === ponies.length) raceOverTrigger = true; }
-
             if (raceOverTrigger) {
                 if (ponies.length > 10) {
                     const losers = ponies.filter(p => p.state === 'racing'); losers.forEach(p => explode(p));
@@ -947,20 +1068,24 @@
                     gameState = 'ROAMING'; broadcast({ type: 'sync_ui', label: 'DONE', mode: 'wait' });
                     setTimeout(() => { if (gameState === 'ROAMING') broadcast({ type: 'sync_ui', label: 'START RACE', mode: 'start' }); }, 3000);
                 }
+                // 清除红绿灯背景
                 document.getElementById('game-screen').className = '';
                 setBarVisibility(false);
             }
         }
 
+        /* === 光线拖影特效 (Hard Edge Trail) === */
         function spawnTrail(p) {
             const fxLayer = document.getElementById('layer-fx');
             const count = Math.random() < 0.5 ? 1 : 2; 
             for (let i = 0; i < count; i++) {
                 const el = document.createElement('div');
                 el.className = 'trail-segment';
+                /* 位置偏移到更后方 (-20) */
                 el.style.left = (p.x - 20 + Math.random() * 10) + 'px';
                 el.style.top = (p.y + 15 + Math.random() * 15) + 'px';
                 el.style.background = p.color;
+                /* 0px 的阴影半径 (Hard Edge) */
                 el.style.boxShadow = `0 0 0px ${p.color}`;
                 fxLayer.appendChild(el);
                 setTimeout(() => el.remove(), 400);
@@ -983,16 +1108,21 @@
             ponies.forEach(p => {
                 p.frame++; p.isWalkAnimating = false; p.isTurbo = false;
                 if (p.manualAnimTimer > 0) p.manualAnimTimer--; p.turboCharge = Math.max(0, p.turboCharge - 1);
+                
+                // 处理无敌时间倒计时
                 if (p.invincibleTimer > 0) p.invincibleTimer--;
 
                 if (p.state === 'ready') { p.x = 20; return; }
                 if (p.state === 'racing') {
+                    // === 1. 眩晕逻辑 ===
                     if (p.isStunned) {
                         p.stunTimer--;
                         if (p.stunTimer <= 0) p.isStunned = false;
-                        p.isWalkAnimating = false; 
+                        p.isWalkAnimating = false; // 晕了不能动
+                        // 即使晕了，可能有点后退速度
                         if (p.manualSpeed < 0) { p.x += p.manualSpeed; p.manualSpeed *= 0.9; }
                     } else {
+                        // === 2. 正常移动逻辑 ===
                         if (p.playerUUID) {
                             if (p.isManual) {
                                 if (Date.now() - p.lastTapTime > 10000) { p.isManual = false; if (!p.name.includes("(BOT)")) p.name += " (BOT)"; }
@@ -1002,8 +1132,10 @@
                             p.manualSpeed *= 0.95; if (p.manualSpeed < 0.1) p.manualSpeed = 0;
                             p.x += p.manualSpeed; p.isWalkAnimating = p.manualSpeed > 0.1;
                         } else {
+                            // AI 逻辑
                             if (currentGameMode === 'RED_LIGHT' && lightState === 'RED') {
-                                if (Math.random() < 0.02) p.x += 2; 
+                                // AI 在红灯时停下，但有几率犯错
+                                if (Math.random() < 0.02) p.x += 2; // AI犯错
                             } else {
                                 p.x += p.speed * (0.9 + Math.random() * 0.2); p.isWalkAnimating = true;
                                 if (currentGameMode === 'HURDLE' && !p.isJumping) {
@@ -1015,35 +1147,38 @@
                             }
                         }
 
+                        // === 3. 跳跃物理 ===
                         if (p.isJumping) {
                             p.z += p.vz;
-                            p.vz -= 0.8; 
+                            p.vz -= 0.8; // 重力
                             if (p.z <= 0) {
                                 p.z = 0; p.vz = 0; p.isJumping = false;
                             }
                         }
 
+                        // === 4. 碰撞检测 (带无敌时间) ===
                         if (p.invincibleTimer <= 0) {
+                            // 只有障碍赛才检测障碍物
                             if (currentGameMode === 'HURDLE') {
                                 obstacles.forEach(obs => {
                                     if (p.x + 40 > obs.x && p.x < obs.x + obs.width) {
                                         if (p.z < 20) { 
                                             p.isStunned = true;
-                                            p.stunTimer = 30; p.invincibleTimer = 90;
-                                            p.manualSpeed = 0; p.x = obs.x - 10; 
-                                            triggerPonyEmoji(p.playerUUID, 'POOP');
-                                            const conn = getConnByUUID(p.playerUUID);
-                                            if(conn) conn.send({ type: 'vibrate', duration: 200 }); 
+                                            p.stunTimer = 30; // 眩晕0.5秒
+                                            p.invincibleTimer = 90; // 无敌1.5秒
+                                            p.manualSpeed = 0; 
+                                            p.x = obs.x - 10; 
+                                            triggerPonyEmoji(p.playerUUID, 'POOP'); 
                                         }
                                     }
                                 });
                             }
                         }
 
+                        // === 特效 ===
                         if (p.turboCharge > 60 && Math.random() < 0.4) spawnTrail(p);
                         if (p.turboCharge > 30) p.isTurbo = true;
                         p.facing = 1;
-                        
                         if (p.x >= FINISH_X) {
                             if (p.state === 'racing') {
                                 p.state = 'finished';
@@ -1169,6 +1304,8 @@
                             
                             mobileBtnState = data.mode; 
                             btn.className = 'push-btn'; 
+
+                            // 重置选择框显示状态
                             modeWrapper.style.display = 'none';
 
                             if (data.mode === 'wait') { 
@@ -1183,6 +1320,7 @@
                             }
                             else if (data.mode === 'start') { 
                                 btn.classList.add('btn-start'); btn.innerText = data.label; info.innerText = "RACE FINISHED"; 
+                                // === 开启模式选择框 ===
                                 modeWrapper.style.display = 'flex';
                             }
                         } else if (data.type === 'eliminated' && data.uuid === playerUUID) {
@@ -1192,7 +1330,7 @@
                             btn.innerText = "TRY\nAGAIN"; 
                             info.innerText = "ELIMINATED";
                             document.getElementById('m-mode-wrapper').style.display = 'none';
-                            if(navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 500]); 
+                            vibrate([100, 50, 100]); // 淘汰震动
                         } else if (data.type === 'player_finished' && data.uuid === playerUUID) {
                             mobileBtnState = 'finished';
                             const btn = document.getElementById('m-btn');
@@ -1200,8 +1338,7 @@
                             btn.innerText = "DONE";
                             document.getElementById('m-info').innerText = "WAITING...";
                             document.getElementById('m-mode-wrapper').style.display = 'none';
-                        } else if (data.type === 'vibrate' || (data.type === 'vibrate_check' && data.target_uuid === playerUUID)) {
-                            if(navigator.vibrate) navigator.vibrate(data.duration || 200);
+                            vibrate([200]); // 冲线震动
                         }
                     });
                 });
@@ -1210,50 +1347,67 @@
 
         /* === 手机端：摇一摇监测函数 === */
         function handleMotion(event) {
-            const acc = event.acceleration; 
+            const acc = event.acceleration; // 使用不带重力的加速度
             if (!acc) return;
+            
+            // 计算合加速度
             const magnitude = Math.sqrt(acc.x*acc.x + acc.y*acc.y + acc.z*acc.z);
-            if (magnitude > 15) { // 阈值
+            
+            // 阈值设置为 15 m/s^2 (大约1.5G)
+            if (magnitude > 15) {
                 const now = Date.now();
-                if (now - lastShakeTime > 500) { 
+                if (now - lastShakeTime > 500) { // 500ms 冷却
                     lastShakeTime = now;
                     if(conn) conn.send({ type: 'jump', uuid: playerUUID }); 
+                    vibrate(200); // 摇一摇强震动
                 }
             }
         }
 
-        /* === 手机端：初始化监听 === */
+        /* === 手机端：初始化手势监听 (上滑跳跃 + 点击跑步) === */
         const mBtn = document.getElementById('m-btn');
+        let touchStartY = 0;
+        let touchStartTime = 0;
+
         mBtn.addEventListener('touchstart', (e) => {
             if (mobileBtnState === 'dead') { resetMobile(); return; }
             if (mobileBtnState === 'finished') return;
             if (mobileBtnState === 'start') { 
                 const selectedMode = document.getElementById('m-mode-select').value;
                 if(conn) conn.send({ type: 'force_start', mode: selectedMode }); 
+                vibrate(50);
                 return; 
             }
             if (mobileBtnState !== 'mash') return;
 
+            // 记录触摸开始
             e.preventDefault(); 
-            // 触感反馈（轻微）
-            if(navigator.vibrate) navigator.vibrate(30);
-            
-            mBtn.style.transform = 'scale(0.95)'; 
-            setTimeout(() => { mBtn.style.transform = 'scale(1)'; }, 50);
-
-            if(conn) conn.send({ type: 'tap', uuid: playerUUID }); 
-            initAudio(); playNextNote(); 
+            touchStartY = e.changedTouches[0].clientY;
+            touchStartTime = Date.now();
+            mBtn.style.transform = 'scale(0.95)'; // 视觉按下
         }, {passive: false});
 
-        mBtn.addEventListener('touchmove', (e) => {
+        mBtn.addEventListener('touchend', (e) => {
             if (mobileBtnState !== 'mash') return;
-            e.preventDefault(); 
-            const currentY = e.touches[0].clientY;
-            if (!isSwiping && touchStartY - currentY > 50) {
-                isSwiping = true;
-                if(conn) conn.send({ type: 'jump', uuid: playerUUID }); 
+            e.preventDefault();
+            mBtn.style.transform = 'scale(1)'; // 视觉恢复
+
+            const touchEndY = e.changedTouches[0].clientY;
+            const diffY = touchStartY - touchEndY; // 正数表示向上滑
+            const timeDiff = Date.now() - touchStartTime;
+
+            // 逻辑判断：如果滑动距离大于50px，认为是上滑跳跃，否则认为是点击
+            if (diffY > 50) {
+                // 上滑 -> 跳跃
+                if(conn) conn.send({ type: 'jump', uuid: playerUUID });
+                vibrate(100); // 跳跃震动稍长
+            } else {
+                // 点击 -> 跑步
+                if(conn) conn.send({ type: 'tap', uuid: playerUUID });
+                initAudio(); playNextNote();
+                vibrate(15); // 跑步震动很短，模拟按键手感
             }
-        }, {passive: false});
+        });
 
         function sendMobile() {
             if(!conn) return alert("Not Connected!");
@@ -1263,7 +1417,8 @@
             
             initAudio(); randomizeMusic();
 
-            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+            // === 请求传感器权限 (iOS 13+) ===
+            if (typeof DeviceMotionEvent.requestPermission === 'function') {
                 DeviceMotionEvent.requestPermission()
                     .then(permissionState => {
                         if (permissionState === 'granted') {
@@ -1272,6 +1427,7 @@
                     })
                     .catch(console.error);
             } else {
+                // 非iOS 13+ 设备直接监听
                 window.addEventListener('devicemotion', handleMotion);
             }
 
@@ -1308,6 +1464,7 @@
         function sendEmoji(type) {
             if(!conn) return; conn.send({ type: 'emoji', uuid: playerUUID, content: type });
             const btn = event.currentTarget; btn.style.transform = 'scale(0.8)'; setTimeout(() => btn.style.transform = 'scale(1)', 100);
+            vibrate(10); // 发表情轻微震动
         }
 
         function resetMobile() { document.getElementById('m-controller').style.display = 'none'; document.getElementById('m-editor-ui').style.display = 'block'; document.getElementById('m-name').value = ''; restoreGridData(mobileGrid); renderGrid('m-grid', mobileGrid, selectedColor); mobileBtnState = 'wait'; }
