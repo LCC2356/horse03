@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - GESTURE EDITION</title>
+    <title>HORSE RUNRUN - PARTY PACK</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -56,7 +56,12 @@
             box-shadow: none;
             overflow: hidden;
             flex-shrink: 0;
+            transition: background-color 0.1s; /* 快速响应红绿灯 */
         }
+
+        /* 红绿灯模式背景样式 */
+        .bg-green { background: #002200 !important; box-shadow: inset 0 0 50px #00ff00 !important; border-color: #00ff00 !important; }
+        .bg-red { background: #440000 !important; box-shadow: inset 0 0 100px #ff0000 !important; border-color: #ff0000 !important; }
 
         #track-wrapper {
             display: flex;
@@ -225,8 +230,6 @@
         }
         .grass { position: absolute; width: 6px; height: 6px; background: #69f0ae; box-shadow: 0 0 4px #69f0ae; }
         
-        /* === 修改：障碍物位置 === */
-        /* 要求：在最下方。GAME_H=100px。Obstacle=30px。Bottom:5px */
         .obstacle {
             position: absolute;
             width: 10px; height: 30px; 
@@ -234,7 +237,7 @@
             border: 2px solid #fff;
             box-shadow: 0 0 10px #ff5252;
             z-index: 5;
-            bottom: 5px; /* 修改：固定在最下方 */
+            bottom: 5px;
         }
 
         .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
@@ -258,7 +261,7 @@
             to { transform: translateY(calc(var(--game-h) + 20px)); }
         }
 
-        /* === 光线拖影特效 (Hard Edge Trail) === */
+        /* === 光线拖影特效 === */
         .trail-segment {
             position: absolute;
             height: 4px;
@@ -401,6 +404,12 @@
         }
         .unit-label { font-size: 1.2rem; color: #555; }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+        select {
+            background: #222; border: 2px solid var(--border); color: white;
+            padding: 8px; font-family: 'VT323', monospace; font-size: 1.2rem;
+            margin-right: 10px; cursor: pointer;
+        }
 
         .btn {
             background: #222; border: 2px solid var(--primary); color: var(--primary);
@@ -554,6 +563,16 @@
                 </div>
             </div>
 
+            <div class="control-group">
+                <span class="control-label">GAME MODE</span>
+                <select id="mode-select">
+                    <option value="RANDOM">RANDOM</option>
+                    <option value="CLASSIC">CLASSIC</option>
+                    <option value="HURDLE">HURDLES</option>
+                    <option value="RED_LIGHT">RED LIGHT</option>
+                </select>
+            </div>
+
             <button class="btn" onclick="spawnTestPony()">+ BOT</button>
             <button class="btn" onclick="openDesktopEditor()">+ PONY</button>
         </div>
@@ -619,7 +638,6 @@
             [1,0,1,1,1,1,1,1,1,0,0], [1,0,1,1,1,1,1,1,1,0,0], [0,0,1,1,1,1,1,1,1,0,0], [0,0,1,0,1,0,1,0,1,0,0], [0,0,1,0,1,0,1,0,1,0,0], [0,0,1,0,1,0,1,0,1,0,0]
         ];
 
-        /* === 原始非对称像素画数据 === */
         const PIXEL_ART_MAPS = {
             'HEART': [ [0,1,1,0,1,1,0], [1,1,1,1,1,1,1], [1,1,1,1,1,1,1], [0,1,1,1,1,1,0], [0,0,1,1,1,0,0], [0,0,0,1,0,0,0] ],
             'POOP': [ [0,0,0,1,0,0,0], [0,0,1,1,1,0,0], [0,1,1,1,1,1,0], [1,0,1,1,1,0,1], [1,1,1,1,1,1,1] ],
@@ -627,24 +645,9 @@
         };
 
         const SONGS = {
-            'JINGLE': [
-                329.6, 329.6, 329.6,  
-                329.6, 329.6, 329.6,  
-                329.6, 392.0, 261.6, 293.7, 329.6,
-                349.2, 349.2, 349.2, 349.2, 349.2, 329.6, 329.6,
-                329.6, 293.7, 293.7, 329.6, 293.7, 392.0
-            ],
-            'MERRY': [
-                261.6, 349.2, 349.2, 392.0, 349.2, 329.6, 293.7, 293.7,
-                293.7, 392.0, 392.0, 440.0, 392.0, 349.2, 329.6, 261.6,
-                261.6, 440.0, 440.0, 466.2, 440.0, 392.0, 349.2, 293.7,
-                261.6, 261.6, 293.7, 392.0, 329.6, 349.2
-            ],
-            'DECK': [
-                523.3, 493.9, 440.0, 392.0, 349.2, 329.6, 293.7, 261.6,
-                293.7, 329.6, 349.2, 293.7,
-                329.6, 293.7, 261.6
-            ]
+            'JINGLE': [ 329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 392.0, 261.6, 293.7, 329.6, 349.2, 349.2, 349.2, 349.2, 349.2, 329.6, 329.6, 329.6, 293.7, 293.7, 329.6, 293.7, 392.0 ],
+            'MERRY': [ 261.6, 349.2, 349.2, 392.0, 349.2, 329.6, 293.7, 293.7, 293.7, 392.0, 392.0, 440.0, 392.0, 349.2, 329.6, 261.6, 261.6, 440.0, 440.0, 466.2, 440.0, 392.0, 349.2, 293.7, 261.6, 261.6, 293.7, 392.0, 329.6, 349.2 ],
+            'DECK': [ 523.3, 493.9, 440.0, 392.0, 349.2, 329.6, 293.7, 261.6, 293.7, 329.6, 349.2, 293.7, 329.6, 293.7, 261.6 ]
         };
 
         const SOUND_STYLES = {
@@ -669,6 +672,11 @@
         let gameState = 'ROAMING';
         let cooldownTimer = 0;
         let waitTimer = 0;
+        
+        /* === 新增：游戏模式变量 === */
+        let currentGameMode = 'CLASSIC'; // 'CLASSIC', 'HURDLE', 'RED_LIGHT'
+        let redLightTimer = 0;
+        let isRedLight = false;
 
         let peer = null, conn = null;
         let pcGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
@@ -873,10 +881,26 @@
             requestSpawnPony(rName, DEFAULT_PIXELS, COLORS[rColorKey], null);
         }
 
+        /* === 修改：Tap 处理逻辑，加入红绿灯判定 === */
         function handleTap(uuid) {
             if (!uuid) return;
             const pony = ponies.find(p => p.playerUUID === uuid);
-            if (pony && pony.state === 'racing' && !pony.isStunned) {
+            if (pony && pony.state === 'racing') {
+                if (pony.isStunned) return;
+
+                // 红绿灯模式判罚
+                if (currentGameMode === 'RED_LIGHT' && isRedLight) {
+                    if (pony.invincibleTimer <= 0) {
+                        pony.isStunned = true;
+                        pony.stunTimer = 60; // 眩晕1秒
+                        pony.invincibleTimer = 90;
+                        pony.manualSpeed = -15; // 后退惩罚
+                        triggerPonyEmoji(p.playerUUID, 'POOP');
+                    }
+                    return;
+                }
+
+                // 正常跑步
                 pony.isManual = true; pony.lastTapTime = Date.now(); pony.tapCount++;
                 pony.name = pony.name.replace(" (BOT)", "");
                 pony.manualSpeed = Math.min(pony.manualSpeed + 2.4, 18);
@@ -889,8 +913,11 @@
             if (!uuid) return;
             const pony = ponies.find(p => p.playerUUID === uuid);
             if (pony && pony.state === 'racing' && !pony.isStunned && !pony.isJumping) {
+                // 红绿灯模式下不能跳（也没必要）
+                if (currentGameMode === 'RED_LIGHT') return;
+
                 pony.isJumping = true;
-                pony.vz = 12; // 起跳初始速度
+                pony.vz = 12; 
                 pony.isManual = true; 
             }
         }
@@ -904,13 +931,7 @@
                 hasCrown: false, isStreak: false, crownCount: 0, timer: 0, frame: 0, finishedWalking: false,
                 targetX: null, targetY: null, isWalkAnimating: false, manualAnimTimer: 0, roamSpeed: 0.5,
                 isTurbo: false, turboCharge: 0,
-                /* === 跳跃与状态属性 === */
-                z: 0,           
-                vz: 0,          
-                isJumping: false,
-                isStunned: false, 
-                stunTimer: 0,
-                invincibleTimer: 0 // 无敌时间计数器
+                z: 0, vz: 0, isJumping: false, isStunned: false, stunTimer: 0, invincibleTimer: 0 
             };
             if (gameState === 'RACING' || gameState === 'COOLDOWN' || gameState === 'WAITING_TO_START') {
                 ponyQueue.push(newPony); updateHUD();
@@ -920,6 +941,15 @@
         }
 
         function startCooldown() {
+            /* === 决定游戏模式 === */
+            const selected = document.getElementById('mode-select').value;
+            if (selected === 'RANDOM') {
+                const modes = ['CLASSIC', 'HURDLE', 'RED_LIGHT'];
+                currentGameMode = modes[Math.floor(Math.random() * modes.length)];
+            } else {
+                currentGameMode = selected;
+            }
+
             gameState = 'COOLDOWN'; cooldownTimer = 240;
             if (ponyQueue.length > 0) { ponies = ponies.concat(ponyQueue); ponyQueue = []; }
             ponies.forEach(p => {
@@ -929,25 +959,50 @@
                 p.z = 0; p.vz = 0; p.isStunned = false; p.stunTimer = 0; p.invincibleTimer = 0;
             });
             document.getElementById('hud').style.display = 'none'; document.getElementById('queue-text').style.display = 'none';
-            setBarVisibility(true); updateBarText("READY", "#ffffff"); broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
+            setBarVisibility(true); 
+            // 显示模式名称
+            let modeName = currentGameMode === 'RED_LIGHT' ? "RED LIGHT" : (currentGameMode === 'HURDLE' ? "HURDLES" : "CLASSIC");
+            updateBarText(modeName, "#ffb300"); 
+            broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
+            
+            // 清理状态
+            obstacles = [];
+            document.getElementById('game-screen').className = ''; // 重置背景
         }
 
         function startRace() {
-            updateBarText("RUN", "#ffffff");
-            const hud = document.getElementById('hud'); hud.style.display = 'block'; hud.innerText = "STATUS: HURDLE RACE!"; 
+            updateBarText("GO!", "#ffffff");
+            
+            let statusText = "STATUS: RACING";
+            let mobileInfo = "RUN (TAP)";
+
+            // 初始化特定模式逻辑
+            if (currentGameMode === 'HURDLE') {
+                statusText = "STATUS: HURDLES";
+                mobileInfo = "TAP: RUN / SWIPE: JUMP";
+                obstacles = [];
+                for(let ox = 500; ox < FINISH_X - 200; ox += (400 + Math.random() * 300)) {
+                    obstacles.push({ x: ox, width: 10, passed: false });
+                }
+            } else if (currentGameMode === 'RED_LIGHT') {
+                statusText = "STATUS: RED LIGHT!";
+                mobileInfo = "WATCH THE SCREEN!";
+                obstacles = []; // 没障碍
+                redLightTimer = 120 + Math.random() * 100; // 初始绿灯时间
+                isRedLight = false;
+                document.getElementById('game-screen').classList.add('bg-green');
+            } else {
+                // Classic
+                obstacles = [];
+            }
+
+            const hud = document.getElementById('hud'); hud.style.display = 'block'; hud.innerText = statusText;
             const vfdOverlay = document.getElementById('vfd-overlay');
             vfdOverlay.classList.remove('vfd-active'); void vfdOverlay.offsetWidth; vfdOverlay.classList.add('vfd-active');
             const textItems = document.querySelectorAll('.bar-text-item');
             textItems.forEach((item, index) => { item.style.animation = `text-vanish 0.05s linear forwards ${delay = 0.02 + (index * 0.06)}s`; });
             setTimeout(() => { if (gameState === 'RACING') { setBarVisibility(false); vfdOverlay.classList.remove('vfd-active'); } }, 1500);
             
-            /* === 生成障碍物 === */
-            obstacles = [];
-            // 每隔 400-700px 生成一排障碍物
-            for(let ox = 500; ox < FINISH_X - 200; ox += (400 + Math.random() * 300)) {
-                obstacles.push({ x: ox, width: 10, passed: false });
-            }
-
             ponies.forEach(p => { 
                 p.speed = 3.0 + Math.random() * 2.5; 
                 p.state = 'racing'; 
@@ -956,7 +1011,7 @@
                 if(p.isManual) p.lastTapTime = Date.now(); 
             });
             grass = []; gameState = 'RACING'; 
-            broadcast({ type: 'sync_ui', label: 'TAP TO RUN\nSWIPE UP JUMP', mode: 'mash' });
+            broadcast({ type: 'sync_ui', label: 'RUN!', mode: 'mash', infoText: mobileInfo });
         }
 
         function gameLoop() { updateGameLogic(); draw(); requestAnimationFrame(gameLoop); }
@@ -970,7 +1025,7 @@
                 updatePoniesMovement(); if (waitTimer <= 0) startCooldown();
             } else if (gameState === 'COOLDOWN') {
                 cooldownTimer--; alert.style.display = 'none';
-                if (cooldownTimer > 180) { updateBarText("READY", "#ffffff"); } else {
+                if (cooldownTimer > 180) { /* 显示模式名，已在startCooldown处理 */ } else {
                     const sec = Math.ceil(cooldownTimer / 60); updateBarText(sec.toString(), '#ffffff');
                     if (cooldownTimer % 60 === 59) triggerFlash();
                     if (sec > 0 && lastBroadcastText !== sec) { broadcast({ type: 'sync_ui', label: sec.toString(), mode: 'wait' }); lastBroadcastText = sec; }
@@ -978,9 +1033,33 @@
                 if (cooldownTimer <= 0) startRace(); updatePoniesMovement();
             } else if (gameState === 'RACING') {
                 if (ponyQueue.length > 0) { alert.style.display = 'block'; alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`; } else { alert.style.display = 'none'; }
+                
+                // === 红绿灯模式逻辑 ===
+                if (currentGameMode === 'RED_LIGHT') {
+                    redLightTimer--;
+                    if (redLightTimer <= 0) {
+                        isRedLight = !isRedLight;
+                        // 随机切换时间：红灯较短(60-120)，绿灯较长(100-200)
+                        redLightTimer = isRedLight ? (60 + Math.random() * 60) : (100 + Math.random() * 100);
+                        
+                        const screen = document.getElementById('game-screen');
+                        screen.className = '';
+                        if (isRedLight) {
+                            screen.classList.add('bg-red');
+                            updateBarText("STOP!", "#ff5252"); setBarVisibility(true);
+                        } else {
+                            screen.classList.add('bg-green');
+                            updateBarText("GO!", "#69f0ae"); 
+                            // 稍微延迟消失，以免遮挡
+                            setTimeout(() => { if (!isRedLight) setBarVisibility(false); }, 500);
+                        }
+                    }
+                }
+
                 updatePoniesMovement(); checkRaceEnd();
             } else if (gameState === 'ROAMING') {
                 hud.style.display = 'block'; hud.innerText = "NOWHERE TO RUN";
+                document.getElementById('game-screen').className = ''; // 清除背景
                 if (ponyQueue.length > 0) { alert.style.display = 'block'; alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`; } else { alert.style.display = 'none'; }
                 updatePoniesMovement();
             }
@@ -1008,6 +1087,9 @@
                     gameState = 'ROAMING'; broadcast({ type: 'sync_ui', label: 'DONE', mode: 'wait' });
                     setTimeout(() => { if (gameState === 'ROAMING') broadcast({ type: 'sync_ui', label: 'START RACE', mode: 'start' }); }, 3000);
                 }
+                // 清除红绿灯背景
+                document.getElementById('game-screen').className = '';
+                setBarVisibility(false);
             }
         }
 
@@ -1056,6 +1138,8 @@
                         p.stunTimer--;
                         if (p.stunTimer <= 0) p.isStunned = false;
                         p.isWalkAnimating = false; // 晕了不能动
+                        // 即使晕了，可能有点后退速度
+                        if (p.manualSpeed < 0) { p.x += p.manualSpeed; p.manualSpeed *= 0.9; }
                     } else {
                         // === 2. 正常移动逻辑 ===
                         if (p.playerUUID) {
@@ -1068,11 +1152,16 @@
                             p.x += p.manualSpeed; p.isWalkAnimating = p.manualSpeed > 0.1;
                         } else {
                             // AI 逻辑
-                            p.x += p.speed * (0.9 + Math.random() * 0.2); p.isWalkAnimating = true;
-                            if (!p.isJumping) {
-                                const nearestObs = obstacles.find(o => o.x > p.x && o.x < p.x + 150); 
-                                if (nearestObs && Math.random() < 0.15) { 
-                                    p.isJumping = true; p.vz = 12; 
+                            if (currentGameMode === 'RED_LIGHT' && isRedLight) {
+                                // AI 在红灯时停下，但有几率犯错
+                                if (Math.random() < 0.02) p.x += 2; // AI犯错
+                            } else {
+                                p.x += p.speed * (0.9 + Math.random() * 0.2); p.isWalkAnimating = true;
+                                if (currentGameMode === 'HURDLE' && !p.isJumping) {
+                                    const nearestObs = obstacles.find(o => o.x > p.x && o.x < p.x + 150); 
+                                    if (nearestObs && Math.random() < 0.15) { 
+                                        p.isJumping = true; p.vz = 12; 
+                                    }
                                 }
                             }
                         }
@@ -1088,18 +1177,21 @@
 
                         // === 4. 碰撞检测 (带无敌时间) ===
                         if (p.invincibleTimer <= 0) {
-                            obstacles.forEach(obs => {
-                                if (p.x + 40 > obs.x && p.x < obs.x + obs.width) {
-                                    if (p.z < 20) { 
-                                        p.isStunned = true;
-                                        p.stunTimer = 30; // 修改：眩晕0.5秒 (约30帧)
-                                        p.invincibleTimer = 90; // 修改：无敌1.5秒 (约90帧)
-                                        p.manualSpeed = 0; 
-                                        p.x = obs.x - 10; 
-                                        triggerPonyEmoji(p.playerUUID, 'POOP'); 
+                            // 只有障碍赛才检测障碍物
+                            if (currentGameMode === 'HURDLE') {
+                                obstacles.forEach(obs => {
+                                    if (p.x + 40 > obs.x && p.x < obs.x + obs.width) {
+                                        if (p.z < 20) { 
+                                            p.isStunned = true;
+                                            p.stunTimer = 30; // 眩晕0.5秒
+                                            p.invincibleTimer = 90; // 无敌1.5秒
+                                            p.manualSpeed = 0; 
+                                            p.x = obs.x - 10; 
+                                            triggerPonyEmoji(p.playerUUID, 'POOP'); 
+                                        }
                                     }
-                                }
-                            });
+                                });
+                            }
                         }
 
                         // === 特效 ===
@@ -1229,8 +1321,6 @@
                             const info = document.getElementById('m-info'); 
                             
                             mobileBtnState = data.mode; 
-                            
-                            // 重置
                             btn.className = 'push-btn'; 
 
                             if (data.mode === 'wait') { 
@@ -1239,7 +1329,8 @@
                             else if (data.mode === 'mash') { 
                                 btn.classList.add('btn-mash'); 
                                 btn.innerText = "RUN"; 
-                                info.innerText = "RUN (TAP) / JUMP (SWIPE UP)"; 
+                                // 根据传入的 infoText 显示提示
+                                info.innerText = data.infoText || "TAP TO RUN"; 
                                 randomizeMusic();
                             }
                             else if (data.mode === 'start') { 
