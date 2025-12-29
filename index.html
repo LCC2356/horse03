@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - PARTY PACK</title>
+    <title>HORSE RUNRUN - TRAFFIC LIGHT EDITION</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -56,11 +56,13 @@
             box-shadow: none;
             overflow: hidden;
             flex-shrink: 0;
-            transition: background-color 0.1s; /* 快速响应红绿灯 */
+            transition: background-color 0.2s; /* 背景颜色过渡 */
         }
 
-        /* 红绿灯模式背景样式 */
+        /* === 红绿灯模式背景样式 === */
         .bg-green { background: #002200 !important; box-shadow: inset 0 0 50px #00ff00 !important; border-color: #00ff00 !important; }
+        /* 新增黄灯样式 */
+        .bg-yellow { background: #332200 !important; box-shadow: inset 0 0 50px #ffb300 !important; border-color: #ffb300 !important; }
         .bg-red { background: #440000 !important; box-shadow: inset 0 0 100px #ff0000 !important; border-color: #ff0000 !important; }
 
         #track-wrapper {
@@ -673,10 +675,10 @@
         let cooldownTimer = 0;
         let waitTimer = 0;
         
-        /* === 新增：游戏模式变量 === */
+        /* === 游戏模式变量 === */
         let currentGameMode = 'CLASSIC'; // 'CLASSIC', 'HURDLE', 'RED_LIGHT'
         let redLightTimer = 0;
-        let isRedLight = false;
+        let lightState = 'GREEN'; // 'GREEN', 'YELLOW', 'RED'
 
         let peer = null, conn = null;
         let pcGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
@@ -724,6 +726,55 @@
             const widthOffset = (7 * pixelSize) / 2;
             container.style.transform = `translateX(-${widthOffset}px)`;
             return container;
+        }
+
+        /* === 简单的信号提示音 === */
+        function playSignalSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const now = audioCtx.currentTime;
+            
+            gain.connect(audioCtx.destination);
+            osc.connect(gain);
+
+            if (type === 'GREEN') {
+                // 高音提示 GO
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'YELLOW') {
+                // 急促警告
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(400, now);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.1);
+                
+                // 双响
+                osc.start(now); osc.stop(now + 0.1);
+                
+                const osc2 = audioCtx.createOscillator();
+                const gain2 = audioCtx.createGain();
+                gain2.connect(audioCtx.destination);
+                osc2.connect(gain2);
+                osc2.type = 'square';
+                osc2.frequency.setValueAtTime(400, now + 0.15);
+                gain2.gain.setValueAtTime(0.2, now + 0.15);
+                gain2.gain.linearRampToValueAtTime(0, now + 0.25);
+                osc2.start(now + 0.15); osc2.stop(now + 0.25);
+
+            } else if (type === 'RED') {
+                // 低沉停止音
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.linearRampToValueAtTime(100, now + 0.5);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.5);
+                osc.start(now); osc.stop(now + 0.5);
+            }
         }
 
         function playNextNote() {
@@ -881,15 +932,14 @@
             requestSpawnPony(rName, DEFAULT_PIXELS, COLORS[rColorKey], null);
         }
 
-        /* === 修改：Tap 处理逻辑，加入红绿灯判定 === */
         function handleTap(uuid) {
             if (!uuid) return;
             const pony = ponies.find(p => p.playerUUID === uuid);
             if (pony && pony.state === 'racing') {
                 if (pony.isStunned) return;
 
-                // 红绿灯模式判罚
-                if (currentGameMode === 'RED_LIGHT' && isRedLight) {
+                // 红绿灯模式判罚 (红灯停)
+                if (currentGameMode === 'RED_LIGHT' && lightState === 'RED') {
                     if (pony.invincibleTimer <= 0) {
                         pony.isStunned = true;
                         pony.stunTimer = 60; // 眩晕1秒
@@ -900,7 +950,7 @@
                     return;
                 }
 
-                // 正常跑步
+                // 正常跑步 (绿灯或黄灯都可以跑，但黄灯有风险提示)
                 pony.isManual = true; pony.lastTapTime = Date.now(); pony.tapCount++;
                 pony.name = pony.name.replace(" (BOT)", "");
                 pony.manualSpeed = Math.min(pony.manualSpeed + 2.4, 18);
@@ -968,6 +1018,7 @@
             // 清理状态
             obstacles = [];
             document.getElementById('game-screen').className = ''; // 重置背景
+            lightState = 'GREEN'; // 重置红绿灯状态
         }
 
         function startRace() {
@@ -988,9 +1039,10 @@
                 statusText = "STATUS: RED LIGHT!";
                 mobileInfo = "WATCH THE SCREEN!";
                 obstacles = []; // 没障碍
+                lightState = 'GREEN';
                 redLightTimer = 120 + Math.random() * 100; // 初始绿灯时间
-                isRedLight = false;
                 document.getElementById('game-screen').classList.add('bg-green');
+                playSignalSound('GREEN');
             } else {
                 // Classic
                 obstacles = [];
@@ -1034,24 +1086,38 @@
             } else if (gameState === 'RACING') {
                 if (ponyQueue.length > 0) { alert.style.display = 'block'; alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`; } else { alert.style.display = 'none'; }
                 
-                // === 红绿灯模式逻辑 ===
+                // === 红绿灯逻辑（含黄灯） ===
                 if (currentGameMode === 'RED_LIGHT') {
                     redLightTimer--;
                     if (redLightTimer <= 0) {
-                        isRedLight = !isRedLight;
-                        // 随机切换时间：红灯较短(60-120)，绿灯较长(100-200)
-                        redLightTimer = isRedLight ? (60 + Math.random() * 60) : (100 + Math.random() * 100);
-                        
                         const screen = document.getElementById('game-screen');
-                        screen.className = '';
-                        if (isRedLight) {
+                        screen.className = ''; // 重置 class
+
+                        if (lightState === 'GREEN') {
+                            // 绿 -> 黄
+                            lightState = 'YELLOW';
+                            redLightTimer = 45 + Math.random() * 30; // 黄灯持续短 (约0.75 - 1.2秒)
+                            screen.classList.add('bg-yellow');
+                            updateBarText("SLOW!", "#ffb300"); setBarVisibility(true);
+                            playSignalSound('YELLOW');
+                        
+                        } else if (lightState === 'YELLOW') {
+                            // 黄 -> 红
+                            lightState = 'RED';
+                            redLightTimer = 60 + Math.random() * 90; // 红灯持续 1-2.5秒
                             screen.classList.add('bg-red');
                             updateBarText("STOP!", "#ff5252"); setBarVisibility(true);
-                        } else {
+                            playSignalSound('RED');
+
+                        } else if (lightState === 'RED') {
+                            // 红 -> 绿
+                            lightState = 'GREEN';
+                            redLightTimer = 100 + Math.random() * 150; // 绿灯持续较长
                             screen.classList.add('bg-green');
                             updateBarText("GO!", "#69f0ae"); 
-                            // 稍微延迟消失，以免遮挡
-                            setTimeout(() => { if (!isRedLight) setBarVisibility(false); }, 500);
+                            playSignalSound('GREEN');
+                            // 稍微延迟消失文字，以免遮挡
+                            setTimeout(() => { if (lightState === 'GREEN') setBarVisibility(false); }, 500);
                         }
                     }
                 }
@@ -1152,7 +1218,7 @@
                             p.x += p.manualSpeed; p.isWalkAnimating = p.manualSpeed > 0.1;
                         } else {
                             // AI 逻辑
-                            if (currentGameMode === 'RED_LIGHT' && isRedLight) {
+                            if (currentGameMode === 'RED_LIGHT' && lightState === 'RED') {
                                 // AI 在红灯时停下，但有几率犯错
                                 if (Math.random() < 0.02) p.x += 2; // AI犯错
                             } else {
