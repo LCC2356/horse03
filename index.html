@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - TRAFFIC LIGHT EDITION</title>
+    <title>HORSE RUNRUN - PARTY PACK v13</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -56,12 +56,11 @@
             box-shadow: none;
             overflow: hidden;
             flex-shrink: 0;
-            transition: background-color 0.2s; /* 背景颜色过渡 */
+            transition: background-color 0.2s;
         }
 
-        /* === 红绿灯模式背景样式 === */
+        /* === WATCH OUT (红绿灯) 模式背景 === */
         .bg-green { background: #002200 !important; box-shadow: inset 0 0 50px #00ff00 !important; border-color: #00ff00 !important; }
-        /* 新增黄灯样式 */
         .bg-yellow { background: #332200 !important; box-shadow: inset 0 0 50px #ffb300 !important; border-color: #ffb300 !important; }
         .bg-red { background: #440000 !important; box-shadow: inset 0 0 100px #ff0000 !important; border-color: #ff0000 !important; }
 
@@ -511,6 +510,22 @@
             font-size: 3rem !important;
         }
 
+        /* === 手机端模式选择按钮 === */
+        .mode-grid {
+            display: none; /* 默认隐藏 */
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 100%; max-width: 320px;
+        }
+        .btn-mode {
+            background: #222; border: 2px solid #555; color: #fff;
+            padding: 20px 10px; font-family: 'VT323', monospace; font-size: 1.5rem;
+            border-radius: 12px; cursor: pointer; text-align: center;
+            box-shadow: 0 0 20px rgba(255,255,255,0.1);
+        }
+        .btn-mode:active { transform: scale(0.95); background: #fff; color: #000; }
+
         #m-success-modal { display: none; }
     </style>
 </head>
@@ -571,7 +586,7 @@
                     <option value="RANDOM">RANDOM</option>
                     <option value="CLASSIC">CLASSIC</option>
                     <option value="HURDLE">HURDLES</option>
-                    <option value="RED_LIGHT">RED LIGHT</option>
+                    <option value="RED_LIGHT">WATCH OUT</option>
                 </select>
             </div>
 
@@ -618,6 +633,13 @@
             
             <div id="m-btn" class="push-btn btn-wait">WAIT</div>
             
+            <div id="m-mode-selector" class="mode-grid" style="display: none;">
+                <div class="btn-mode" onclick="sendModeStart('CLASSIC')">CLASSIC</div>
+                <div class="btn-mode" onclick="sendModeStart('HURDLE')">HURDLES</div>
+                <div class="btn-mode" onclick="sendModeStart('RED_LIGHT')">WATCH OUT</div>
+                <div class="btn-mode" onclick="sendModeStart('RANDOM')">RANDOM</div>
+            </div>
+
             <div class="emoji-bar">
                 <div class="emoji-btn" onclick="sendEmoji('HEART')" data-icon="HEART"></div>
                 <div class="emoji-btn" onclick="sendEmoji('POOP')" data-icon="POOP"></div>
@@ -728,7 +750,7 @@
             return container;
         }
 
-        /* === 简单的信号提示音 === */
+        /* === 信号提示音 === */
         function playSignalSound(type) {
             if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
@@ -739,7 +761,6 @@
             osc.connect(gain);
 
             if (type === 'GREEN') {
-                // 高音提示 GO
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(600, now);
                 osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
@@ -747,13 +768,11 @@
                 gain.gain.linearRampToValueAtTime(0, now + 0.3);
                 osc.start(now); osc.stop(now + 0.3);
             } else if (type === 'YELLOW') {
-                // 急促警告
                 osc.type = 'square';
                 osc.frequency.setValueAtTime(400, now);
                 gain.gain.setValueAtTime(0.2, now);
                 gain.gain.linearRampToValueAtTime(0, now + 0.1);
                 
-                // 双响
                 osc.start(now); osc.stop(now + 0.1);
                 
                 const osc2 = audioCtx.createOscillator();
@@ -767,7 +786,6 @@
                 osc2.start(now + 0.15); osc2.stop(now + 0.25);
 
             } else if (type === 'RED') {
-                // 低沉停止音
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(150, now);
                 osc.frequency.linearRampToValueAtTime(100, now + 0.5);
@@ -915,6 +933,13 @@
                         } else if (data.type === 'jump') {
                             handleJump(data.uuid);
                         } else if (data.type === 'force_start') {
+                            // 手机端选择了模式并开始
+                            if (data.mode) {
+                                currentGameMode = data.mode;
+                                // 桌面端 UI 同步
+                                const select = document.getElementById('mode-select');
+                                if(select) select.value = data.mode;
+                            }
                             if (gameState === 'ROAMING' || gameState === 'WAITING_TO_START') startCooldown();
                         } else if (data.type === 'emoji') {
                             triggerPonyEmoji(data.uuid, data.content);
@@ -950,7 +975,7 @@
                     return;
                 }
 
-                // 正常跑步 (绿灯或黄灯都可以跑，但黄灯有风险提示)
+                // 正常跑步
                 pony.isManual = true; pony.lastTapTime = Date.now(); pony.tapCount++;
                 pony.name = pony.name.replace(" (BOT)", "");
                 pony.manualSpeed = Math.min(pony.manualSpeed + 2.4, 18);
@@ -991,12 +1016,13 @@
         }
 
         function startCooldown() {
-            /* === 决定游戏模式 === */
+            /* === 决定游戏模式 (如果Desktop未改, 保持原样, 如果 Mobile send force_start带了mode, 已经在handle里改了) === */
             const selected = document.getElementById('mode-select').value;
-            if (selected === 'RANDOM') {
-                const modes = ['CLASSIC', 'HURDLE', 'RED_LIGHT'];
-                currentGameMode = modes[Math.floor(Math.random() * modes.length)];
-            } else {
+            // 如果当前不是随机，但下拉框是随机，则重新随机
+            if (selected === 'RANDOM' && (currentGameMode === 'RANDOM' || !['CLASSIC', 'HURDLE', 'RED_LIGHT'].includes(currentGameMode))) {
+                 const modes = ['CLASSIC', 'HURDLE', 'RED_LIGHT'];
+                 currentGameMode = modes[Math.floor(Math.random() * modes.length)];
+            } else if (selected !== 'RANDOM') {
                 currentGameMode = selected;
             }
 
@@ -1011,7 +1037,7 @@
             document.getElementById('hud').style.display = 'none'; document.getElementById('queue-text').style.display = 'none';
             setBarVisibility(true); 
             // 显示模式名称
-            let modeName = currentGameMode === 'RED_LIGHT' ? "RED LIGHT" : (currentGameMode === 'HURDLE' ? "HURDLES" : "CLASSIC");
+            let modeName = currentGameMode === 'RED_LIGHT' ? "WATCH OUT" : (currentGameMode === 'HURDLE' ? "HURDLES" : "CLASSIC");
             updateBarText(modeName, "#ffb300"); 
             broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
             
@@ -1036,11 +1062,12 @@
                     obstacles.push({ x: ox, width: 10, passed: false });
                 }
             } else if (currentGameMode === 'RED_LIGHT') {
-                statusText = "STATUS: RED LIGHT!";
+                statusText = "STATUS: WATCH OUT!";
                 mobileInfo = "WATCH THE SCREEN!";
                 obstacles = []; // 没障碍
                 lightState = 'GREEN';
-                redLightTimer = 120 + Math.random() * 100; // 初始绿灯时间
+                // 绿灯初始时间缩短20%: (80 ~ 200)
+                redLightTimer = 80 + Math.random() * 120; 
                 document.getElementById('game-screen').classList.add('bg-green');
                 playSignalSound('GREEN');
             } else {
@@ -1094,9 +1121,9 @@
                         screen.className = ''; // 重置 class
 
                         if (lightState === 'GREEN') {
-                            // 绿 -> 黄
+                            // 绿 -> 黄 (固定 1 秒)
                             lightState = 'YELLOW';
-                            redLightTimer = 45 + Math.random() * 30; // 黄灯持续短 (约0.75 - 1.2秒)
+                            redLightTimer = 60; 
                             screen.classList.add('bg-yellow');
                             updateBarText("SLOW!", "#ffb300"); setBarVisibility(true);
                             playSignalSound('YELLOW');
@@ -1110,13 +1137,12 @@
                             playSignalSound('RED');
 
                         } else if (lightState === 'RED') {
-                            // 红 -> 绿
+                            // 红 -> 绿 (缩短 20%)
                             lightState = 'GREEN';
-                            redLightTimer = 100 + Math.random() * 150; // 绿灯持续较长
+                            redLightTimer = 80 + Math.random() * 120; // 绿灯持续较短 (80-200帧)
                             screen.classList.add('bg-green');
                             updateBarText("GO!", "#69f0ae"); 
                             playSignalSound('GREEN');
-                            // 稍微延迟消失文字，以免遮挡
                             setTimeout(() => { if (lightState === 'GREEN') setBarVisibility(false); }, 500);
                         }
                     }
@@ -1385,8 +1411,13 @@
                         else if (data.type === 'sync_ui') {
                             const btn = document.getElementById('m-btn'); 
                             const info = document.getElementById('m-info'); 
-                            
+                            const modeSelector = document.getElementById('m-mode-selector'); // 模式选择器
+
                             mobileBtnState = data.mode; 
+                            
+                            // 默认：隐藏模式选择器，显示按钮
+                            btn.style.display = 'flex';
+                            modeSelector.style.display = 'none';
                             btn.className = 'push-btn'; 
 
                             if (data.mode === 'wait') { 
@@ -1395,12 +1426,15 @@
                             else if (data.mode === 'mash') { 
                                 btn.classList.add('btn-mash'); 
                                 btn.innerText = "RUN"; 
-                                // 根据传入的 infoText 显示提示
                                 info.innerText = data.infoText || "TAP TO RUN"; 
                                 randomizeMusic();
                             }
                             else if (data.mode === 'start') { 
-                                btn.classList.add('btn-start'); btn.innerText = data.label; info.innerText = "RACE FINISHED"; 
+                                // === 比赛结束状态 ===
+                                // 隐藏大按钮，显示模式选择器
+                                btn.style.display = 'none';
+                                modeSelector.style.display = 'grid';
+                                info.innerText = "GAME OVER\nPICK NEXT MODE";
                             }
                         } else if (data.type === 'eliminated' && data.uuid === playerUUID) {
                             const btn = document.getElementById('m-btn'); const info = document.getElementById('m-info'); 
@@ -1420,12 +1454,20 @@
             } catch(e) { console.error(e); }
         }
 
+        /* === 手机端：发送模式选择请求 === */
+        function sendModeStart(mode) {
+            if(!conn) return;
+            const btn = event.currentTarget;
+            btn.style.transform = 'scale(0.9)'; setTimeout(() => btn.style.transform = 'scale(1)', 100);
+            conn.send({ type: 'force_start', mode: mode });
+        }
+
         /* === 手机端：初始化手势监听 === */
         const mBtn = document.getElementById('m-btn');
         mBtn.addEventListener('touchstart', (e) => {
             if (mobileBtnState === 'dead') { resetMobile(); return; }
             if (mobileBtnState === 'finished') return;
-            if (mobileBtnState === 'start') { if(conn) conn.send({ type: 'force_start' }); return; }
+            // if (mobileBtnState === 'start') { ... } // 逻辑移到模式选择按钮了
             if (mobileBtnState !== 'mash') return;
 
             e.preventDefault(); 
