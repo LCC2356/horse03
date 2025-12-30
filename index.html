@@ -1,10 +1,9 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - TUG FIX</title>
+    <title>HORSE RUNRUN - ONE FOR ALL</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -69,23 +68,23 @@
         #tug-layer {
             position: absolute; inset: 0; z-index: 1; display: none;
         }
-        /* 蓝色区域（左侧） */
+        /* 蓝色区域（左侧）- 升级为强发光风格 */
         #tug-blue-zone {
             position: absolute; left: 0; top: 0; bottom: 0;
             width: 50%; 
-            background: #001133; /* 深蓝底 */
-            box-shadow: inset 0 0 80px #2979ff; /* 强蓝光 */
-            border-right: 6px solid #fff; /* 分界线 */
-            filter: drop-shadow(0 0 10px #fff); /* 分界线发光 */
+            background: #001133; 
+            box-shadow: inset 0 0 80px #2979ff; 
+            border-right: 6px solid #fff; 
+            filter: drop-shadow(0 0 10px #fff);
             transition: width 0.1s linear; 
             z-index: 2;
         }
-        /* 红色区域（右侧） */
+        /* 红色区域（右侧）- 升级为强发光风格 */
         #tug-red-zone {
             position: absolute; right: 0; top: 0; bottom: 0;
             width: 50%;
-            background: #330000; /* 深红底 */
-            box-shadow: inset 0 0 80px #ff0000; /* 强红光 */
+            background: #330000; 
+            box-shadow: inset 0 0 80px #ff0000; 
             z-index: 1;
             transition: width 0.1s linear; 
         }
@@ -94,22 +93,6 @@
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             font-size: 60px; color: #fff; text-shadow: 0 0 20px #fff, 0 0 40px #ff00ff; z-index: 10;
             opacity: 1; pointer-events: none; mix-blend-mode: overlay;
-        }
-
-        /* 手机端队伍按钮颜色 - 强制覆盖 */
-        .btn-team-red { 
-            background: #ff0000 !important; 
-            border-color: #ff5252 !important; 
-            color: #fff !important; 
-            box-shadow: 0 0 30px rgba(255, 0, 0, 0.6) !important;
-            text-shadow: 0 0 10px #fff !important;
-        }
-        .btn-team-blue { 
-            background: #0044ff !important; 
-            border-color: #40e0d0 !important; 
-            color: #fff !important; 
-            box-shadow: 0 0 30px rgba(0, 100, 255, 0.6) !important;
-            text-shadow: 0 0 10px #fff !important;
         }
 
         #track-wrapper {
@@ -486,6 +469,22 @@
         .btn-mash { background: #fff !important; border-color: #ccc !important; color: #000 !important; box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; }
         .btn-start { background: #ffffff !important; border: 8px solid #ccc !important; color: #000000 !important; box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; }
         .btn-dead { background: #ffffff !important; border: 8px solid #000000 !important; color: #000000 !important; box-shadow: 0 0 30px rgba(255, 255, 255, 0.5) !important; font-size: 3rem !important; }
+        
+        /* 手机端队伍按钮颜色 - 强制覆盖，置于底部以确保优先级 */
+        .btn-team-red { 
+            background: #ff0000 !important; 
+            border-color: #ff5252 !important; 
+            color: #fff !important; 
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.6) !important;
+            text-shadow: 0 0 10px #fff !important;
+        }
+        .btn-team-blue { 
+            background: #0044ff !important; 
+            border-color: #40e0d0 !important; 
+            color: #fff !important; 
+            box-shadow: 0 0 30px rgba(0, 100, 255, 0.6) !important;
+            text-shadow: 0 0 10px #fff !important;
+        }
     </style>
 </head>
 <body>
@@ -1136,7 +1135,7 @@
             if (currentGameMode === 'RED_LIGHT') modeName = "STOP?";
             else if (currentGameMode === 'HURDLE') modeName = "JUMP";
             else if (currentGameMode === 'CLASSIC') modeName = "RUN";
-            else if (currentGameMode === 'TUG') modeName = "TUG WAR";
+            else if (currentGameMode === 'TUG') modeName = "ONE FOR ALL"; // 修改点：拔河改名
 
             updateBarText(modeName, "#ffffff"); 
             
@@ -1411,7 +1410,8 @@
                 mvpPony.isStreak = true;
             }
             
-            const winnerText = (winnerTeam === 1) ? "BLUE TEAM WINS!" : "RED TEAM WINS!";
+            // 修改点：简化胜利文字
+            const winnerText = (winnerTeam === 1) ? "BLUE WIN" : "RED WIN";
             const winnerColor = (winnerTeam === 1) ? "#2979ff" : "#ff0000";
             updateBarText(winnerText, winnerColor);
             setBarVisibility(true);
@@ -1420,18 +1420,24 @@
             if(tugLayer) tugLayer.style.display = 'none';
             
             setTimeout(() => {
-                gameState = 'ROAMING';
-                setBarVisibility(false);
-                layout.x = 0; applyLayout(false); 
-                broadcast({ type: 'sync_ui', label: 'DONE', mode: 'wait' });
-                
-                // === 修改点：增加延时发送开始指令，解决手机端卡死在 DONE 的问题 ===
-                setTimeout(() => {
-                    if (gameState === 'ROAMING') {
-                         broadcast({ type: 'sync_ui', label: 'RESTART', mode: 'start' });
-                    }
-                }, 2000);
-
+                // 修改点：检测排队，自动开始下一轮
+                if (ponyQueue.length > 0) {
+                    gameState = 'WAITING_TO_START';
+                    waitTimer = 180;
+                    // updateGameLogic 会接管倒计时逻辑
+                } else {
+                    gameState = 'ROAMING';
+                    setBarVisibility(false);
+                    layout.x = 0; applyLayout(false); 
+                    broadcast({ type: 'sync_ui', label: 'DONE', mode: 'wait' });
+                    
+                    setTimeout(() => {
+                        if (gameState === 'ROAMING') {
+                             // 修改点：手机端显示 START RACE
+                             broadcast({ type: 'sync_ui', label: 'START RACE', mode: 'start' });
+                        }
+                    }, 2000);
+                }
             }, 4000);
         }
 
@@ -1873,5 +1879,3 @@
     </script>
 </body>
 </html>
-
-```
