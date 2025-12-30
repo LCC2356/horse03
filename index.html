@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - RESPAWN EDITION</title>
+    <title>HORSE RUNRUN - ELIMINATION FIX</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -1303,6 +1303,9 @@
                     conn.on('data', data => {
                         if (data.type === 'reconnect_success') { document.getElementById('m-editor-ui').style.display = 'none'; document.getElementById('m-controller').style.display = 'flex'; }
                         else if (data.type === 'sync_ui') {
+                            // === 关键修复：如果玩家已淘汰，忽略主机的 UI 同步，保持在“重新创建”界面 ===
+                            if (mobileBtnState === 'dead') return;
+
                             const btn = document.getElementById('m-btn'); 
                             const info = document.getElementById('m-info'); 
                             const modeWrapper = document.getElementById('m-mode-wrapper');
