@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - HAPTIC EDITION</title>
+    <title>HORSE RUNRUN - PURE WHITE EDITION</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -231,9 +231,9 @@
         .obstacle {
             position: absolute;
             width: 10px; height: 30px; 
-            background: #ff5252;
-            border: 2px solid #fff;
-            box-shadow: 0 0 10px #ff5252;
+            background: #ffffff; /* 纯白背景 */
+            border: 2px solid #ffffff; /* 纯白边框 */
+            box-shadow: 0 0 15px #ffffff; /* 纯白发光 */
             z-index: 5;
             bottom: 5px;
         }
@@ -923,7 +923,8 @@
             else if (currentGameMode === 'HURDLE') modeName = "JUMP";
             else if (currentGameMode === 'CLASSIC') modeName = "RUN";
 
-            updateBarText(modeName, "#ffb300"); 
+            // === 修改点：所有模式的开始文字都改为白色 ===
+            updateBarText(modeName, "#ffffff"); 
             broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
             
             // 清理状态
