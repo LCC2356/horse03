@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - TUG PERFECT</title>
+    <title>HORSE RUNRUN - SMOOTH TUG</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -75,7 +75,7 @@
             background: rgba(41, 121, 255, 0.5); 
             border-right: 4px solid #fff; 
             box-shadow: 0 0 20px rgba(41, 121, 255, 0.8); 
-            transition: width 0.1s linear;
+            transition: width 0.1s linear; /* CSS平滑过渡 */
             z-index: 2;
         }
         /* 红色区域（右侧） */
@@ -85,7 +85,7 @@
             background: rgba(255, 82, 82, 0.5); 
             box-shadow: 0 0 20px rgba(255, 82, 82, 0.8);
             z-index: 1;
-            transition: width 0.1s linear;
+            transition: width 0.1s linear; /* CSS平滑过渡 */
         }
         
         .icon-vs {
@@ -1193,13 +1193,11 @@
                 if (currentGameMode === 'TUG') {
                     // === 拔河逻辑 ===
                     
-                    // 1. Bot 自动拉力 (降低几率到 1.5%)
+                    // 1. Bot 自动拉力
                     ponies.forEach(p => {
                         if (!p.playerUUID && Math.random() < 0.015) { 
-                            // 降低 Bot 拉力
                             if (p.team === 1) tugValue = Math.min(100, tugValue + 1.0);
                             else tugValue = Math.max(0, tugValue - 1.0);
-                            
                             p.isWalkAnimating = true;
                             p.pullOffset = (p.team === 1 ? 10 : -10);
                         }
@@ -1217,34 +1215,36 @@
 
                     const battleFront = GAME_W * (tugValue / 100);
                     
-                    // === 修改：所有小马跟随框体整齐移动 ===
+                    // === 修改：平滑移动逻辑 (LERP) ===
                     ponies.forEach(p => {
-                        // 找出这只小马在队伍里的排位
                         const teamMembers = ponies.filter(tm => tm.team === p.team).sort((a,b) => a.id.localeCompare(b.id));
                         const myIndex = teamMembers.findIndex(tm => tm.id === p.id);
                         
                         let basePositionX;
-                        
                         if (p.team === 1) {
-                            // 蓝队：最前方是 battleFront - 50。后面依次排列
-                            // 50是距离分界线的空隙，40是每只马的间隔
                             basePositionX = battleFront - 80 - (myIndex * 45);
                         } else {
-                            // 红队：最前方是 battleFront + 50
                             basePositionX = battleFront + 80 + (myIndex * 45);
                         }
                         
-                        // 强制更新位置到计算好的整齐位置
-                        // p.pullOffset 是点击时的瞬间冲刺距离，平时为0
-                        p.x = basePositionX + (p.pullOffset || 0);
+                        // 目标位置 = 基础位置 + 冲击偏移
+                        const desiredX = basePositionX + (p.pullOffset || 0);
                         
-                        // 让冲击力衰减
+                        // 平滑移动：每次只移动差距的 15% (Lerp)
+                        // 这解决了“瞬移”问题，也让 p.pullOffset 的效果更具弹性
+                        const smoothFactor = 0.15;
+                        p.x = p.x + (desiredX - p.x) * smoothFactor;
+                        
+                        // 让冲击力自然衰减
                         if (p.pullOffset) p.pullOffset *= 0.8;
                         if (Math.abs(p.pullOffset) < 1) p.pullOffset = 0;
                         
-                        // 动画衰减
-                        if (p.pullOffset === 0 && !p.isManual) {
+                        // 动画管理
+                        if (Math.abs(desiredX - p.x) < 1 && !p.isManual) {
                              p.isWalkAnimating = false;
+                        } else {
+                             // 如果移动距离大，就播放走路动画
+                             p.isWalkAnimating = true;
                         }
                     });
 
