@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - TUG BATTLE</title>
+    <title>HORSE RUNRUN - TUG MVP EDITION</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -631,10 +631,6 @@
 
         // === 拔河变量 ===
         let tugValue = 50; // 0-100, 50 is center. <50 Red wins (moves left), >50 Blue wins (moves right)
-        // 修正逻辑：
-        // 蓝队在左，红队在右。
-        // 蓝队点击 -> 蓝色区域变大 -> tugValue 增加 (例如 50 -> 60) -> 红色被挤到右边
-        // 红队点击 -> 红色区域变大 -> tugValue 减少 (例如 50 -> 40) -> 蓝色被挤到左边
         
         let peer = null, conn = null;
         let pcGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
@@ -870,7 +866,6 @@
                         } else if (data.type === 'jump') {
                             handleJump(data.uuid);
                         } else if (data.type === 'force_start') {
-                            // 如果手机端发来了选择的模式，更新电脑端的设置
                             if (data.mode) {
                                 const modeSel = document.getElementById('mode-select');
                                 if(modeSel) modeSel.value = data.mode;
@@ -893,12 +888,7 @@
         }
 
         function applyTugForce(team) {
-            // team: -1 (Red, Right Side), 1 (Blue, Left Side)
-            // 目标：
-            // Blue click (1) -> Increase tugValue (Blue zone grows)
-            // Red click (-1) -> Decrease tugValue (Blue zone shrinks, Red grows)
-            
-            const power = 1.5; // 每次点击的力量
+            const power = 1.5; 
             if (team === 1) {
                 tugValue = Math.min(100, tugValue + power);
             } else {
@@ -911,15 +901,31 @@
             const pony = ponies.find(p => p.playerUUID === uuid);
             if (pony && pony.state === 'racing') {
                 
-                // === 拔河模式点击逻辑 ===
                 if (currentGameMode === 'TUG') {
                     applyTugForce(pony.team);
                     
-                    // 小马动作
+                    pony.tapCount++; // 记录点击次数用于评选 MVP
+                    
+                    // 拔河动作反馈
                     pony.isWalkAnimating = true;
                     pony.manualAnimTimer = 5;
-                    // 简单的视觉反馈
-                    pony.x += (pony.team === 1 ? 1 : -1) * 2; 
+                    // 视觉反馈：向后仰 (pullOffset)
+                    pony.pullOffset = (pony.team === 1 ? -15 : 15); // Blue往左仰，Red往右仰
+                    
+                    // 尘土特效
+                    if (Math.random() < 0.5) {
+                        const fx = document.getElementById('layer-fx');
+                        const d = document.createElement('div');
+                        d.style.position = 'absolute';
+                        d.style.left = (pony.x + 20) + 'px';
+                        d.style.top = (pony.y + 40) + 'px';
+                        d.style.width = '6px'; d.style.height = '6px';
+                        d.style.background = '#888';
+                        d.style.opacity = '0.6';
+                        d.style.animation = 'text-vanish 0.5s forwards';
+                        fx.appendChild(d);
+                        setTimeout(() => d.remove(), 500);
+                    }
                     return;
                 }
 
@@ -965,7 +971,8 @@
                 hasCrown: false, isStreak: false, crownCount: 0, timer: 0, frame: 0, finishedWalking: false,
                 targetX: null, targetY: null, isWalkAnimating: false, manualAnimTimer: 0, roamSpeed: 0.5,
                 isTurbo: false, turboCharge: 0,
-                z: 0, vz: 0, isJumping: false, isStunned: false, stunTimer: 0, invincibleTimer: 0 
+                z: 0, vz: 0, isJumping: false, isStunned: false, stunTimer: 0, invincibleTimer: 0,
+                pullOffset: 0 // 新增：拔河时的视觉偏移
             };
             if (gameState === 'RACING' || gameState === 'COOLDOWN' || gameState === 'WAITING_TO_START') {
                 ponyQueue.push(newPony); updateHUD();
@@ -975,14 +982,10 @@
         }
 
         function startCooldown() {
-            /* === 决定游戏模式 === */
-            // 将队列中的玩家加入游戏
             if (ponyQueue.length > 0) { ponies = ponies.concat(ponyQueue); ponyQueue = []; }
 
             let selected = document.getElementById('mode-select').value;
             
-            // === 修复：人数不足时强制切换回 CLASSIC ===
-            // 拔河至少需要2个实体（可以是玩家也可以是Bot）
             if (selected === 'TUG' && ponies.length < 2) {
                 alert("NOT ENOUGH PLAYERS FOR TUG WAR (MIN 2)");
                 selected = 'CLASSIC'; 
@@ -991,7 +994,6 @@
 
             if (selected === 'RANDOM') {
                 let modes = ['CLASSIC', 'HURDLE', 'RED_LIGHT'];
-                // 只有人数够才随机到 TUG
                 if (ponies.length >= 2) modes.push('TUG'); 
                 currentGameMode = modes[Math.floor(Math.random() * modes.length)];
             } else {
@@ -1000,29 +1002,75 @@
 
             gameState = 'COOLDOWN'; cooldownTimer = 240;
             
+            // === 预先分配队伍 ===
+            if (currentGameMode === 'TUG') {
+                const allPonies = [...ponies].sort(() => Math.random() - 0.5);
+                const teamMap = {};
+                allPonies.forEach((p, index) => {
+                    p.team = (index % 2 === 0) ? 1 : -1; // 1:Blue, -1:Red
+                    p.tapCount = 0; // 重置点击数，用于MVP
+                    if (p.playerUUID) teamMap[p.playerUUID] = (p.team === 1) ? 'BLUE' : 'RED';
+                });
+                // 提前广播队伍信息
+                broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait', teamMap: teamMap });
+            } else {
+                broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
+            }
+
             ponies.forEach(p => {
-                p.x = 20; p.y = 30 + Math.random() * (GAME_H - PONY_SIZE - 30); p.targetX = null; p.targetY = null;
-                p.facing = 1; p.state = 'ready'; p.manualSpeed = 0; p.tapCount = 0;
+                p.state = 'ready'; 
+                p.manualSpeed = 0; p.tapCount = 0;
                 p.isWalkAnimating = false; p.manualAnimTimer = 0; p.isTurbo = false; p.turboCharge = 0;
                 p.z = 0; p.vz = 0; p.isStunned = false; p.stunTimer = 0; p.invincibleTimer = 0;
+                p.pullOffset = 0;
+
+                // === 拔河模式：预备阶段就站好位 ===
+                if (currentGameMode === 'TUG') {
+                    if (p.team === 1) {
+                        p.x = (GAME_W / 2) - 300 - Math.random() * 400; // 左侧区域
+                        p.facing = 1; 
+                    } else {
+                        p.x = (GAME_W / 2) + 300 + Math.random() * 400; // 右侧区域
+                        p.facing = -1;
+                    }
+                } else {
+                    p.x = 20; 
+                    p.facing = 1;
+                }
+                
+                p.y = 30 + Math.random() * (GAME_H - PONY_SIZE - 30);
             });
+
             document.getElementById('hud').style.display = 'none'; document.getElementById('queue-text').style.display = 'none';
             setBarVisibility(true); 
-            // 修改：显示 FREEZE 而不是 RED LIGHT, RUN 而不是 CLASSIC
+            
             let modeName = "CLASSIC";
             if (currentGameMode === 'RED_LIGHT') modeName = "STOP?";
             else if (currentGameMode === 'HURDLE') modeName = "JUMP";
             else if (currentGameMode === 'CLASSIC') modeName = "RUN";
             else if (currentGameMode === 'TUG') modeName = "TUG WAR";
 
-            // === 修改点：所有模式的开始文字都改为白色 ===
             updateBarText(modeName, "#ffffff"); 
-            broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
             
-            // 清理状态
+            // 拔河特殊处理：如果选了拔河，马上显示视觉层，虽然还没开始拉
+            if (currentGameMode === 'TUG') {
+                tugValue = 50;
+                document.getElementById('tug-layer').style.display = 'block';
+                document.getElementById('tug-blue-zone').style.width = '50%';
+                
+                // 摄像机归位到战场中心
+                const targetX = (window.innerWidth / 2) - (1700 * layout.scale); // 1700 is center
+                layout.x = targetX;
+                applyLayout(false);
+            } else {
+                // 其他模式
+                document.getElementById('game-screen').className = ''; 
+                lightState = 'GREEN'; 
+                // 隐藏拔河层
+                document.getElementById('tug-layer').style.display = 'none';
+            }
+            
             obstacles = [];
-            document.getElementById('game-screen').className = ''; // 重置背景
-            lightState = 'GREEN'; // 重置红绿灯状态
         }
 
         function startRace() {
@@ -1031,66 +1079,35 @@
             let statusText = "STATUS: RACING";
             let mobileInfo = "RUN (TAP)";
             
-            // 重置拔河视觉
-            document.getElementById('tug-layer').style.display = 'none';
-
             if (currentGameMode === 'HURDLE') {
                 statusText = "STATUS: JUMP";
-                mobileInfo = "TAP: RUN / UP: JUMP"; // 修改：提示上滑跳跃
+                mobileInfo = "TAP: RUN / UP: JUMP"; 
                 obstacles = [];
                 for(let ox = 500; ox < FINISH_X - 200; ox += (400 + Math.random() * 300)) {
                     obstacles.push({ x: ox, width: 10, passed: false });
                 }
             } else if (currentGameMode === 'RED_LIGHT') {
-                statusText = "STATUS: STOP?"; // 修改：显示 STOP?
+                statusText = "STATUS: STOP?"; 
                 mobileInfo = "WATCH!"; 
                 obstacles = []; 
                 lightState = 'GREEN';
-                // 绿灯时间缩短20%
                 redLightTimer = (120 + Math.random() * 100) * 0.8; 
                 document.getElementById('game-screen').classList.add('bg-green');
                 playSignalSound('GREEN');
             } else if (currentGameMode === 'TUG') {
-                // === 拔河模式逻辑 ===
                 statusText = "TEAM BATTLE";
                 mobileInfo = "PULL!";
-                tugValue = 50; // 重置
+                tugValue = 50; 
                 obstacles = [];
                 
-                // 显示拔河视觉元素
-                document.getElementById('tug-layer').style.display = 'block';
-
-                // 分配队伍
-                // 1. 先把所有人（包括Bot）打乱
-                const allPonies = [...ponies].sort(() => Math.random() - 0.5);
-                
-                // 2. 均匀分配
+                // 这里的广播已经不需要 teamMap 了，因为 cooldown 里发过了
+                // 但为了保险（比如有人刚连进来），还是发一下
                 const teamMap = {};
-                allPonies.forEach((p, index) => {
-                    // team 1: Blue (Left), team -1: Red (Right)
-                    // 偶数索引给Blue(1), 奇数给Red(-1)
-                    p.team = (index % 2 === 0) ? 1 : -1;
-                    
-                    // 初始位置：分布在左右两侧
-                    // Blue (1) 在左侧 0~GAME_W/2, Red (-1) 在右侧 GAME_W/2~GAME_W
-                    // 为了好看，让它们稍微靠近中间一点，但不越界
-                    if (p.team === 1) {
-                        p.x = (GAME_W / 2) - 300 - Math.random() * 400; // 左侧区域
-                        p.facing = 1; // 面向右
-                    } else {
-                        p.x = (GAME_W / 2) + 300 + Math.random() * 400; // 右侧区域
-                        p.facing = -1; // 面向左
-                    }
-                    
-                    p.manualSpeed = 0;
-                    if (p.playerUUID) {
-                        teamMap[p.playerUUID] = (p.team === 1) ? 'BLUE' : 'RED';
-                    }
+                ponies.forEach(p => {
+                    if (p.playerUUID) teamMap[p.playerUUID] = (p.team === 1) ? 'BLUE' : 'RED';
                 });
-
                 broadcast({ type: 'sync_ui', label: 'PULL!', mode: 'tug', teamMap: teamMap });
             } else {
-                // Classic -> RUN
                 statusText = "STATUS: RUN";
                 obstacles = [];
             }
@@ -1123,71 +1140,75 @@
         function updateGameLogic() {
             spawnSnow();
             const alert = document.getElementById('queue-text'); const hud = document.getElementById('hud');
+            
+            // 确保倒计时阶段，拔河的小马保持在位
+            if (gameState === 'COOLDOWN' && currentGameMode === 'TUG') {
+                ponies.forEach(p => {
+                    p.frame++;
+                    if (p.team === 1) {
+                        p.x = (GAME_W / 2) - 300 - (Math.sin(p.id + Date.now()*0.002) * 50); 
+                    } else {
+                        p.x = (GAME_W / 2) + 300 + (Math.sin(p.id + Date.now()*0.002) * 50);
+                    }
+                });
+            }
+
             if (gameState === 'WAITING_TO_START') {
                 waitTimer--; alert.style.display = 'block'; const sec = Math.ceil(waitTimer / 60); alert.innerText = `NEXT ROUND IN ${sec}`;
                 if (sec > 0 && lastBroadcastText !== sec) { broadcast({ type: 'sync_ui', label: `STARTING ${sec}`, mode: 'wait' }); lastBroadcastText = sec; }
                 updatePoniesMovement(); if (waitTimer <= 0) startCooldown();
             } else if (gameState === 'COOLDOWN') {
                 cooldownTimer--; alert.style.display = 'none';
-                if (cooldownTimer > 180) { /* 显示模式名，已在startCooldown处理 */ } else {
+                if (cooldownTimer > 180) { } else {
                     const sec = Math.ceil(cooldownTimer / 60); updateBarText(sec.toString(), '#ffffff');
                     if (cooldownTimer % 60 === 59) triggerFlash();
                     if (sec > 0 && lastBroadcastText !== sec) { broadcast({ type: 'sync_ui', label: sec.toString(), mode: 'wait' }); lastBroadcastText = sec; }
                 }
-                if (cooldownTimer <= 0) startRace(); updatePoniesMovement();
+                if (cooldownTimer <= 0) startRace(); 
+                if (currentGameMode !== 'TUG') updatePoniesMovement(); // TUG mode positions managed manually above in cooldown
             } else if (gameState === 'RACING') {
                 if (ponyQueue.length > 0) { alert.style.display = 'block'; alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`; } else { alert.style.display = 'none'; }
                 
                 if (currentGameMode === 'TUG') {
                     // === 拔河逻辑 ===
                     
-                    // 1. Bot 自动拉力
+                    // 1. Bot 自动拉力 (降低几率到 1.5%)
                     ponies.forEach(p => {
-                        if (!p.playerUUID && Math.random() < 0.05) { // Bot 5% 几率每帧拉一下
-                            applyTugForce(p.team);
+                        if (!p.playerUUID && Math.random() < 0.015) { 
+                            // 降低 Bot 拉力
+                            if (p.team === 1) tugValue = Math.min(100, tugValue + 1.0);
+                            else tugValue = Math.max(0, tugValue - 1.0);
+                            
                             p.isWalkAnimating = true;
-                            p.x += (p.team === 1 ? 1 : -1) * 2; // 视觉震动
+                            p.pullOffset = (p.team === 1 ? -10 : 10);
                         }
                     });
 
-                    // 2. 更新视觉宽度
-                    // Blue Zone Width = tugValue %
                     document.getElementById('tug-blue-zone').style.width = tugValue + '%';
 
-                    // 3. 强制摄像机居中 (因为跑道很长，我们想看中间)
-                    // GAME_W = 3400. Center = 1700.
-                    // 我们希望屏幕中心对准 1700.
-                    // layout.x 是 translate 的值。
-                    // 屏幕中心 = window.innerWidth / 2.
-                    // 目标位置 = 1700 * layout.scale + layout.x
-                    // => window.innerWidth / 2 = 1700 * scale + x
-                    // => x = (window.innerWidth / 2) - (1700 * scale)
                     const targetX = (window.innerWidth / 2) - (1700 * layout.scale);
                     layout.x = targetX;
                     applyLayout(false);
 
-                    // 4. 小马位置微调 (随着区域移动)
-                    // tugValue 0 -> Blue 0%, Red 100% (Left)
-                    // tugValue 100 -> Blue 100%, Red 0% (Right)
-                    // 战场中心点随着 tugValue 移动：
-                    // Center X = GAME_W * (tugValue / 100)
                     const battleFront = GAME_W * (tugValue / 100);
                     
                     ponies.forEach(p => {
-                        // 它们应该在战线附近徘徊
-                        // Blue (1) 在 battleFront 左边 50~450 px
-                        // Red (-1) 在 battleFront 右边 50~450 px
                         let targetX;
                         if (p.team === 1) {
                             targetX = battleFront - 150 - (Math.sin(p.id + Date.now()*0.002) * 200 + 200); 
                         } else {
                             targetX = battleFront + 150 + (Math.sin(p.id + Date.now()*0.002) * 200 + 200);
                         }
-                        // 平滑靠近
-                        p.x = p.x + (targetX - p.x) * 0.05;
+                        
+                        // 平滑移动 + 施加 pullOffset 视觉反馈
+                        const basePos = p.x + (targetX - p.x) * 0.05;
+                        p.x = basePos + (p.pullOffset || 0);
+                        
+                        // pullOffset 衰减
+                        if (p.pullOffset) p.pullOffset *= 0.8;
+                        if (Math.abs(p.pullOffset) < 1) p.pullOffset = 0;
                     });
 
-                    // 5. 胜利判定
                     if (tugValue >= 95) {
                         endTugWar(1); // Blue Wins
                     } else if (tugValue <= 5) {
@@ -1195,7 +1216,7 @@
                     }
 
                 } else if (currentGameMode === 'RED_LIGHT') {
-                    // ... 红绿灯逻辑 ...
+                    // ... 红绿灯 ...
                     redLightTimer--;
                     if (redLightTimer <= 0) {
                         const screen = document.getElementById('game-screen');
@@ -1225,18 +1246,17 @@
                     updatePoniesMovement(); 
                     checkRaceEnd();
                 } else {
-                    // Classic / Hurdle
                     updatePoniesMovement(); 
                     checkRaceEnd();
                 }
 
             } else if (gameState === 'ROAMING') {
                 hud.style.display = 'block'; hud.innerText = "NOWHERE TO RUN";
-                document.getElementById('game-screen').className = ''; // 清除背景
+                document.getElementById('game-screen').className = ''; 
                 if (ponyQueue.length > 0) { alert.style.display = 'block'; alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`; } else { alert.style.display = 'none'; }
                 updatePoniesMovement();
             }
-            // 随机生成草 (装饰)
+            
             const active = ponies.filter(p => p.state === 'racing');
             if (active.length === 0 && Math.random() < 0.2) {
                 const segmentSize = 500; const totalSegments = Math.ceil(GAME_W / segmentSize);
@@ -1250,26 +1270,48 @@
 
         function endTugWar(winnerTeam) {
             gameState = 'FINISHED';
-            // 爆炸败者
+            
+            // 找出 MVP
+            let mvpPony = null;
+            let maxTaps = -1;
+
             ponies.forEach(p => {
+                // 清除所有皇冠先
+                p.hasCrown = false;
+                p.isStreak = false;
+
                 if (p.team !== winnerTeam) {
-                    explode(p); 
+                    explode(p); // 输家爆炸
                 } else {
-                    p.hasCrown = true; 
-                    p.state = 'finished';
+                    p.state = 'roaming'; // 赢家变成散步状态
+                    // 比较 MVP
+                    if (p.tapCount > maxTaps) {
+                        maxTaps = p.tapCount;
+                        mvpPony = p;
+                    }
                 }
             });
+
+            // 给 MVP 戴皇冠
+            if (mvpPony) {
+                mvpPony.hasCrown = true;
+                mvpPony.isStreak = true;
+            }
             
             const winnerText = (winnerTeam === 1) ? "BLUE TEAM WINS!" : "RED TEAM WINS!";
             const winnerColor = (winnerTeam === 1) ? "#2979ff" : "#ff0000";
             updateBarText(winnerText, winnerColor);
             setBarVisibility(true);
 
+            // 隐藏拔河层，露出原本的背景让它们散步
+            document.getElementById('tug-layer').style.display = 'none';
+            // 恢复摄像机视角到正常位置（或者保持在当前位置，因为大家都在这里）
+            // 让他们在当前区域附近散步即可，不用强制归零
+            
             setTimeout(() => {
                 gameState = 'ROAMING';
                 setBarVisibility(false);
-                document.getElementById('tug-layer').style.display = 'none';
-                layout.x = 0; applyLayout(false); // 归位摄像机
+                layout.x = 0; applyLayout(false); // 此时再归位摄像机
                 broadcast({ type: 'sync_ui', label: 'DONE', mode: 'wait' });
             }, 4000);
         }
