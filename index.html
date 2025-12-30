@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - PURE WHITE EDITION</title>
+    <title>HORSE RUNRUN - RESPAWN EDITION</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -1235,6 +1235,10 @@
                 tick();
             }
             const grassCount = Math.floor(Math.random() * 3) + 1; for(let i=0; i<grassCount; i++) { grass.push({ x: p.x + (Math.random()-0.5) * 60, y: p.y + (Math.random()-0.5) * 40 }); }
+            
+            // === 修改：从数组中彻底移除小马，允许重新生成 ===
+            ponies = ponies.filter(target => target.id !== p.id); 
+            
             if (p.playerUUID) { broadcast({ type: 'eliminated', uuid: p.playerUUID }); }
         }
 
@@ -1328,7 +1332,8 @@
                             const btn = document.getElementById('m-btn'); const info = document.getElementById('m-info'); 
                             mobileBtnState = 'dead'; 
                             btn.className = 'push-btn btn-dead'; 
-                            btn.innerText = "TRY\nAGAIN"; 
+                            // === 修改：显示重新创建 ===
+                            btn.innerText = "CREATE\nAGAIN"; 
                             info.innerText = "ELIMINATED";
                             document.getElementById('m-mode-wrapper').style.display = 'none';
                             vibrate([100, 50, 100]); // 淘汰震动
@@ -1468,7 +1473,14 @@
             vibrate(10); // 发表情轻微震动
         }
 
-        function resetMobile() { document.getElementById('m-controller').style.display = 'none'; document.getElementById('m-editor-ui').style.display = 'block'; document.getElementById('m-name').value = ''; restoreGridData(mobileGrid); renderGrid('m-grid', mobileGrid, selectedColor); mobileBtnState = 'wait'; }
+        function resetMobile() { 
+            document.getElementById('m-controller').style.display = 'none'; 
+            document.getElementById('m-editor-ui').style.display = 'block'; 
+            // document.getElementById('m-name').value = ''; // 可选：是否清空名字
+            // restoreGridData(mobileGrid); // === 修改：不重置画布，保留玩家上次画的 ===
+            renderGrid('m-grid', mobileGrid, selectedColor); 
+            mobileBtnState = 'wait'; 
+        }
         function clearMobile() { clearGridData(mobileGrid); renderGrid('m-grid', mobileGrid, selectedColor); }
         function clearDesktop() { clearGridData(pcGrid); renderGrid('pc-grid', pcGrid, selectedColor); }
         function clearGridData(grid) { for(let r=0; r<11; r++) for(let c=0; c<11; c++) grid[r][c] = 0; }
