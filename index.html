@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - TUG OF WAR</title>
+    <title>HORSE RUNRUN - TUG FIX</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -945,16 +945,29 @@
 
         function startCooldown() {
             /* === 决定游戏模式 === */
-            const selected = document.getElementById('mode-select').value;
+            // 将队列中的玩家加入游戏
+            if (ponyQueue.length > 0) { ponies = ponies.concat(ponyQueue); ponyQueue = []; }
+
+            let selected = document.getElementById('mode-select').value;
+            
+            // === 修复：人数不足时强制切换回 CLASSIC ===
+            if (selected === 'TUG' && ponies.length < 2) {
+                alert("NOT ENOUGH PLAYERS FOR TUG WAR (MIN 2)");
+                selected = 'CLASSIC'; 
+                document.getElementById('mode-select').value = 'CLASSIC';
+            }
+
             if (selected === 'RANDOM') {
-                const modes = ['CLASSIC', 'HURDLE', 'RED_LIGHT', 'TUG'];
+                let modes = ['CLASSIC', 'HURDLE', 'RED_LIGHT'];
+                // 只有人数够才随机到 TUG
+                if (ponies.length >= 2) modes.push('TUG'); 
                 currentGameMode = modes[Math.floor(Math.random() * modes.length)];
             } else {
                 currentGameMode = selected;
             }
 
             gameState = 'COOLDOWN'; cooldownTimer = 240;
-            if (ponyQueue.length > 0) { ponies = ponies.concat(ponyQueue); ponyQueue = []; }
+            
             ponies.forEach(p => {
                 p.x = 20; p.y = 30 + Math.random() * (GAME_H - PONY_SIZE - 30); p.targetX = null; p.targetY = null;
                 p.facing = 1; p.state = 'ready'; p.manualSpeed = 0; p.tapCount = 0;
@@ -1541,7 +1554,8 @@
                 vibrate(50);
                 return; 
             }
-            if (mobileBtnState !== 'mash') return;
+            // === 修改点：允许 tug 状态触发 ===
+            if (mobileBtnState !== 'mash' && mobileBtnState !== 'tug') return;
 
             // 记录触摸开始
             e.preventDefault(); 
@@ -1551,7 +1565,8 @@
         }, {passive: false});
 
         mBtn.addEventListener('touchend', (e) => {
-            if (mobileBtnState !== 'mash') return;
+            // === 修改点：允许 tug 状态触发 ===
+            if (mobileBtnState !== 'mash' && mobileBtnState !== 'tug') return;
             e.preventDefault();
             mBtn.style.transform = 'scale(1)'; // 视觉恢复
 
