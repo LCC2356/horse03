@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - TUG MVP EDITION</title>
+    <title>HORSE RUNRUN - TUG FINAL</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -904,7 +904,7 @@
                 if (currentGameMode === 'TUG') {
                     applyTugForce(pony.team);
                     
-                    pony.tapCount++; // 记录点击次数用于评选 MVP
+                    pony.tapCount++; // 记录点击次数
                     
                     // 拔河动作反馈
                     pony.isWalkAnimating = true;
@@ -1271,23 +1271,36 @@
         function endTugWar(winnerTeam) {
             gameState = 'FINISHED';
             
-            // 找出 MVP
+            // 1. 确定需要淘汰的人数
+            const totalPlayers = ponies.length;
+            const eliminationCount = Math.max(0, totalPlayers - 10);
+            
+            // 2. 找出输家并按点击数排序 (升序)
+            let losers = ponies.filter(p => p.team !== winnerTeam);
+            losers.sort((a, b) => a.tapCount - b.tapCount); // 点击最少的排前面
+            
+            // 3. 确定谁爆炸
+            const toExplode = new Set(losers.slice(0, eliminationCount).map(p => p.id));
+
+            // 4. 找出 MVP (胜者中点击最多的)
             let mvpPony = null;
             let maxTaps = -1;
 
             ponies.forEach(p => {
-                // 清除所有皇冠先
                 p.hasCrown = false;
                 p.isStreak = false;
 
-                if (p.team !== winnerTeam) {
-                    explode(p); // 输家爆炸
+                if (toExplode.has(p.id)) {
+                    explode(p); // 爆炸
                 } else {
-                    p.state = 'roaming'; // 赢家变成散步状态
-                    // 比较 MVP
-                    if (p.tapCount > maxTaps) {
-                        maxTaps = p.tapCount;
-                        mvpPony = p;
+                    p.state = 'roaming'; // 幸存者（包括没被淘汰的输家和赢家）进入散步状态
+                    
+                    // 只有赢家参与 MVP 评选
+                    if (p.team === winnerTeam) {
+                        if (p.tapCount > maxTaps) {
+                            maxTaps = p.tapCount;
+                            mvpPony = p;
+                        }
                     }
                 }
             });
@@ -1305,8 +1318,6 @@
 
             // 隐藏拔河层，露出原本的背景让它们散步
             document.getElementById('tug-layer').style.display = 'none';
-            // 恢复摄像机视角到正常位置（或者保持在当前位置，因为大家都在这里）
-            // 让他们在当前区域附近散步即可，不用强制归零
             
             setTimeout(() => {
                 gameState = 'ROAMING';
@@ -1373,7 +1384,12 @@
                 // 处理无敌时间倒计时
                 if (p.invincibleTimer > 0) p.invincibleTimer--;
 
-                if (p.state === 'ready') { p.x = 20; return; }
+                // === 修复：如果是 TUG 模式的 ready 阶段，不要强制归零 ===
+                if (p.state === 'ready') { 
+                    if (currentGameMode !== 'TUG') p.x = 20; 
+                    return; 
+                }
+
                 if (p.state === 'racing') {
                     // === 1. 眩晕逻辑 ===
                     if (p.isStunned) {
