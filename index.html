@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - ULTIMATE TUG</title>
+    <title>HORSE RUNRUN - TUG FIX</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -68,7 +68,7 @@
         #tug-layer {
             position: absolute; inset: 0; z-index: 1; display: none;
         }
-        /* 蓝色区域（左侧）- 升级为强发光风格 */
+        /* 蓝色区域（左侧） */
         #tug-blue-zone {
             position: absolute; left: 0; top: 0; bottom: 0;
             width: 50%; 
@@ -79,7 +79,7 @@
             transition: width 0.1s linear; 
             z-index: 2;
         }
-        /* 红色区域（右侧）- 升级为强发光风格 */
+        /* 红色区域（右侧） */
         #tug-red-zone {
             position: absolute; right: 0; top: 0; bottom: 0;
             width: 50%;
@@ -980,8 +980,8 @@
                     pony.isWalkAnimating = true;
                     pony.manualAnimTimer = 5;
 
-                    // === 修改：增大点击反馈偏移量 ===
-                    pony.pullOffset = (pony.team === 1 ? 50 : -50); 
+                    // === 修改：点击冲刺距离改为35 ===
+                    pony.pullOffset = (pony.team === 1 ? 35 : -35); 
                     
                     // === 新增：点击震荡波特效 ===
                     const fx = document.getElementById('layer-fx');
@@ -1423,6 +1423,14 @@
                 setBarVisibility(false);
                 layout.x = 0; applyLayout(false); 
                 broadcast({ type: 'sync_ui', label: 'DONE', mode: 'wait' });
+                
+                // === 修改点：增加延时发送开始指令，解决手机端卡死在 DONE 的问题 ===
+                setTimeout(() => {
+                    if (gameState === 'ROAMING') {
+                         broadcast({ type: 'sync_ui', label: 'RESTART', mode: 'start' });
+                    }
+                }, 2000);
+
             }, 4000);
         }
 
