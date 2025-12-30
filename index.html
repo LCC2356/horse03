@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - TUG FINAL</title>
+    <title>HORSE RUNRUN - TUG PUSH EDITION</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -64,33 +64,35 @@
         .bg-yellow { background: #332200 !important; box-shadow: inset 0 0 50px #ffb300 !important; border-color: #ffb300 !important; }
         .bg-red { background: #440000 !important; box-shadow: inset 0 0 100px #ff0000 !important; border-color: #ff0000 !important; }
 
-        /* === 拔河模式专用视觉层 === */
+        /* === 拔河模式专用视觉层 (修改后) === */
         #tug-layer {
             position: absolute; inset: 0; z-index: 1; display: none;
         }
         /* 蓝色区域（左侧） */
         #tug-blue-zone {
             position: absolute; left: 0; top: 0; bottom: 0;
-            width: 50%; /* 初始50% */
-            background: rgba(0, 0, 255, 0.4);
-            border-right: 6px solid #fff; /* 中间的分界线 */
-            box-shadow: 5px 0 20px rgba(255, 255, 255, 0.5);
+            width: 50%; 
+            background: rgba(41, 121, 255, 0.5); /* 纯蓝，半透明 */
+            border-right: 4px solid #fff; /* 战线 */
+            box-shadow: 0 0 20px rgba(41, 121, 255, 0.8); /* 蓝色发光 */
+            transition: width 0.1s linear;
+            z-index: 2;
+        }
+        /* 红色区域（右侧） */
+        #tug-red-zone {
+            position: absolute; right: 0; top: 0; bottom: 0;
+            width: 50%;
+            background: rgba(255, 82, 82, 0.5); /* 纯红，半透明 */
+            /* border-left: 4px solid #ff5252; */
+            box-shadow: 0 0 20px rgba(255, 82, 82, 0.8);
+            z-index: 1;
             transition: width 0.1s linear;
         }
-        /* 红色区域（右侧 - 作为底色即可，不需要动，蓝色盖住它） */
-        #tug-red-bg {
-            position: absolute; left: 0; top: 0; bottom: 0; right: 0;
-            background: rgba(255, 0, 0, 0.4);
-            z-index: -1;
-        }
         
-        .tug-icon {
-            position: absolute; top: 10px; font-size: 24px; opacity: 0.8;
-        }
         .icon-vs {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             font-size: 40px; color: #fff; text-shadow: 0 0 10px #fff; z-index: 10;
-            opacity: 0.5;
+            opacity: 0.8; pointer-events: none;
         }
 
         /* 手机端队伍颜色 */
@@ -461,7 +463,7 @@
                     <div class="grid-bg"></div>
                     
                     <div id="tug-layer">
-                        <div id="tug-red-bg"></div> <div id="tug-blue-zone">
+                        <div id="tug-red-zone"></div> <div id="tug-blue-zone">
                             <span class="tug-icon" style="right: 10px; color: #fff;">&#9664;</span> </div>
                         <div class="icon-vs">VS</div>
                     </div>
@@ -904,13 +906,12 @@
                 if (currentGameMode === 'TUG') {
                     applyTugForce(pony.team);
                     
-                    pony.tapCount++; // 记录点击次数
+                    pony.tapCount++; 
                     
-                    // 拔河动作反馈
                     pony.isWalkAnimating = true;
                     pony.manualAnimTimer = 5;
-                    // 视觉反馈：向后仰 (pullOffset)
-                    pony.pullOffset = (pony.team === 1 ? -15 : 15); // Blue往左仰，Red往右仰
+                    // 点击反馈：向前冲（推）
+                    pony.pullOffset = (pony.team === 1 ? 15 : -15); // Blue向右冲，Red向左冲
                     
                     // 尘土特效
                     if (Math.random() < 0.5) {
@@ -955,7 +956,6 @@
             const pony = ponies.find(p => p.playerUUID === uuid);
             if (pony && pony.state === 'racing' && !pony.isStunned && !pony.isJumping) {
                 if (currentGameMode === 'RED_LIGHT') return;
-                // 拔河可以跳，没实际作用但好玩
                 pony.isJumping = true;
                 pony.vz = 12; 
                 pony.isManual = true; 
@@ -972,7 +972,7 @@
                 targetX: null, targetY: null, isWalkAnimating: false, manualAnimTimer: 0, roamSpeed: 0.5,
                 isTurbo: false, turboCharge: 0,
                 z: 0, vz: 0, isJumping: false, isStunned: false, stunTimer: 0, invincibleTimer: 0,
-                pullOffset: 0 // 新增：拔河时的视觉偏移
+                pullOffset: 0 
             };
             if (gameState === 'RACING' || gameState === 'COOLDOWN' || gameState === 'WAITING_TO_START') {
                 ponyQueue.push(newPony); updateHUD();
@@ -1007,11 +1007,10 @@
                 const allPonies = [...ponies].sort(() => Math.random() - 0.5);
                 const teamMap = {};
                 allPonies.forEach((p, index) => {
-                    p.team = (index % 2 === 0) ? 1 : -1; // 1:Blue, -1:Red
-                    p.tapCount = 0; // 重置点击数，用于MVP
+                    p.team = (index % 2 === 0) ? 1 : -1; 
+                    p.tapCount = 0; 
                     if (p.playerUUID) teamMap[p.playerUUID] = (p.team === 1) ? 'BLUE' : 'RED';
                 });
-                // 提前广播队伍信息
                 broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait', teamMap: teamMap });
             } else {
                 broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
@@ -1052,21 +1051,19 @@
 
             updateBarText(modeName, "#ffffff"); 
             
-            // 拔河特殊处理：如果选了拔河，马上显示视觉层，虽然还没开始拉
             if (currentGameMode === 'TUG') {
                 tugValue = 50;
                 document.getElementById('tug-layer').style.display = 'block';
                 document.getElementById('tug-blue-zone').style.width = '50%';
+                document.getElementById('tug-red-zone').style.width = '50%';
                 
                 // 摄像机归位到战场中心
-                const targetX = (window.innerWidth / 2) - (1700 * layout.scale); // 1700 is center
+                const targetX = (window.innerWidth / 2) - (1700 * layout.scale); 
                 layout.x = targetX;
                 applyLayout(false);
             } else {
-                // 其他模式
                 document.getElementById('game-screen').className = ''; 
                 lightState = 'GREEN'; 
-                // 隐藏拔河层
                 document.getElementById('tug-layer').style.display = 'none';
             }
             
@@ -1100,8 +1097,6 @@
                 tugValue = 50; 
                 obstacles = [];
                 
-                // 这里的广播已经不需要 teamMap 了，因为 cooldown 里发过了
-                // 但为了保险（比如有人刚连进来），还是发一下
                 const teamMap = {};
                 ponies.forEach(p => {
                     if (p.playerUUID) teamMap[p.playerUUID] = (p.team === 1) ? 'BLUE' : 'RED';
@@ -1165,7 +1160,7 @@
                     if (sec > 0 && lastBroadcastText !== sec) { broadcast({ type: 'sync_ui', label: sec.toString(), mode: 'wait' }); lastBroadcastText = sec; }
                 }
                 if (cooldownTimer <= 0) startRace(); 
-                if (currentGameMode !== 'TUG') updatePoniesMovement(); // TUG mode positions managed manually above in cooldown
+                if (currentGameMode !== 'TUG') updatePoniesMovement(); 
             } else if (gameState === 'RACING') {
                 if (ponyQueue.length > 0) { alert.style.display = 'block'; alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`; } else { alert.style.display = 'none'; }
                 
@@ -1180,11 +1175,12 @@
                             else tugValue = Math.max(0, tugValue - 1.0);
                             
                             p.isWalkAnimating = true;
-                            p.pullOffset = (p.team === 1 ? -10 : 10);
+                            p.pullOffset = (p.team === 1 ? 10 : -10);
                         }
                     });
 
                     document.getElementById('tug-blue-zone').style.width = tugValue + '%';
+                    document.getElementById('tug-red-zone').style.width = (100 - tugValue) + '%';
 
                     const targetX = (window.innerWidth / 2) - (1700 * layout.scale);
                     layout.x = targetX;
@@ -1200,11 +1196,9 @@
                             targetX = battleFront + 150 + (Math.sin(p.id + Date.now()*0.002) * 200 + 200);
                         }
                         
-                        // 平滑移动 + 施加 pullOffset 视觉反馈
                         const basePos = p.x + (targetX - p.x) * 0.05;
                         p.x = basePos + (p.pullOffset || 0);
                         
-                        // pullOffset 衰减
                         if (p.pullOffset) p.pullOffset *= 0.8;
                         if (Math.abs(p.pullOffset) < 1) p.pullOffset = 0;
                     });
@@ -1271,13 +1265,13 @@
         function endTugWar(winnerTeam) {
             gameState = 'FINISHED';
             
-            // 1. 确定需要淘汰的人数
+            // 1. 确定需要淘汰的人数 (末位淘汰：总人数-10)
             const totalPlayers = ponies.length;
             const eliminationCount = Math.max(0, totalPlayers - 10);
             
-            // 2. 找出输家并按点击数排序 (升序)
+            // 2. 找出输家并按点击数排序 (升序，点得少的排前面)
             let losers = ponies.filter(p => p.team !== winnerTeam);
-            losers.sort((a, b) => a.tapCount - b.tapCount); // 点击最少的排前面
+            losers.sort((a, b) => a.tapCount - b.tapCount);
             
             // 3. 确定谁爆炸
             const toExplode = new Set(losers.slice(0, eliminationCount).map(p => p.id));
@@ -1293,7 +1287,7 @@
                 if (toExplode.has(p.id)) {
                     explode(p); // 爆炸
                 } else {
-                    p.state = 'roaming'; // 幸存者（包括没被淘汰的输家和赢家）进入散步状态
+                    p.state = 'roaming'; // 幸存者进入散步状态
                     
                     // 只有赢家参与 MVP 评选
                     if (p.team === winnerTeam) {
@@ -1316,13 +1310,12 @@
             updateBarText(winnerText, winnerColor);
             setBarVisibility(true);
 
-            // 隐藏拔河层，露出原本的背景让它们散步
             document.getElementById('tug-layer').style.display = 'none';
             
             setTimeout(() => {
                 gameState = 'ROAMING';
                 setBarVisibility(false);
-                layout.x = 0; applyLayout(false); // 此时再归位摄像机
+                layout.x = 0; applyLayout(false); 
                 broadcast({ type: 'sync_ui', label: 'DONE', mode: 'wait' });
             }, 4000);
         }
@@ -1476,95 +1469,6 @@
                     else { p.finishedWalking = false; aiBehavior(p, true); }
                 } else { p.finishedWalking = false; aiBehavior(p, false); }
                 p.x = Math.max(0, Math.min(GAME_W - 38, p.x)); p.y = Math.max(p.hasCrown ? 35 : 20, Math.min(GAME_H - 44 - 6, p.y));
-            });
-        }
-
-        function aiBehavior(p, restrictFinish) {
-            const minX = restrictFinish ? FINISH_X : 0; const maxX = GAME_W - 38; const maxY = GAME_H - 44; const minY = p.hasCrown ? 35 : 20;
-            if (p.state === 'roaming' || p.state === 'finished') {
-                for(let i=0; i<grass.length; i++) {
-                    const g = grass[i];
-                    if (Math.abs(g.x - p.x) < 50 && Math.abs(g.y - p.y) < 50) { p.state = 'eating'; p.timer = 50; grass.splice(i, 1); p.targetX = null; p.targetY = null; return; }
-                }
-                if (p.timer-- <= 0) {
-                    const action = Math.random();
-                    if (action < 0.3) { p.targetX = (p.x < GAME_W / 2) ? GAME_W - 100 - Math.random() * 400 : 50 + Math.random() * 400; p.targetY = minY + Math.random() * (maxY - minY); p.timer = 400 + Math.random() * 400; p.roamSpeed = 2.0; }
-                    else if (action < 0.8) { p.targetX = p.x + (Math.random() - 0.5) * 600; p.targetY = minY + Math.random() * (maxY - minY); p.timer = 100 + Math.random() * 200; p.roamSpeed = 0.8; }
-                    else { p.targetX = null; p.targetY = null; p.timer = 60 + Math.random() * 120; p.roamSpeed = 0; }
-                }
-                if (p.targetX !== null && p.targetY !== null) {
-                    const dx = p.targetX - p.x; const dy = p.targetY - p.y; const dist = Math.sqrt(dx*dx + dy*dy);
-                    if (dist < 5) { p.targetX = null; p.targetY = null; p.timer = 0; }
-                    else { const speed = p.roamSpeed || 0.5; p.x += (dx / dist) * speed; p.y += (dy / dist) * speed; p.facing = Math.sign(dx) || 1; p.isWalkAnimating = true; }
-                }
-            } else if (p.state === 'eating') { if (p.timer-- <= 0) p.state = 'roaming'; }
-        }
-
-        function explode(p) {
-            const fx = document.getElementById('layer-fx');
-            for(let i=0; i<20; i++) {
-                const el = document.createElement('div'); el.className = 'explosion';
-                el.style.left = (p.x + 19) + 'px'; el.style.top = (p.y + 19) + 'px'; el.style.background = p.color; fx.appendChild(el);
-                const angle = Math.random() * 6.28, spd = 3 + Math.random() * 5;
-                let vx = Math.cos(angle) * spd, vy = Math.sin(angle) * spd, life = 40;
-                const tick = () => { if (life-- <= 0) return el.remove(); el.style.left = (parseFloat(el.style.left) + vx) + 'px'; el.style.top = (parseFloat(el.style.top) + vy) + 'px'; el.style.opacity = life/40; requestAnimationFrame(tick); };
-                tick();
-            }
-            const grassCount = Math.floor(Math.random() * 3) + 1; for(let i=0; i<grassCount; i++) { grass.push({ x: p.x + (Math.random()-0.5) * 60, y: p.y + (Math.random()-0.5) * 40 }); }
-            
-            // === 修改：从数组中彻底移除小马，允许重新生成 ===
-            ponies = ponies.filter(target => target.id !== p.id); 
-            
-            if (p.playerUUID) { broadcast({ type: 'eliminated', uuid: p.playerUUID }); }
-        }
-
-        function draw() {
-            // 渲染障碍物和草地
-            const grassL = document.getElementById('layer-grass'); 
-            let htmlContent = grass.map(g => `<div class="grass" style="left:${g.x}px; top:${g.y}px"></div>`).join('');
-            if (gameState === 'RACING' || gameState === 'COOLDOWN') {
-                htmlContent += obstacles.map(o => `<div class="obstacle" style="left:${o.x}px; height:30px;"></div>`).join('');
-            }
-            grassL.innerHTML = htmlContent;
-
-            const ponyL = document.getElementById('layer-pony'); const nodes = Array.from(ponyL.children); const ids = new Set(ponies.map(p => p.id));
-            nodes.forEach(n => { if(!ids.has(n.id)) n.remove(); });
-            ponies.forEach(p => {
-                let el = document.getElementById(p.id);
-                if (!el) {
-                    el = document.createElement('div'); el.id = p.id; el.className = 'entity';
-                    el.innerHTML = `<div class="aura"></div><div class="crown-container" style="display: none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path></svg></div><div class="name-tag">${p.name}</div><div class="p-grid" style="display:grid; grid-template-columns:repeat(11,1fr); width:100%; height:100%;"></div>`;
-                    ponyL.appendChild(el);
-                }
-                
-                // === Z轴跳跃偏移 ===
-                el.style.transform = `translate(${p.x}px, ${p.y - p.z}px) scale(1.1)`; 
-                el.style.zIndex = Math.floor(p.y);
-                
-                // 眩晕与无敌效果
-                if (p.isStunned) {
-                    el.style.filter = "grayscale(100%) opacity(0.5)";
-                } else if (p.invincibleTimer > 0) {
-                    // 无敌闪烁：每5帧切换一次透明度
-                    el.style.filter = (Math.floor(p.invincibleTimer / 5) % 2 === 0) ? "opacity(0.3)" : "opacity(0.8)";
-                } else {
-                    el.style.filter = "none";
-                }
-
-                const crownC = el.querySelector('.crown-container'); if (p.hasCrown) { crownC.style.display = 'flex'; } else { crownC.style.display = 'none'; }
-                el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none'; el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
-                const gridEl = el.querySelector('.p-grid');
-                if (p.isTurbo) { gridEl.classList.add('trail-active'); gridEl.style.setProperty('--trail-c', p.color); } else { gridEl.classList.remove('trail-active'); gridEl.style.removeProperty('--trail-c'); }
-                let frameStep = 0; if (p.isManual && p.state === 'racing') { frameStep = (p.manualAnimTimer > 0) ? 1 : 0; } else if (p.isWalkAnimating) { frameStep = Math.floor(p.frame / 5) % 2; }
-                gridEl.style.transform = `scaleX(${p.facing || 1})`;
-                let html = '';
-                for(let y=0; y<11; y++) {
-                    let row = p.pixels[y];
-                    if (p.state === 'eating') { if (y <= 5) { row = (y >= 2) ? p.pixels[y - 2] : [0,0,0,0,0,0,0,0,0,0,0]; } }
-                    else if (frameStep === 1 && y > 8) { row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[0]]; }
-                    for(let x=0; x<11; x++) { if (row[x]) html += `<div style="background:${p.color}; width:100%; height:100%; grid-column:${x+1}; grid-row:${y+1}"></div>`; }
-                }
-                gridEl.innerHTML = html;
             });
         }
 
