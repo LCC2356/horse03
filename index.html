@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - STABLE EDITION</title>
+    <title>HORSE RUNRUN - TUG PERFECT</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -72,9 +72,9 @@
         #tug-blue-zone {
             position: absolute; left: 0; top: 0; bottom: 0;
             width: 50%; 
-            background: rgba(41, 121, 255, 0.5); /* 纯蓝，半透明 */
-            border-right: 4px solid #fff; /* 战线 */
-            box-shadow: 0 0 20px rgba(41, 121, 255, 0.8); /* 蓝色发光 */
+            background: rgba(41, 121, 255, 0.5); 
+            border-right: 4px solid #fff; 
+            box-shadow: 0 0 20px rgba(41, 121, 255, 0.8); 
             transition: width 0.1s linear;
             z-index: 2;
         }
@@ -82,7 +82,7 @@
         #tug-red-zone {
             position: absolute; right: 0; top: 0; bottom: 0;
             width: 50%;
-            background: rgba(255, 82, 82, 0.5); /* 纯红，半透明 */
+            background: rgba(255, 82, 82, 0.5); 
             box-shadow: 0 0 20px rgba(255, 82, 82, 0.8);
             z-index: 1;
             transition: width 0.1s linear;
@@ -976,7 +976,6 @@
             if (gameState === 'RACING' || gameState === 'COOLDOWN' || gameState === 'WAITING_TO_START') {
                 // 安全添加，移除可能导致错误的 updateHUD 调用
                 ponyQueue.push(newPony); 
-                // updateHUD(); <--- Removed to prevent crash
             } else {
                 ponies.push(newPony); startCooldown();
             }
@@ -1304,6 +1303,10 @@
                     explode(p); // 爆炸
                 } else {
                     p.state = 'roaming'; // 幸存者进入散步状态
+                    // 重置AI目标，确保不会卡住
+                    p.targetX = null;
+                    p.targetY = null;
+                    p.timer = 0;
                     
                     // 只有赢家参与 MVP 评选
                     if (p.team === winnerTeam) {
