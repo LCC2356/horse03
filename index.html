@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - ONE FOR ALL</title>
+    <title>HORSE RUNRUN - TEAM WIN</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -1135,7 +1135,7 @@
             if (currentGameMode === 'RED_LIGHT') modeName = "STOP?";
             else if (currentGameMode === 'HURDLE') modeName = "JUMP";
             else if (currentGameMode === 'CLASSIC') modeName = "RUN";
-            else if (currentGameMode === 'TUG') modeName = "ONE FOR ALL"; // 修改点：拔河改名
+            else if (currentGameMode === 'TUG') modeName = "TEAM"; // 修改点：拔河改名
 
             updateBarText(modeName, "#ffffff"); 
             
@@ -1411,8 +1411,8 @@
             }
             
             // 修改点：简化胜利文字
-            const winnerText = (winnerTeam === 1) ? "BLUE WIN" : "RED WIN";
-            const winnerColor = (winnerTeam === 1) ? "#2979ff" : "#ff0000";
+            const winnerText = "WIN"; // 统一显示 WIN
+            const winnerColor = (winnerTeam === 1) ? "#2979ff" : "#ff0000"; // 颜色区分胜负
             updateBarText(winnerText, winnerColor);
             setBarVisibility(true);
 
