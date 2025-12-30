@@ -68,31 +68,30 @@
         #tug-layer {
             position: absolute; inset: 0; z-index: 1; display: none;
         }
-        
-        /* === 修改：白队区域（左侧） === */
+        /* 蓝色区域（左侧）- 升级为强发光风格 */
         #tug-blue-zone {
             position: absolute; left: 0; top: 0; bottom: 0;
             width: 50%; 
-            background: #e0e0e0; /* 亮白色/银色背景 */
-            box-shadow: inset 0 0 80px #ffffff; 
-            border-right: 6px solid #000; /* 黑色分割线 */
+            background: #001133; 
+            box-shadow: inset 0 0 80px #2979ff; 
+            border-right: 6px solid #fff; 
             filter: drop-shadow(0 0 10px #fff);
             transition: width 0.1s linear; 
             z-index: 2;
         }
-        /* === 修改：黑队区域（右侧） === */
+        /* 红色区域（右侧）- 升级为强发光风格 */
         #tug-red-zone {
             position: absolute; right: 0; top: 0; bottom: 0;
             width: 50%;
-            background: #111111; /* 深黑色背景 */
-            box-shadow: inset 0 0 80px #333333; /* 深灰色发光 */
+            background: #330000; 
+            box-shadow: inset 0 0 80px #ff0000; 
             z-index: 1;
             transition: width 0.1s linear; 
         }
         
         .icon-vs {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 60px; color: #fff; text-shadow: 0 0 20px #fff, 0 0 40px #888; z-index: 10;
+            font-size: 60px; color: #fff; text-shadow: 0 0 20px #fff, 0 0 40px #ff00ff; z-index: 10;
             opacity: 1; pointer-events: none; mix-blend-mode: overlay;
         }
 
@@ -471,20 +470,20 @@
         .btn-start { background: #ffffff !important; border: 8px solid #ccc !important; color: #000000 !important; box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; }
         .btn-dead { background: #ffffff !important; border: 8px solid #000000 !important; color: #000000 !important; box-shadow: 0 0 30px rgba(255, 255, 255, 0.5) !important; font-size: 3rem !important; }
         
-        /* === 修改：手机端队伍按钮颜色 - 白队 === */
-        .btn-team-blue { 
-            background: #ffffff !important; 
-            border-color: #cccccc !important; 
-            color: #000000 !important; 
-            box-shadow: 0 0 30px rgba(255, 255, 255, 0.6) !important;
-            text-shadow: none !important;
-        }
-        /* === 修改：手机端队伍按钮颜色 - 黑队 === */
+        /* 手机端队伍按钮颜色 - 强制覆盖，置于底部以确保优先级 */
         .btn-team-red { 
-            background: #000000 !important; 
-            border-color: #555555 !important; 
-            color: #ffffff !important; 
-            box-shadow: 0 0 30px rgba(100, 100, 100, 0.6) !important;
+            background: #ff0000 !important; 
+            border-color: #ff5252 !important; 
+            color: #fff !important; 
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.6) !important;
+            text-shadow: 0 0 10px #fff !important;
+        }
+        .btn-team-blue { 
+            background: #0044ff !important; 
+            border-color: #40e0d0 !important; 
+            color: #fff !important; 
+            box-shadow: 0 0 30px rgba(0, 100, 255, 0.6) !important;
+            text-shadow: 0 0 10px #fff !important;
         }
     </style>
 </head>
@@ -498,7 +497,7 @@
                     
                     <div id="tug-layer">
                         <div id="tug-red-zone"></div> <div id="tug-blue-zone">
-                            <span class="tug-icon" style="right: 10px; color: #000;">&#9664;</span> </div>
+                            <span class="tug-icon" style="right: 10px; color: #fff;">&#9664;</span> </div>
                         <div class="icon-vs">VS</div>
                     </div>
 
@@ -992,8 +991,8 @@
                     shock.className = 'shockwave';
                     shock.style.left = (pony.x + 25) + 'px'; // 居中
                     shock.style.top = (pony.y + 25) + 'px';
-                    // 根据队伍颜色改变震荡波颜色 (1=WHITE, -1=BLACK)
-                    shock.style.borderColor = (pony.team === 1) ? '#ffffff' : '#444444';
+                    // 根据队伍颜色改变震荡波颜色
+                    shock.style.borderColor = (pony.team === 1) ? '#2979ff' : '#ff5252';
                     fx.appendChild(shock);
                     setTimeout(() => shock.remove(), 400);
 
@@ -1092,8 +1091,7 @@
                 allPonies.forEach((p, index) => {
                     p.team = (index % 2 === 0) ? 1 : -1; 
                     p.tapCount = 0; 
-                    // 修改点：分配队伍名称为 WHITE 和 BLACK
-                    if (p.playerUUID) teamMap[p.playerUUID] = (p.team === 1) ? 'WHITE' : 'BLACK';
+                    if (p.playerUUID) teamMap[p.playerUUID] = (p.team === 1) ? 'BLUE' : 'RED';
                 });
                 broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait', teamMap: teamMap });
             } else {
@@ -1116,11 +1114,11 @@
                     const baseY = (GAME_H - PONY_SIZE) / 2 + 10; // 垂直居中
 
                     if (p.team === 1) {
-                        // 白队 (左)
+                        // 蓝队
                         p.x = (GAME_W / 2) - 100 - (myIndex * 50); 
                         p.facing = 1; 
                     } else {
-                        // 黑队 (右)
+                        // 红队
                         p.x = (GAME_W / 2) + 100 + (myIndex * 50);
                         p.facing = -1;
                     }
@@ -1203,8 +1201,7 @@
 
                 const teamMap = {};
                 ponies.forEach(p => {
-                    // 修改点：队伍名
-                    if (p.playerUUID) teamMap[p.playerUUID] = (p.team === 1) ? 'WHITE' : 'BLACK';
+                    if (p.playerUUID) teamMap[p.playerUUID] = (p.team === 1) ? 'BLUE' : 'RED';
                 });
                 broadcast({ type: 'sync_ui', label: 'PULL!', mode: 'tug', teamMap: teamMap });
             } else {
@@ -1322,9 +1319,9 @@
                     });
 
                     if (tugValue >= 95) {
-                        endTugWar(1); // Blue (White) Wins
+                        endTugWar(1); // Blue Wins
                     } else if (tugValue <= 5) {
-                        endTugWar(-1); // Red (Black) Wins
+                        endTugWar(-1); // Red Wins
                     }
 
                 } else if (currentGameMode === 'RED_LIGHT') {
@@ -1417,8 +1414,7 @@
             
             // 修改点：简化胜利文字
             const winnerText = "WIN"; // 统一显示 WIN
-            // 修改点：胜利颜色 1=White, -1=Black(Grey)
-            const winnerColor = (winnerTeam === 1) ? "#ffffff" : "#666666"; 
+            const winnerColor = (winnerTeam === 1) ? "#2979ff" : "#ff0000"; // 颜色区分胜负
             updateBarText(winnerText, winnerColor);
             setBarVisibility(true);
 
@@ -1701,9 +1697,8 @@
                                 if (data.teamMap && data.teamMap[playerUUID]) {
                                     const myTeam = data.teamMap[playerUUID];
                                     info.innerText = `TEAM ${myTeam}`;
-                                    // 修改：设置黑白队文字颜色
-                                    info.style.color = (myTeam === 'BLACK') ? '#ffffff' : '#40e0d0';
-                                    btn.classList.add(myTeam === 'BLACK' ? 'btn-team-red' : 'btn-team-blue');
+                                    info.style.color = (myTeam === 'RED') ? '#ff5252' : '#2979ff';
+                                    btn.classList.add(myTeam === 'RED' ? 'btn-team-red' : 'btn-team-blue');
                                 } else {
                                     info.innerText = "SPECTATING"; 
                                 }
