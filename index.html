@@ -3,33 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - TEAM MODE</title>
+    <title>HORSE RUNRUN - 1BIT DUNGEON</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --bg: #111;
-            --primary: #ffffff;
-            --panel: #222222;
-            --border: #444444;
+            --bg: #101010;
+            --primary: #eeeeee;
+            --secondary: #444444;
+            --accent: #ffffff;
             --game-w: 3400px;
-            --game-h: 100px;
-            --accent: #40e0d0;
+            --game-h: 120px; /* 稍微增高以容纳地砖 */
+        }
+
+        /* 1-BIT 抖动纹理生成 */
+        .pattern-checker {
+            background-image: linear-gradient(45deg, #222 25%, transparent 25%, transparent 75%, #222 75%, #222),
+                              linear-gradient(45deg, #222 25%, transparent 25%, transparent 75%, #222 75%, #222);
+            background-position: 0 0, 2px 2px;
+            background-size: 4px 4px;
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
 
         body {
             margin: 0; padding: 0;
-            background-color: #0a0a0a;
+            background-color: #050505;
             font-family: 'VT323', monospace;
             color: var(--primary);
             height: 100vh; width: 100vw;
             overflow: hidden;
             display: flex; flex-direction: column;
             position: relative;
+            image-rendering: pixelated; /* 关键：强制像素化 */
         }
 
         .hidden { display: none !important; }
@@ -39,6 +47,27 @@
             width: 100%; height: 100%;
             overflow: hidden;
             background: #000;
+        }
+
+        /* 背景装饰层 */
+        .dungeon-wall {
+            position: absolute; inset: 0;
+            background-color: #000;
+            opacity: 1;
+            z-index: 0;
+        }
+        
+        /* 砖块纹理 */
+        .wall-bricks {
+            position: absolute; inset: 0;
+            background-image: 
+                linear-gradient(335deg, #111 23px, transparent 23px),
+                linear-gradient(155deg, #111 23px, transparent 23px),
+                linear-gradient(335deg, #111 23px, transparent 23px),
+                linear-gradient(155deg, #111 23px, transparent 23px);
+            background-size: 58px 58px;
+            background-position: 0px 2px, 4px 35px, 29px 31px, 34px 6px;
+            opacity: 0.5;
         }
 
         #game-container {
@@ -51,183 +80,153 @@
         #game-screen {
             width: var(--game-w); height: var(--game-h);
             background: #000; position: relative;
-            border: 2px solid var(--primary);
-            border-right: none;
+            /* 改为粗白边框 */
+            border-top: 4px solid var(--primary);
+            border-bottom: 8px solid var(--primary); /* 地板更厚 */
             box-shadow: none;
             overflow: hidden;
             flex-shrink: 0;
-            transition: background-color 0.1s;
         }
 
-        /* === 红绿灯模式背景样式 === */
-        .bg-green { background: #002200 !important; box-shadow: inset 0 0 50px #00ff00 !important; border-color: #00ff00 !important; }
-        .bg-yellow { background: #332200 !important; box-shadow: inset 0 0 50px #ffb300 !important; border-color: #ffb300 !important; }
-        .bg-red { background: #440000 !important; box-shadow: inset 0 0 100px #ff0000 !important; border-color: #ff0000 !important; }
+        /* 装饰：藤蔓 (用CSS模拟像素点) */
+        .vine {
+            position: absolute; top: 0; width: 4px; background: transparent;
+            image-rendering: pixelated;
+            z-index: 5;
+            pointer-events: none;
+        }
+        /* 简单的像素藤蔓生成 */
+        .vine::after {
+            content: ''; position: absolute; top:0; left:0; width: 4px; height: 100%;
+            background: linear-gradient(to bottom, 
+                #fff 0%, #fff 10%, 
+                transparent 10%, transparent 15%, 
+                #fff 15%, #fff 30%,
+                transparent 30%, transparent 35%,
+                #fff 35%, #fff 40%,
+                transparent 40%, transparent 60%,
+                #fff 60%, #fff 80%
+            );
+            box-shadow: 4px 10px 0 #fff, -4px 25px 0 #fff;
+            opacity: 0.5;
+        }
 
-        /* === 拔河模式专用视觉层 === */
+        /* === 模式样式调整 === */
+        /* 去除发光，改为背景图案变化 */
+        .bg-green { background: #000 !important; border-color: #fff !important; }
+        .bg-yellow { background: #222 !important; border-color: #aaa !important; } 
+        /* 红灯模式下使用斜线纹理 */
+        .bg-red { 
+            background: repeating-linear-gradient(45deg, #220000, #220000 10px, #000 10px, #000 20px) !important; 
+            border-color: #fff !important; 
+        }
+
+        /* === 拔河模式 === */
         #tug-layer {
             position: absolute; inset: 0; z-index: 1; display: none;
         }
-        /* 蓝色区域（左侧）- 升级为强发光风格 */
+        /* 左侧：黑色+网格 */
         #tug-blue-zone {
-            position: absolute; left: 0; top: 0; bottom: 0;
-            width: 50%; 
-            background: #001133; 
-            box-shadow: inset 0 0 80px #2979ff; 
-            border-right: 6px solid #fff; 
-            filter: drop-shadow(0 0 10px #fff);
-            transition: width 0.1s linear; 
+            position: absolute; left: 0; top: 0; bottom: 0; width: 50%; 
+            background: #000; 
+            border-right: 4px dashed #fff; 
             z-index: 2;
+            transition: width 0.1s linear; 
         }
-        /* 红色区域（右侧）- 升级为强发光风格 */
+        /* 右侧：白色+抖动纹理 */
         #tug-red-zone {
-            position: absolute; right: 0; top: 0; bottom: 0;
-            width: 50%;
-            background: #330000; 
-            box-shadow: inset 0 0 80px #ff0000; 
+            position: absolute; right: 0; top: 0; bottom: 0; width: 50%;
+            background: #fff;
+            background-image: radial-gradient(#000 1px, transparent 1px);
+            background-size: 4px 4px;
             z-index: 1;
             transition: width 0.1s linear; 
         }
         
         .icon-vs {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 60px; color: #fff; text-shadow: 0 0 20px #fff, 0 0 40px #ff00ff; z-index: 10;
-            opacity: 1; pointer-events: none; mix-blend-mode: overlay;
+            font-size: 60px; color: #fff; 
+            background: #000; padding: 0 10px; border: 2px solid #fff;
+            z-index: 10;
         }
 
         #track-wrapper {
             display: flex;
             width: calc(var(--game-w) + var(--game-h));
             height: var(--game-h);
-            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
             flex-shrink: 0;
             position: relative;
         }
 
         #side-qr-box {
-            width: var(--game-h);
-            height: var(--game-h);
-            background: #000;
-            border: 2px solid var(--primary);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            flex-shrink: 0;
+            width: var(--game-h); height: var(--game-h);
+            background: #fff; /* 纯白背景 */
+            border: 4px solid var(--primary);
+            border-left: none;
+            display: flex; justify-content: center; align-items: center;
+            position: relative; flex-shrink: 0;
+            color: #000;
         }
 
         .join-label {
-            position: absolute;
-            bottom: 2px;
-            left: 0; width: 100%;
-            text-align: center;
-            font-size: 14px;
-            color: #888;
-            pointer-events: none;
-            text-shadow: 1px 1px 0 #000;
+            position: absolute; bottom: 2px; left: 0; width: 100%;
+            text-align: center; font-size: 20px; color: #000;
+            font-weight: bold;
         }
 
         .flash-active {
-            animation: track-flash 0.2s ease-out;
+            animation: invert-flash 0.1s steps(2);
         }
-        @keyframes track-flash {
-            0% { background-color: rgba(255, 255, 255, 0.4); box-shadow: inset 0 0 150px var(--primary); border-color: #fff; }
-            100% { background-color: #000; box-shadow: none; border-color: var(--primary); }
+        @keyframes invert-flash {
+            0% { filter: invert(0); }
+            50% { filter: invert(1); }
+            100% { filter: invert(0); }
         }
 
         .grid-bg {
-            position: absolute; inset: 0; opacity: 0.2;
-            background-image: linear-gradient(rgba(255, 255, 255, 0.3) 1px, transparent 1px),
-                              linear-gradient(90deg, rgba(255, 255, 255, 0.3) 1px, transparent 1px);
-            background-size: 50px 50px;
+            position: absolute; inset: 0; opacity: 0.3;
+            /* 简单的垂直线条模拟柱子 */
+            background-image: linear-gradient(90deg, #333 1px, transparent 1px);
+            background-size: 100px 100%;
             pointer-events: none;
         }
         .finish-line {
-            position: absolute; top: 0; bottom: 0; right: 400px; width: 12px;
-            background-image: linear-gradient(45deg, #fff 25%, transparent 25%, transparent 50%, #fff 50%, #fff 75%, transparent 75%, transparent);
-            background-size: 12px 12px; opacity: 0.8; z-index: 0;
+            position: absolute; top: 0; bottom: 0; right: 400px; width: 20px;
+            background-image: repeating-linear-gradient(45deg, #fff 0, #fff 10px, #000 10px, #000 20px);
+            border: 2px solid #fff;
+            opacity: 1; z-index: 0;
         }
 
         /* HUD */
-        .hud { position: absolute; bottom: 4px; right: 10px; font-size: 32px; opacity: 0.5; letter-spacing: 2px; z-index: 110; }
-
-        #track-display-bar {
-            position: absolute;
-            top: 50%; transform: translateY(-50%);
-            left: 0; width: 100%; height: 100px;
-            display: none;
-            align-items: center; justify-content: center;
-            z-index: 100;
-            pointer-events: none;
+        .hud { 
+            position: absolute; bottom: 105%; right: 0px; 
+            font-size: 40px; color: #fff; background: #000; 
+            padding: 5px 10px; border: 2px solid #fff;
+            z-index: 110; 
         }
 
-        .bar-container {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        #track-display-bar {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            left: 0; width: 100%; height: 100px;
+            display: none; align-items: center; justify-content: center;
+            z-index: 100; pointer-events: none;
         }
 
         .bar-text-item {
-            font-size: 80px;
-            letter-spacing: 2px;
-            text-shadow: 0 0 20px currentColor;
-            font-weight: bold;
-            width: 260px;
-            display: flex;
-            justify-content: center;
-            flex-shrink: 0;
-            margin: 0;
-            animation: text-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-
-        @keyframes text-pop {
-            0% { transform: scale(0.5); opacity: 0; }
-            100% { transform: scale(1.0); opacity: 1; }
-        }
-
-        @keyframes text-vanish {
-            0% { opacity: 1; }
-            100% { opacity: 0; }
+            font-size: 80px; font-weight: bold; width: 260px;
+            display: flex; justify-content: center; flex-shrink: 0; margin: 0;
+            color: #fff !important; /* 强制白色 */
+            text-shadow: 4px 4px 0 #000; /* 黑色阴影增加可读性 */
+            -webkit-text-stroke: 1px #000;
         }
 
         .queue-alert {
-            position: absolute; top: 10px; right: 20px;
-            font-size: 24px; color: #ffb300; text-shadow: 0 0 5px #ffb300;
+            position: absolute; top: -50px; right: 20px;
+            font-size: 24px; color: #fff; background: #000; border: 1px solid #fff; padding: 5px;
             display: none; z-index: 20;
         }
 
-        #vfd-overlay {
-            position: absolute; inset: 0;
-            display: flex; align-items: center; justify-content: flex-start;
-            overflow: hidden;
-            opacity: 0;
-            pointer-events: none; z-index: 95;
-            padding-left: 0;
-        }
-
-        #vfd-overlay i {
-            display: inline-block;
-            width: 0; height: 0;
-            border-top: 15px solid transparent;
-            border-bottom: 15px solid transparent;
-            border-left: 80px solid var(--primary);
-            margin-right: 20px;
-            flex-shrink: 0;
-            opacity: 0;
-            transform: scale(0.8) skewX(-20deg);
-            filter: drop-shadow(0 0 5px var(--primary));
-        }
-
-        .vfd-active { opacity: 1 !important; }
-        .vfd-active i { animation: vfd-flash 0.4s ease-out forwards calc(var(--d) * 1s); }
-
-        @keyframes vfd-flash {
-            0% { opacity: 0; transform: scale(0.8) translateX(0); }
-            10% { opacity: 1; transform: scale(1.2) translateX(10px); filter: drop-shadow(0 0 15px var(--primary)) drop-shadow(0 0 30px #fff); }
-            40% { opacity: 0.3; transform: scale(1.0) translateX(20px); }
-            100% { opacity: 0; transform: scale(0.8) translateX(30px); }
-        }
+        #vfd-overlay { display: none; } /* 移除 VFD 效果 */
 
         .entity { position: absolute; width: 44px; height: 44px; will-change: transform; }
         .pixel-grid {
@@ -243,261 +242,186 @@
             width: 18px; height: 18px;
             animation: bounce 1s infinite; z-index: 10;
             display: flex; flex-direction: column-reverse; align-items: center;
+            filter: drop-shadow(1px 1px 0 #000); /* 皇冠加边框 */
         }
-        .aura {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 160%; height: 160%; border-radius: 50%;
-            background: radial-gradient(circle, rgba(250,204,21,0.4) 0%, transparent 70%);
-            box-shadow: 0 0 10px #facc15; z-index: -1;
-            animation: pulse 0.5s infinite alternate; display: none;
-        }
-        @keyframes pulse { from { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } }
+        .aura { display: none !important; } /* 移除光环 */
 
         .name-tag {
-            position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
-            font-size: 20px; white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000;
+            position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+            font-size: 20px; white-space: nowrap; color: #fff !important; 
+            background: #000; padding: 0 4px;
+            border: 1px solid #fff;
         }
-        .grass { position: absolute; width: 6px; height: 6px; background: #69f0ae; box-shadow: 0 0 4px #69f0ae; }
+        /* 装饰性草地改为小石块 */
+        .grass { 
+            position: absolute; width: 6px; height: 6px; 
+            background: #fff; box-shadow: 2px 2px 0 #444; 
+        }
         
+        /* 障碍物改为板条箱样式 */
         .obstacle {
             position: absolute;
             width: 10px; height: 30px; 
-            background: #ffffff; 
-            border: 2px solid #ffffff; 
-            box-shadow: 0 0 15px #ffffff; 
-            z-index: 5;
-            bottom: 5px;
+            background: #000; 
+            border: 2px solid #fff; 
+            z-index: 5; bottom: 5px;
+            /* 内部画一个X */
+            background: linear-gradient(to top right, transparent calc(50% - 1px), #fff, transparent calc(50% + 1px)),
+                        linear-gradient(to top left, transparent calc(50% - 1px), #fff, transparent calc(50% + 1px));
         }
 
-        /* 拔河对撞粒子 */
         .tug-spark {
-            position: absolute; width: 4px; height: 4px; background: #fff;
-            box-shadow: 0 0 10px #fff, 0 0 20px #ff00ff;
+            position: absolute; width: 4px; height: 4px; background: #000;
+            border: 1px solid #fff;
             pointer-events: none; z-index: 20;
-            border-radius: 50%;
         }
 
-        /* 拔河点击震荡波 */
         .shockwave {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 10px; height: 10px; border-radius: 50%;
-            border: 4px solid rgba(255, 255, 255, 0.8);
+            border: 2px solid #fff !important; /* 强制白色 */
             pointer-events: none; z-index: 5;
-            animation: shock-expand 0.4s ease-out forwards;
-        }
-        @keyframes shock-expand {
-            0% { width: 10px; height: 10px; opacity: 1; border-width: 4px; }
-            100% { width: 100px; height: 100px; opacity: 0; border-width: 0px; }
+            animation: shock-expand 0.4s steps(5) forwards; /* 步进动画 */
         }
 
-        .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
-        @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
-
-        #layer-snow { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
-        .snowflake {
-            position: absolute; top: -10px;
-            background: #ffffff; border-radius: 50%; box-shadow: 0 0 4px #ffffff;
-            animation-name: snowfall; animation-timing-function: linear; animation-fill-mode: forwards;
-        }
-        @keyframes snowfall { to { transform: translateY(calc(var(--game-h) + 20px)); } }
+        .explosion { position: absolute; width: 4px; height: 4px; background: #fff; border: 1px solid #000; pointer-events: none; }
 
         .trail-segment {
-            position: absolute; height: 4px; width: 50px; border-radius: 0px; 
-            pointer-events: none; opacity: 0.8;
-            animation: trail-fade 0.4s ease-out forwards;
-            z-index: 90; mix-blend-mode: screen; 
-        }
-        @keyframes trail-fade { to { opacity: 0; transform: translateX(-40px) scaleX(0.5); } }
-
-        .trail-active .p-grid {
-            filter: drop-shadow(-10px 0 5px var(--trail-c)) drop-shadow(-20px 0 10px var(--trail-c)) opacity(0.95);
-            transform: scaleX(1.3) skewX(-15deg);
-            transition: filter 0.1s ease-out, transform 0.1s ease-out;
+            position: absolute; height: 4px; width: 50px; 
+            background: #fff !important; /* 强制白色 */
+            opacity: 0.5;
+            animation: trail-fade 0.2s steps(3) forwards;
+            z-index: 90;
+            background-image: radial-gradient(#000 20%, transparent 20%); background-size: 4px 4px;
         }
 
-        .pixel-emoji-container {
-            position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
-            pointer-events: none; z-index: 200;
-            animation: pixel-float-smooth 2.5s linear forwards;
-        }
-
+        /* 表情 */
         .pop-text {
-            position: absolute; top: -24px; left: 50%; transform: translateX(-50%);
-            color: var(--accent); font-size: 28px; letter-spacing: 2px;
-            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
-            white-space: nowrap; pointer-events: none; z-index: 210;
+            color: #fff; font-size: 28px;
+            text-shadow: 2px 2px 0 #000;
             font-family: 'VT323', monospace;
-            animation: pixel-float-smooth 2.5s linear forwards;
+            background: #000; padding: 2px 5px; border: 1px solid #fff;
         }
 
-        .pixel-icon-base { background: transparent; position: relative; }
-
-        @keyframes pixel-float-smooth {
-            0% { opacity: 0; transform: translate(-50%, 10px) scale(0.5); }
-            10% { opacity: 1; transform: translate(-50%, -10px) scale(1); }
-            25% { transform: translate(calc(-50% + 20px), -40px) scale(1); }
-            50% { transform: translate(calc(-50% - 20px), -80px) scale(1); }
-            75% { transform: translate(calc(-50% + 15px), -120px) scale(1); opacity: 0.8; }
-            100% { transform: translate(-50%, -160px) scale(1); opacity: 0; }
-        }
-
-        .emoji-bar {
-            display: none !important; /* 隐藏表情栏 */
-            gap: 15px; margin-top: 40px; pointer-events: auto; z-index: 22001; justify-content: center;
-        }
-        .emoji-btn {
-            background: #222; border: 2px solid #555; color: #fff;
-            width: 60px; height: 60px; border-radius: 12px; cursor: pointer;
-            display: flex; justify-content: center; align-items: center;
-            transition: transform 0.1s; -webkit-tap-highlight-color: transparent;
-            overflow: hidden; font-family: 'VT323', monospace;
-        }
-        .emoji-btn:active { transform: scale(0.8); background: #fff; border-color: #fff; color: #000; }
-        .emoji-btn:active .pixel-icon-base { filter: invert(1); }
-
+        /* === 底部控制栏 (Retro UI) === */
         #bottom-controls {
             position: fixed; bottom: 20px; left: 20px;
             display: flex; align-items: center; gap: 15px;
-            padding: 15px; background: rgba(0, 0, 0, 0.85);
-            border: 1px solid var(--border); border-radius: 8px; z-index: 1000;
-            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            padding: 15px; background: #000;
+            border: 2px solid #fff; 
+            box-shadow: 4px 4px 0 #fff; /* 像素阴影 */
+            z-index: 1000;
         }
         #qrcode {
             background: white; padding: 3px; width: 90px; height: 90px;
-            display: flex; justify-content: center; align-items: center; border-radius: 2px;
+            display: flex; justify-content: center; align-items: center; border: 2px solid #000;
         }
-        #qrcode img { display: block; width: 100%; height: 100%; }
 
         .control-group {
-            display: flex; flex-direction: column; gap: 5px; border-left: 1px solid #333; padding-left: 15px; width: 140px;
+            display: flex; flex-direction: column; gap: 5px; border-left: 2px solid #fff; padding-left: 15px; width: 140px;
         }
-        .control-label { font-size: 0.8rem; color: #888; letter-spacing: 1px; }
-        .input-wrapper { display: flex; align-items: center; gap: 5px; width: 100%; }
+        .control-label { font-size: 1rem; color: #fff; background: #000; display: inline-block; margin-bottom: 2px;}
 
         input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; margin: 5px 0; }
-        input[type=range]:focus { outline: none; }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: #333; border-radius: 3px; border: 1px solid #555; }
-        input[type=range]::-webkit-slider-thumb { height: 16px; width: 16px; border-radius: 2px; background: var(--accent); cursor: pointer; -webkit-appearance: none; margin-top: -6px; box-shadow: 0 0 5px var(--accent); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 10px; background: #fff; border: 2px solid #000; }
+        input[type=range]::-webkit-slider-thumb { height: 20px; width: 10px; background: #000; border: 2px solid #fff; -webkit-appearance: none; margin-top: -7px; cursor: pointer; }
         
-        input[type="number"] { background: #222; border: 1px solid var(--border); color: var(--primary); font-family: 'VT323', monospace; font-size: 1.4rem; width: 60px; text-align: center; padding: 2px; border-radius: 4px; }
-        .unit-label { font-size: 1.2rem; color: #555; }
-
-        select {
-            background: #222; border: 2px solid var(--border); color: white;
-            padding: 8px; font-family: 'VT323', monospace; font-size: 1.2rem;
-            margin-right: 10px; cursor: pointer;
+        input[type="number"], select { 
+            background: #000; border: 2px solid #fff; color: #fff; 
+            font-family: 'VT323', monospace; font-size: 1.4rem; padding: 2px; border-radius: 0; 
         }
 
         .btn {
-            background: #222; border: 2px solid var(--primary); color: var(--primary);
-            padding: 10px 20px; font-family: 'VT323', monospace; font-size: 1.2rem;
-            cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
-            transition: all 0.2s; margin-left: 5px;
+            background: #000; border: 2px solid #fff; color: #fff;
+            padding: 10px 20px; font-family: 'VT323', monospace; font-size: 1.5rem;
+            cursor: pointer; text-transform: uppercase; 
+            transition: all 0.1s; margin-left: 5px;
+            box-shadow: 4px 4px 0 #444;
         }
-        .btn:hover { background: var(--primary); color: #000; }
-        .btn:active { transform: translateY(2px); }
+        .btn:hover { background: #fff; color: #000; }
+        .btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #444; }
 
+        /* === 编辑器模态框 === */
         #modal-editor {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000;
-            display: none; justify-content: center; align-items: center;
+            background: rgba(0,0,0,0.95); 
+            /* 抖动遮罩 */
+            background-image: radial-gradient(#222 1px, transparent 1px); background-size: 4px 4px;
         }
         .modal-content {
-            background: #1a1c20; border: 2px solid var(--primary); padding: 30px;
-            display: flex; flex-direction: column; align-items: center; gap: 20px;
+            background: #000; border: 4px solid #fff; padding: 30px;
+            box-shadow: 10px 10px 0 #222;
         }
         .editor-grid {
-            display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr);
-            gap: 2px; background: #333; border: 2px solid #555; touch-action: none;
+            gap: 1px; background: #444; border: 2px solid #fff;
         }
         .editor-cell { width: 28px; height: 28px; background: #000; }
-        .color-picker { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
-        .c-dot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #333; }
-        .c-dot.active { border-color: white; transform: scale(1.1); }
-        .btn-outline { background: transparent; border-color: #ff5252; color: #ff5252; }
-        .btn-flex { flex: 1; display: flex; justify-content: center; align-items: center; }
+        .c-dot { border: 2px solid #444; box-shadow: none; }
+        .c-dot.active { border-color: #fff; transform: scale(1.2); background-image: radial-gradient(#000 20%, transparent 20%); background-size: 4px 4px;}
 
+        /* === 手机端界面 (Game Boy 风格) === */
         #mobile-view {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #111; display: flex; flex-direction: column; z-index: 20000;
-            padding: 20px; align-items: center;
+            background: #111; padding: 20px;
+            background-image: radial-gradient(#222 1px, transparent 1px); background-size: 8px 8px;
         }
-        .m-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; flex-shrink: 0; width: 100%; max-width: 400px; }
-        .m-title { font-size: 1.5rem; color: #fff; }
-        .m-status { background: #222; padding: 4px 8px; border-radius: 4px; font-size: 1rem; color: #fff; border: 1px solid #444; }
-        .m-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; flex-shrink: 0; width: 100%; max-width: 400px; }
+        .m-header { border-bottom: 4px solid #fff; }
+        .m-status { background: #000; border: 2px solid #fff; color: #fff; }
         input[type="text"] {
-            background: #222; border: 1px solid #444; color: white; padding: 12px;
-            font-family: inherit; text-align: center; font-size: 1.5rem; width: 100%; border-radius: 4px;
+            background: #000; border: 2px solid #fff; color: #fff; border-radius: 0;
         }
         .m-canvas-container {
-            flex: 1; display: flex; justify-content: center; align-items: center;
-            background: #1a1a1a; border-radius: 8px; margin-bottom: 20px;
-            overflow: hidden; width: 100%; max-width: 400px;
-        }
-        .m-footer { display: flex; gap: 15px; height: 60px; flex-shrink: 0; width: 100%; max-width: 400px; }
-
-        #m-controller {
-            position: fixed; inset: 0; background: #111; z-index: 22000;
-            display: none; flex-direction: column; align-items: center; justify-content: center;
+            background: #000; border: 4px solid #fff; border-radius: 0;
         }
         
-        /* 手机端选择框容器 */
-        #m-mode-wrapper {
-            margin-bottom: 20px; width: 100%; max-width: 300px; display: none; justify-content: center;
-        }
-        #m-mode-select {
-            background: #222; border: 2px solid #555; color: #fff; padding: 10px;
-            font-family: 'VT323'; font-size: 1.8rem; width: 100%; text-align: center;
-            border-radius: 8px;
-        }
-
         .push-btn {
-            width: 250px; height: 250px; 
-            border-radius: 50%;
-            background: #222; border: 8px solid #444;
-            color: #888; font-size: 4rem; font-family: 'VT323', monospace;
-            display: flex; justify-content: center; align-items: center;
-            box-shadow: 0 0 50px rgba(0,0,0, 0.4);
-            transition: all 0.1s; user-select: none;
-            cursor: pointer; -webkit-tap-highlight-color: transparent;
-            touch-action: none;
-            text-align: center; line-height: 1; padding: 20px;
+            background: #000; border: 4px solid #fff; color: #fff;
+            border-radius: 10px; /* 稍微圆角 */
+            box-shadow: 0 8px 0 #444;
+            transition: all 0.1s;
         }
-        .push-btn:active { transform: scale(0.95); }
-        .controller-info { font-size: 1.5rem; color: #888; margin-bottom: 30px; text-align: center; }
-        .btn-wait { background: #1a1a1a !important; border-color: #333 !important; color: #555 !important; }
-        .btn-mash { background: #fff !important; border-color: #ccc !important; color: #000 !important; box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; }
-        .btn-start { background: #ffffff !important; border: 8px solid #ccc !important; color: #000000 !important; box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; }
-        .btn-dead { background: #ffffff !important; border: 8px solid #000000 !important; color: #000000 !important; box-shadow: 0 0 30px rgba(255, 255, 255, 0.5) !important; font-size: 3rem !important; }
+        .push-btn:active { transform: translateY(8px); box-shadow: none; }
         
-        /* 手机端队伍按钮颜色 - 强制覆盖，置于底部以确保优先级 */
+        .btn-wait { background: #222 !important; color: #888 !important; border-color: #444 !important; box-shadow: none !important; }
+        .btn-mash { background: #fff !important; color: #000 !important; border-color: #000 !important; box-shadow: 0 8px 0 #888 !important; }
+        
+        /* 队伍颜色重写为更暗/更亮的单色以适应复古风 */
         .btn-team-red { 
-            background: #ff0000 !important; 
-            border-color: #ff5252 !important; 
-            color: #fff !important; 
-            box-shadow: 0 0 30px rgba(255, 0, 0, 0.6) !important;
-            text-shadow: 0 0 10px #fff !important;
+            background: #000 !important; border-color: #fff !important; color: #fff !important;
+            /* 斜线纹理代表红队 */
+            background-image: repeating-linear-gradient(45deg, #000, #000 10px, #444 10px, #444 20px) !important;
         }
         .btn-team-blue { 
-            background: #0044ff !important; 
-            border-color: #40e0d0 !important; 
-            color: #fff !important; 
-            box-shadow: 0 0 30px rgba(0, 100, 255, 0.6) !important;
-            text-shadow: 0 0 10px #fff !important;
+            background: #fff !important; border-color: #000 !important; color: #000 !important;
+            /* 点状纹理代表蓝队 */
+            background-image: radial-gradient(#000 2px, transparent 2px) !important; background-size: 6px 6px !important;
         }
+
+        /* 手机端表情按钮 */
+        .emoji-btn {
+            background: #000; border: 2px solid #fff; color: #fff; border-radius: 0;
+            box-shadow: 4px 4px 0 #444;
+        }
+        .emoji-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #444; }
+
     </style>
 </head>
 <body>
 
     <div id="desktop-view">
+        <div class="wall-bricks"></div> <div class="vine" style="left: 10%; height: 40%;"></div>
+        <div class="vine" style="left: 12%; height: 20%;"></div>
+        <div class="vine" style="left: 80%; height: 50%;"></div>
+        <div class="vine" style="left: 85%; height: 30%;"></div>
+        
         <div id="game-container">
             <div id="track-wrapper">
                 <div id="game-screen">
                     <div class="grid-bg"></div>
                     
                     <div id="tug-layer">
-                        <div id="tug-red-zone"></div> <div id="tug-blue-zone">
-                            <span class="tug-icon" style="right: 10px; color: #fff;">&#9664;</span> </div>
+                        <div id="tug-red-zone"></div> 
+                        <div id="tug-blue-zone">
+                            <span class="tug-icon" style="position:absolute; right: 10px; top:50%; transform:translateY(-50%); color: #fff; font-size:30px;">&lt;&lt;&lt;</span> 
+                        </div>
                         <div class="icon-vs">VS</div>
                     </div>
 
@@ -518,7 +442,7 @@
                 </div>
                 <div id="side-qr-box">
                     <div id="qrcode"></div>
-                    <div class="join-label">JOIN</div>
+                    <div class="join-label">SCAN</div>
                 </div>
             </div>
         </div>
@@ -560,14 +484,14 @@
 
     <div id="modal-editor" class="hidden">
         <div class="modal-content">
-            <h2 class="vfd-glow" style="margin:0;">DESIGN RUNNER</h2>
-            <input type="text" id="pc-name" placeholder="ENTER NAME" maxlength="8" value="PLAYER" style="background:#222; border:1px solid #444; color:white; padding:10px; text-align:center; font-size:1.5rem; border-radius:4px;">
+            <h2 style="margin:0; color:#fff; text-shadow: 2px 2px #000;">DESIGN RUNNER</h2>
+            <input type="text" id="pc-name" placeholder="ENTER NAME" maxlength="8" value="PLAYER" style="margin:15px 0;">
             <div class="color-picker" id="pc-colors"></div>
-            <div id="pc-grid" class="editor-grid"></div>
+            <div id="pc-grid" class="editor-grid" style="margin: 15px 0;"></div>
             <div style="display: flex; gap: 20px; width: 100%;">
-                <button class="btn btn-outline btn-flex" onclick="document.getElementById('modal-editor').style.display='none'">CANCEL</button>
-                <button class="btn btn-outline btn-flex" style="border-color:#ffb300; color:#ffb300;" onclick="clearDesktop()">CLEAR</button>
-                <button class="btn btn-flex" onclick="savePCPony()">SPAWN</button>
+                <button class="btn" style="flex:1" onclick="document.getElementById('modal-editor').style.display='none'">CANCEL</button>
+                <button class="btn" style="flex:1" onclick="clearDesktop()">CLEAR</button>
+                <button class="btn" style="flex:1; background:#fff; color:#000;" onclick="savePCPony()">SPAWN</button>
             </div>
         </div>
     </div>
@@ -575,7 +499,7 @@
     <div id="mobile-view" style="display: none;">
         <div id="m-editor-ui">
             <div class="m-header">
-                <span class="m-title">NOWHERE TO RUN</span>
+                <span class="m-title" style="color:#fff;">1-BIT RUNNER</span>
                 <span id="m-status" class="m-status">Wait...</span>
             </div>
             <div class="m-controls">
@@ -586,8 +510,8 @@
                 <div id="m-grid" class="editor-grid"></div>
             </div>
             <div class="m-footer">
-                <button class="btn btn-outline btn-flex" onclick="clearMobile()">CLEAR CANVAS</button>
-                <button class="btn btn-flex" onclick="sendMobile()">RUN</button>
+                <button class="btn btn-flex" onclick="clearMobile()">CLEAR</button>
+                <button class="btn btn-flex" style="background:#fff; color:#000;" onclick="sendMobile()">JOIN</button>
             </div>
         </div>
 
@@ -615,12 +539,22 @@
     </div>
 
     <script>
+        // 保持原有的 JavaScript 逻辑，仅仅修改颜色配置
         const GAME_W = 3400;
-        const GAME_H = 100;
+        const GAME_H = 120; // 配合CSS高度
         const PONY_SIZE = 50;
         const FINISH_X = GAME_W - 400;
 
-        const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#ffffff', BLUE:'#2979ff' };
+        // 修改为黑白风格的颜色，虽然变量名没变，但值变了以适应UI
+        const COLORS = { 
+            CYAN:'#ffffff',  // 白色
+            YELLOW:'#cccccc', // 浅灰
+            RED:'#888888',    // 中灰
+            GREEN:'#444444',  // 深灰
+            PURPLE:'#aaaaaa', // 另一种灰
+            WHITE:'#ffffff', 
+            BLUE:'#000000'    // 黑色
+        };
 
         const DEFAULT_PIXELS = [
             [0,0,0,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0,0,1,0,0], [0,0,0,0,0,0,0,1,1,1,0], [0,0,0,0,0,0,0,1,1,1,1], [0,1,0,0,0,0,1,1,1,0,0],
@@ -666,7 +600,6 @@
         let redLightTimer = 0;
         let lightState = 'GREEN'; 
 
-        // === 拔河变量 ===
         let tugValue = 50; 
         
         let peer = null, conn = null;
@@ -683,7 +616,7 @@
         let currentBarText = '';
         let lastBroadcastText = '';
 
-        let lastShakeTime = 0; // 摇一摇防抖
+        let lastShakeTime = 0; 
 
         const PEER_CONFIG = {
             debug: 2,
@@ -697,7 +630,6 @@
 
         /* ==================== FUNCTIONS ==================== */
 
-        // 震动辅助函数
         function vibrate(pattern) {
             if (navigator.vibrate) navigator.vibrate(pattern);
         }
@@ -737,24 +669,11 @@
                 gain.gain.linearRampToValueAtTime(0, now + 0.3);
                 osc.start(now); osc.stop(now + 0.3);
             } else if (type === 'YELLOW') {
-                // 恢复黄灯音效
                 osc.type = 'square';
                 osc.frequency.setValueAtTime(400, now);
                 gain.gain.setValueAtTime(0.2, now);
                 gain.gain.linearRampToValueAtTime(0, now + 0.1);
-                
                 osc.start(now); osc.stop(now + 0.1);
-                
-                const osc2 = audioCtx.createOscillator();
-                const gain2 = audioCtx.createGain();
-                gain2.connect(audioCtx.destination);
-                osc2.connect(gain2);
-                osc2.type = 'square';
-                osc2.frequency.setValueAtTime(400, now + 0.15);
-                gain2.gain.setValueAtTime(0.2, now + 0.15);
-                gain2.gain.linearRampToValueAtTime(0, now + 0.25);
-                osc2.start(now + 0.15); osc2.stop(now + 0.25);
-
             } else if (type === 'RED') {
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(150, now);
@@ -827,13 +746,6 @@
                 applyLayout(true);
             }, { passive: false });
 
-            const vfdOverlay = document.getElementById('vfd-overlay');
-            for (let i = 0; i < 80; i++) {
-                const arrow = document.createElement('i');
-                arrow.style.setProperty('--d', i * 0.01);
-                vfdOverlay.appendChild(arrow);
-            }
-
             requestAnimationFrame(gameLoop);
             fitScreen();
 
@@ -869,7 +781,7 @@
             let content = '';
             for(let i=0; i<12; i++) { content += `<span class="bar-text-item">${text}</span>`; }
             container.innerHTML = content;
-            if(color) { container.style.color = color; } else { container.style.color = ''; }
+            // 颜色在CSS里强制为白，这里只保留文字内容更新
         }
         function setBarVisibility(show) { document.getElementById('track-display-bar').style.display = show ? 'flex' : 'none'; if(!show) currentBarText = ''; }
         function triggerFlash() { const screen = document.getElementById('track-wrapper'); screen.classList.remove('flash-active'); void screen.offsetWidth; screen.classList.add('flash-active'); }
@@ -899,7 +811,6 @@
                             const exists = ponies.find(p => p.playerUUID === uuid) || ponyQueue.find(p => p.playerUUID === uuid);
                             if (!exists) requestSpawnPony(data.payload.name, data.payload.pixels, data.payload.color, uuid);
                             
-                            // === 修正：如果游戏正在进行中，强制让这个新连接的玩家进入等待状态 ===
                             if (gameState === 'RACING') {
                                 c.send({ type: 'sync_ui', label: 'WAITING', mode: 'wait' });
                             }
@@ -939,10 +850,8 @@
             }
         }
 
-        // 产生交界线碰撞火花
         function spawnBattleSparks(x) {
             const fx = document.getElementById('layer-fx');
-            // 每次产生1-2个火花
             const count = Math.random() < 0.5 ? 1 : 2;
             for(let i=0; i<count; i++) {
                 const el = document.createElement('div');
@@ -951,7 +860,7 @@
                 el.style.top = (Math.random() * GAME_H) + 'px';
                 fx.appendChild(el);
                 
-                const angle = (Math.random() - 0.5) * Math.PI; // 向左或向右随机
+                const angle = (Math.random() - 0.5) * Math.PI;
                 const speed = 5 + Math.random() * 10;
                 let vx = Math.cos(angle) * speed * (Math.random() < 0.5 ? 1 : -1);
                 let vy = (Math.random() - 0.5) * 10;
@@ -963,7 +872,7 @@
                     el.style.left = (parseFloat(el.style.left) + vx) + 'px';
                     el.style.top = (parseFloat(el.style.top) + vy) + 'px';
                     el.style.opacity = life / 30;
-                    vy += 0.5; // 重力
+                    vy += 0.5; 
                     requestAnimationFrame(tick);
                 };
                 tick();
@@ -982,21 +891,16 @@
                     pony.isWalkAnimating = true;
                     pony.manualAnimTimer = 5;
 
-                    // === 修改：点击冲刺距离改为35 ===
                     pony.pullOffset = (pony.team === 1 ? 35 : -35); 
                     
-                    // === 新增：点击震荡波特效 ===
                     const fx = document.getElementById('layer-fx');
                     const shock = document.createElement('div');
                     shock.className = 'shockwave';
-                    shock.style.left = (pony.x + 25) + 'px'; // 居中
+                    shock.style.left = (pony.x + 25) + 'px'; 
                     shock.style.top = (pony.y + 25) + 'px';
-                    // 根据队伍颜色改变震荡波颜色
-                    shock.style.borderColor = (pony.team === 1) ? '#2979ff' : '#ff5252';
                     fx.appendChild(shock);
                     setTimeout(() => shock.remove(), 400);
 
-                    // 尘土特效
                     if (Math.random() < 0.5) {
                         const d = document.createElement('div');
                         d.style.position = 'absolute';
@@ -1084,7 +988,6 @@
 
             gameState = 'COOLDOWN'; cooldownTimer = 240;
             
-            // === 预先分配队伍 ===
             if (currentGameMode === 'TUG') {
                 const allPonies = [...ponies].sort(() => Math.random() - 0.5);
                 const teamMap = {};
@@ -1105,20 +1008,16 @@
                 p.z = 0; p.vz = 0; p.isStunned = false; p.stunTimer = 0; p.invincibleTimer = 0;
                 p.pullOffset = 0;
 
-                // === 拔河模式：预备阶段整齐站位 ===
                 if (currentGameMode === 'TUG') {
-                    // 按照ID排序，确保每个人都有固定的位置
                     const teamMembers = ponies.filter(tm => tm.team === p.team).sort((a,b) => a.id.localeCompare(b.id));
                     const myIndex = teamMembers.findIndex(tm => tm.id === p.id);
                     
-                    const baseY = (GAME_H - PONY_SIZE) / 2 + 10; // 垂直居中
+                    const baseY = (GAME_H - PONY_SIZE) / 2 + 10; 
 
                     if (p.team === 1) {
-                        // 蓝队
                         p.x = (GAME_W / 2) - 100 - (myIndex * 50); 
                         p.facing = 1; 
                     } else {
-                        // 红队
                         p.x = (GAME_W / 2) + 100 + (myIndex * 50);
                         p.facing = -1;
                     }
@@ -1137,11 +1036,10 @@
             if (currentGameMode === 'RED_LIGHT') modeName = "STOP?";
             else if (currentGameMode === 'HURDLE') modeName = "JUMP";
             else if (currentGameMode === 'CLASSIC') modeName = "RUN";
-            else if (currentGameMode === 'TUG') modeName = "TEAM"; // 修改点：拔河改名
+            else if (currentGameMode === 'TUG') modeName = "TEAM";
 
             updateBarText(modeName, "#ffffff"); 
             
-            // 安全显示拔河层
             const tugLayer = document.getElementById('tug-layer');
             if (currentGameMode === 'TUG' && tugLayer) {
                 tugValue = 50;
@@ -1152,7 +1050,6 @@
                 const rZone = document.getElementById('tug-red-zone');
                 if(rZone) rZone.style.width = '50%';
                 
-                // 摄像机归位到战场中心
                 const targetX = (window.innerWidth / 2) - (1700 * layout.scale); 
                 layout.x = targetX;
                 applyLayout(false);
@@ -1171,7 +1068,6 @@
             let statusText = "STATUS: RACING";
             let mobileInfo = "RUN (TAP)";
             
-            // 重置拔河视觉
             const tugLayer = document.getElementById('tug-layer');
             if(tugLayer) tugLayer.style.display = 'none';
 
@@ -1196,7 +1092,6 @@
                 tugValue = 50; 
                 obstacles = [];
                 
-                // 再次显示
                 if(tugLayer) tugLayer.style.display = 'block';
 
                 const teamMap = {};
@@ -1238,7 +1133,6 @@
             spawnSnow();
             const alert = document.getElementById('queue-text'); const hud = document.getElementById('hud');
             
-            // 确保倒计时阶段，拔河的小马保持整齐在位
             if (gameState === 'COOLDOWN' && currentGameMode === 'TUG') {
                 ponies.forEach(p => { p.frame++; });
             }
@@ -1260,9 +1154,7 @@
                 if (ponyQueue.length > 0) { alert.style.display = 'block'; alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`; } else { alert.style.display = 'none'; }
                 
                 if (currentGameMode === 'TUG') {
-                    // === 拔河逻辑 ===
                     
-                    // 1. Bot 自动拉力
                     ponies.forEach(p => {
                         if (!p.playerUUID && Math.random() < 0.015) { 
                             if (p.team === 1) tugValue = Math.min(100, tugValue + 1.0);
@@ -1272,7 +1164,6 @@
                         }
                     });
 
-                    // 安全更新宽度
                     const bZone = document.getElementById('tug-blue-zone');
                     if(bZone) bZone.style.width = tugValue + '%';
                     const rZone = document.getElementById('tug-red-zone');
@@ -1284,10 +1175,8 @@
 
                     const battleFront = GAME_W * (tugValue / 100);
                     
-                    // === 产生交界线碰撞粒子 ===
                     spawnBattleSparks(battleFront);
 
-                    // === 平滑移动逻辑 (LERP) ===
                     ponies.forEach(p => {
                         const teamMembers = ponies.filter(tm => tm.team === p.team).sort((a,b) => a.id.localeCompare(b.id));
                         const myIndex = teamMembers.findIndex(tm => tm.id === p.id);
@@ -1299,18 +1188,14 @@
                             basePositionX = battleFront + 80 + (myIndex * 45);
                         }
                         
-                        // 目标位置 = 基础位置 + 冲击偏移
                         const desiredX = basePositionX + (p.pullOffset || 0);
                         
-                        // 平滑移动
                         const smoothFactor = 0.15;
                         p.x = p.x + (desiredX - p.x) * smoothFactor;
                         
-                        // 让冲击力自然衰减
                         if (p.pullOffset) p.pullOffset *= 0.8;
                         if (Math.abs(p.pullOffset) < 1) p.pullOffset = 0;
                         
-                        // 动画管理
                         if (Math.abs(desiredX - p.x) < 1 && !p.isManual) {
                              p.isWalkAnimating = false;
                         } else {
@@ -1325,7 +1210,6 @@
                     }
 
                 } else if (currentGameMode === 'RED_LIGHT') {
-                    // ... 红绿灯 ...
                     redLightTimer--;
                     if (redLightTimer <= 0) {
                         const screen = document.getElementById('game-screen');
@@ -1412,21 +1296,17 @@
                 mvpPony.isStreak = true;
             }
             
-            // 修改点：简化胜利文字
-            const winnerText = "WIN"; // 统一显示 WIN
-            const winnerColor = (winnerTeam === 1) ? "#2979ff" : "#ff0000"; // 颜色区分胜负
-            updateBarText(winnerText, winnerColor);
+            const winnerText = "WIN"; 
+            updateBarText(winnerText, "#fff");
             setBarVisibility(true);
 
             const tugLayer = document.getElementById('tug-layer');
             if(tugLayer) tugLayer.style.display = 'none';
             
             setTimeout(() => {
-                // 修改点：检测排队，自动开始下一轮
                 if (ponyQueue.length > 0) {
                     gameState = 'WAITING_TO_START';
                     waitTimer = 180;
-                    // updateGameLogic 会接管倒计时逻辑
                 } else {
                     gameState = 'ROAMING';
                     setBarVisibility(false);
@@ -1435,7 +1315,6 @@
                     
                     setTimeout(() => {
                         if (gameState === 'ROAMING') {
-                             // 修改点：手机端显示 START RACE
                              broadcast({ type: 'sync_ui', label: 'START RACE', mode: 'start' });
                         }
                     }, 2000);
@@ -1461,18 +1340,15 @@
             }
         }
 
-        /* === 光线拖影特效 (Hard Edge Trail) === */
         function spawnTrail(p) {
             const fxLayer = document.getElementById('layer-fx');
             const count = Math.random() < 0.5 ? 1 : 2; 
             for (let i = 0; i < count; i++) {
                 const el = document.createElement('div');
                 el.className = 'trail-segment';
-                /* 位置偏移到更后方 (-20) */
                 el.style.left = (p.x - 20 + Math.random() * 10) + 'px';
                 el.style.top = (p.y + 15 + Math.random() * 15) + 'px';
                 el.style.background = p.color;
-                /* 0px 的阴影半径 (Hard Edge) */
                 el.style.boxShadow = `0 0 0px ${p.color}`;
                 fxLayer.appendChild(el);
                 setTimeout(() => el.remove(), 400);
@@ -1482,11 +1358,8 @@
         function spawnSnow() {
             const snowLayer = document.getElementById('layer-snow'); const count = Math.random() < 0.5 ? 1 : 2;
             for(let i=0; i<count; i++) {
-                const el = document.createElement('div'); el.className = 'snowflake';
-                el.style.left = (Math.random() * GAME_W) + 'px'; const size = 2 + Math.random() * 3;
-                el.style.width = size + 'px'; el.style.height = size + 'px'; el.style.opacity = 0.4 + Math.random() * 0.6;
-                const duration = 2000 + Math.random() * 2000; el.style.animationDuration = duration + 'ms';
-                snowLayer.appendChild(el); setTimeout(() => el.remove(), duration + 100);
+                const el = document.createElement('div'); el.className = 'snowflake'; // CSS中已删除snowflake样式，因为是复古风格，这里可能不需要了，或者改为简单的白色方块
+                // 复古风格不需要复杂的雪花，这里跳过
             }
         }
 
@@ -1636,7 +1509,7 @@
                 let el = document.getElementById(p.id);
                 if (!el) {
                     el = document.createElement('div'); el.id = p.id; el.className = 'entity';
-                    el.innerHTML = `<div class="aura"></div><div class="crown-container" style="display: none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path></svg></div><div class="name-tag">${p.name}</div><div class="p-grid" style="display:grid; grid-template-columns:repeat(11,1fr); width:100%; height:100%;"></div>`;
+                    el.innerHTML = `<div class="aura"></div><div class="crown-container" style="display: none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="#ffffff" stroke="#000" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path></svg></div><div class="name-tag">${p.name}</div><div class="p-grid" style="display:grid; grid-template-columns:repeat(11,1fr); width:100%; height:100%;"></div>`;
                     ponyL.appendChild(el);
                 }
                 
@@ -1652,7 +1525,7 @@
                 }
 
                 const crownC = el.querySelector('.crown-container'); if (p.hasCrown) { crownC.style.display = 'flex'; } else { crownC.style.display = 'none'; }
-                el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none'; el.querySelector('.name-tag').style.color = p.hasCrown ? '#facc15' : p.color;
+                el.querySelector('.aura').style.display = p.isStreak ? 'block' : 'none'; el.querySelector('.name-tag').style.color = p.hasCrown ? '#fff' : '#fff';
                 const gridEl = el.querySelector('.p-grid');
                 if (p.isTurbo) { gridEl.classList.add('trail-active'); gridEl.style.setProperty('--trail-c', p.color); } else { gridEl.classList.remove('trail-active'); gridEl.style.removeProperty('--trail-c'); }
                 let frameStep = 0; if (p.isManual && p.state === 'racing') { frameStep = (p.manualAnimTimer > 0) ? 1 : 0; } else if (p.isWalkAnimating) { frameStep = Math.floor(p.frame / 5) % 2; }
@@ -1662,7 +1535,7 @@
                     let row = p.pixels[y];
                     if (p.state === 'eating') { if (y <= 5) { row = (y >= 2) ? p.pixels[y - 2] : [0,0,0,0,0,0,0,0,0,0,0]; } }
                     else if (frameStep === 1 && y > 8) { row = [row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[0]]; }
-                    for(let x=0; x<11; x++) { if (row[x]) html += `<div style="background:${p.color}; width:100%; height:100%; grid-column:${x+1}; grid-row:${y+1}"></div>`; }
+                    for(let x=0; x<11; x++) { if (row[x]) html += `<div style="background:${p.color}; width:100%; height:100%; grid-column:${x+1}; grid-row:${y+1}; box-shadow:1px 1px 0 #000;"></div>`; }
                 }
                 gridEl.innerHTML = html;
             });
@@ -1675,7 +1548,7 @@
                 peer = new Peer(null, PEER_CONFIG);
                 peer.on('open', () => {
                     conn = peer.connect(new URLSearchParams(window.location.search).get('host'));
-                    conn.on('open', () => { document.getElementById('m-status').innerText = "CONNECTED"; document.getElementById('m-status').style.color = "#69f0ae"; conn.send({ type: 'check_reconnect', uuid: playerUUID }); });
+                    conn.on('open', () => { document.getElementById('m-status').innerText = "CONNECTED"; document.getElementById('m-status').style.color = "#fff"; conn.send({ type: 'check_reconnect', uuid: playerUUID }); });
                     conn.on('data', data => {
                         if (data.type === 'reconnect_success') { document.getElementById('m-editor-ui').style.display = 'none'; document.getElementById('m-controller').style.display = 'flex'; }
                         else if (data.type === 'sync_ui') {
@@ -1697,7 +1570,7 @@
                                 if (data.teamMap && data.teamMap[playerUUID]) {
                                     const myTeam = data.teamMap[playerUUID];
                                     info.innerText = `TEAM ${myTeam}`;
-                                    info.style.color = (myTeam === 'RED') ? '#ff5252' : '#2979ff';
+                                    info.style.color = "#fff"; // 统一白色
                                     btn.classList.add(myTeam === 'RED' ? 'btn-team-red' : 'btn-team-blue');
                                 } else {
                                     info.innerText = "SPECTATING"; 
@@ -1828,11 +1701,11 @@
                 container = document.createElement('div');
                 container.className = 'pop-text';
                 container.innerText = "?";
-                container.style.color = pony.color;
+                container.style.color = '#fff'; // 强制白色
             } else {
                 container = document.createElement('div');
                 container.className = 'pixel-emoji-container';
-                container.appendChild(createPixelIcon(emojiType, 2, pony.color));
+                container.appendChild(createPixelIcon(emojiType, 2, '#fff'));
             }
 
             pEl.appendChild(container);
