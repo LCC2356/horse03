@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - TEAM MODE</title>
+    <title>HORSE RUNRUN - RANDOM TEAMS</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -68,7 +68,7 @@
         #tug-layer {
             position: absolute; inset: 0; z-index: 1; display: none;
         }
-        /* 蓝色区域（左侧）- 升级为强发光风格 */
+        /* 蓝色区域（左侧）- 默认样式，会被动态CSS覆盖 */
         #tug-blue-zone {
             position: absolute; left: 0; top: 0; bottom: 0;
             width: 50%; 
@@ -76,17 +76,17 @@
             box-shadow: inset 0 0 80px #2979ff; 
             border-right: 6px solid #fff; 
             filter: drop-shadow(0 0 10px #fff);
-            transition: width 0.1s linear; 
+            transition: width 0.1s linear, background-color 0.3s, box-shadow 0.3s; 
             z-index: 2;
         }
-        /* 红色区域（右侧）- 升级为强发光风格 */
+        /* 红色区域（右侧）- 默认样式，会被动态CSS覆盖 */
         #tug-red-zone {
             position: absolute; right: 0; top: 0; bottom: 0;
             width: 50%;
             background: #330000; 
             box-shadow: inset 0 0 80px #ff0000; 
             z-index: 1;
-            transition: width 0.1s linear; 
+            transition: width 0.1s linear, background-color 0.3s, box-shadow 0.3s; 
         }
         
         .icon-vs {
@@ -284,6 +284,7 @@
             border: 4px solid rgba(255, 255, 255, 0.8);
             pointer-events: none; z-index: 5;
             animation: shock-expand 0.4s ease-out forwards;
+            transition: border-color 0.3s;
         }
         @keyframes shock-expand {
             0% { width: 10px; height: 10px; opacity: 1; border-width: 4px; }
@@ -470,20 +471,22 @@
         .btn-start { background: #ffffff !important; border: 8px solid #ccc !important; color: #000000 !important; box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; }
         .btn-dead { background: #ffffff !important; border: 8px solid #000000 !important; color: #000000 !important; box-shadow: 0 0 30px rgba(255, 255, 255, 0.5) !important; font-size: 3rem !important; }
         
-        /* 手机端队伍按钮颜色 - 强制覆盖，置于底部以确保优先级 */
-        .btn-team-red { 
-            background: #ff0000 !important; 
-            border-color: #ff5252 !important; 
-            color: #fff !important; 
-            box-shadow: 0 0 30px rgba(255, 0, 0, 0.6) !important;
-            text-shadow: 0 0 10px #fff !important;
-        }
+        /* 手机端队伍按钮颜色 - 默认样式，会被动态CSS覆盖 */
         .btn-team-blue { 
             background: #0044ff !important; 
             border-color: #40e0d0 !important; 
             color: #fff !important; 
             box-shadow: 0 0 30px rgba(0, 100, 255, 0.6) !important;
             text-shadow: 0 0 10px #fff !important;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        .btn-team-red { 
+            background: #ff0000 !important; 
+            border-color: #ff5252 !important; 
+            color: #fff !important; 
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.6) !important;
+            text-shadow: 0 0 10px #fff !important;
+            transition: background-color 0.3s, box-shadow 0.3s;
         }
     </style>
 </head>
@@ -621,6 +624,18 @@
         const FINISH_X = GAME_W - 400;
 
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#ffffff', BLUE:'#2979ff' };
+
+        // === 新增：定义双色配色方案 ===
+        const TEAM_COLOR_SCHEMES = [
+            { name: 'Purple & Lime', c1: '#d500f9', c2: '#76ff03' }, // 类似参考图05
+            { name: 'Blue & Orange', c1: '#2979ff', c2: '#ff6d00' }, // 类似参考图08 (经典蓝橙)
+            { name: 'Cyan & Red',    c1: '#00e5ff', c2: '#ff3d00' }, // 类似参考图01
+            { name: 'Pink & Mint',   c1: '#f50057', c2: '#1de9b6' }, // 类似参考图22
+            { name: 'Teal & Yellow', c1: '#00bfa5', c2: '#ffd600' }  // 类似参考图13
+        ];
+        // 当前使用的队伍颜色，初始为默认蓝红
+        let currentTeam1Color = TEAM_COLOR_SCHEMES[1].c1; 
+        let currentTeam2Color = TEAM_COLOR_SCHEMES[1].c2;
 
         const DEFAULT_PIXELS = [
             [0,0,0,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0,0,1,0,0], [0,0,0,0,0,0,0,1,1,1,0], [0,0,0,0,0,0,0,1,1,1,1], [0,1,0,0,0,0,1,1,1,0,0],
@@ -794,6 +809,42 @@
             myCurrentSongKey = songKeys[Math.floor(Math.random() * songKeys.length)];
             myStyleKey = STYLE_KEYS[Math.floor(Math.random() * STYLE_KEYS.length)];
             noteIndex = 0; 
+        }
+
+        // === 新增：动态更新队伍颜色的CSS ===
+        function updateTeamColorsCSS(c1, c2) {
+            // 找到或创建用于动态样式的 style 标签
+            let styleEl = document.getElementById('dynamic-team-styles');
+            if (!styleEl) {
+                styleEl = document.createElement('style');
+                styleEl.id = 'dynamic-team-styles';
+                document.head.appendChild(styleEl);
+            }
+
+            const css = `
+                /* Team 1 (原蓝色队) */
+                #tug-blue-zone {
+                    background: ${c1}33 !important; /* 加一点透明度作为背景 */
+                    box-shadow: inset 0 0 80px ${c1} !important;
+                }
+                .btn-team-blue {
+                    background: ${c1} !important;
+                    border-color: #fff !important;
+                    box-shadow: 0 0 30px ${c1}99 !important; /* 加透明度 */
+                }
+                
+                /* Team 2 (原红色队) */
+                #tug-red-zone {
+                    background: ${c2}33 !important;
+                    box-shadow: inset 0 0 80px ${c2} !important;
+                }
+                .btn-team-red {
+                    background: ${c2} !important;
+                    border-color: #fff !important;
+                    box-shadow: 0 0 30px ${c2}99 !important;
+                }
+            `;
+            styleEl.innerHTML = css;
         }
 
         window.onload = function() {
@@ -985,14 +1036,14 @@
                     // === 修改：点击冲刺距离改为35 ===
                     pony.pullOffset = (pony.team === 1 ? 35 : -35); 
                     
-                    // === 新增：点击震荡波特效 ===
+                    // === 新增：点击震荡波特效，使用当前队伍颜色 ===
                     const fx = document.getElementById('layer-fx');
                     const shock = document.createElement('div');
                     shock.className = 'shockwave';
                     shock.style.left = (pony.x + 25) + 'px'; // 居中
                     shock.style.top = (pony.y + 25) + 'px';
-                    // 根据队伍颜色改变震荡波颜色
-                    shock.style.borderColor = (pony.team === 1) ? '#2979ff' : '#ff5252';
+                    // 根据当前随机选择的队伍颜色改变震荡波颜色
+                    shock.style.borderColor = (pony.team === 1) ? currentTeam1Color : currentTeam2Color;
                     fx.appendChild(shock);
                     setTimeout(() => shock.remove(), 400);
 
@@ -1086,14 +1137,23 @@
             
             // === 预先分配队伍 ===
             if (currentGameMode === 'TUG') {
+                // --- 新增：随机选择配色方案 ---
+                const scheme = TEAM_COLOR_SCHEMES[Math.floor(Math.random() * TEAM_COLOR_SCHEMES.length)];
+                currentTeam1Color = scheme.c1;
+                currentTeam2Color = scheme.c2;
+                // 应用到 CSS
+                updateTeamColorsCSS(currentTeam1Color, currentTeam2Color);
+                // ---------------------------
+
                 const allPonies = [...ponies].sort(() => Math.random() - 0.5);
                 const teamMap = {};
                 allPonies.forEach((p, index) => {
-                    p.team = (index % 2 === 0) ? 1 : -1; 
+                    p.team = (index % 2 === 0) ? 1 : 2; // 用 1 和 2 区分队伍
                     p.tapCount = 0; 
-                    if (p.playerUUID) teamMap[p.playerUUID] = (p.team === 1) ? 'BLUE' : 'RED';
+                    if (p.playerUUID) teamMap[p.playerUUID] = p.team;
                 });
-                broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait', teamMap: teamMap });
+                // 广播时带上颜色信息
+                broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait', teamMap: teamMap, c1: currentTeam1Color, c2: currentTeam2Color });
             } else {
                 broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
             }
@@ -1114,11 +1174,11 @@
                     const baseY = (GAME_H - PONY_SIZE) / 2 + 10; // 垂直居中
 
                     if (p.team === 1) {
-                        // 蓝队
+                        // 左队
                         p.x = (GAME_W / 2) - 100 - (myIndex * 50); 
                         p.facing = 1; 
                     } else {
-                        // 红队
+                        // 右队
                         p.x = (GAME_W / 2) + 100 + (myIndex * 50);
                         p.facing = -1;
                     }
@@ -1201,9 +1261,10 @@
 
                 const teamMap = {};
                 ponies.forEach(p => {
-                    if (p.playerUUID) teamMap[p.playerUUID] = (p.team === 1) ? 'BLUE' : 'RED';
+                    if (p.playerUUID) teamMap[p.playerUUID] = p.team;
                 });
-                broadcast({ type: 'sync_ui', label: 'PULL!', mode: 'tug', teamMap: teamMap });
+                // 广播时带上颜色信息
+                broadcast({ type: 'sync_ui', label: 'PULL!', mode: 'tug', teamMap: teamMap, c1: currentTeam1Color, c2: currentTeam2Color });
             } else {
                 statusText = "STATUS: RUN";
                 obstacles = [];
@@ -1321,7 +1382,7 @@
                     if (tugValue >= 95) {
                         endTugWar(1); // Blue Wins
                     } else if (tugValue <= 5) {
-                        endTugWar(-1); // Red Wins
+                        endTugWar(2); // Red Wins
                     }
 
                 } else if (currentGameMode === 'RED_LIGHT') {
@@ -1412,9 +1473,9 @@
                 mvpPony.isStreak = true;
             }
             
-            // 修改点：简化胜利文字
+            // 修改点：简化胜利文字，使用当前队伍颜色
             const winnerText = "WIN"; // 统一显示 WIN
-            const winnerColor = (winnerTeam === 1) ? "#2979ff" : "#ff0000"; // 颜色区分胜负
+            const winnerColor = (winnerTeam === 1) ? currentTeam1Color : currentTeam2Color; // 颜色区分胜负
             updateBarText(winnerText, winnerColor);
             setBarVisibility(true);
 
@@ -1695,10 +1756,13 @@
                                 btn.innerText = "PULL!";
                                 
                                 if (data.teamMap && data.teamMap[playerUUID]) {
-                                    const myTeam = data.teamMap[playerUUID];
-                                    info.innerText = `TEAM ${myTeam}`;
-                                    info.style.color = (myTeam === 'RED') ? '#ff5252' : '#2979ff';
-                                    btn.classList.add(myTeam === 'RED' ? 'btn-team-red' : 'btn-team-blue');
+                                    const myTeamId = data.teamMap[playerUUID];
+                                    const isTeam1 = myTeamId === 1;
+                                    info.innerText = `TEAM ${myTeamId}`;
+                                    // 使用广播来的颜色
+                                    info.style.color = isTeam1 ? data.c1 : data.c2; 
+                                    // 添加对应的类名（样式已被动态 CSS 修改）
+                                    btn.classList.add(isTeam1 ? 'btn-team-blue' : 'btn-team-red');
                                 } else {
                                     info.innerText = "SPECTATING"; 
                                 }
