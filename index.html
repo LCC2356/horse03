@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - BLUE vs ORANGE</title>
+    <title>HORSE RUNRUN - CYBER GRADIENTS</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -56,7 +56,8 @@
             box-shadow: none;
             overflow: hidden;
             flex-shrink: 0;
-            transition: background-color 0.1s, border-color 0.1s, box-shadow 0.1s;
+            /* 移除旧的过渡，背景现在由JS动态控制 */
+            transition: border-color 0.1s;
         }
 
         /* === 红绿灯模式背景样式 === */
@@ -68,12 +69,16 @@
         #tug-layer {
             position: absolute; inset: 0; z-index: 1; display: none;
         }
-        /* 注意：#tug-blue-zone 和 #tug-red-zone 的样式现在完全由 JS 动态生成 */
+        /* 注意：#tug-blue-zone 和 #tug-red-zone 的核心样式 (background, filter, box-shadow)
+           现在完全由 JavaScript 的 updateTeamColorsCSS 函数动态生成，以实现复杂的渐变效果。
+        */
         #tug-blue-zone {
             position: absolute; left: 0; top: 0; bottom: 0;
             width: 50%; 
             transition: width 0.1s linear; 
             z-index: 2;
+            /* 默认边框，会被JS覆盖 */
+            border-right: 2px solid rgba(255,255,255,0.5);
         }
         #tug-red-zone {
             position: absolute; right: 0; top: 0; bottom: 0;
@@ -618,9 +623,13 @@
 
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#ffffff', BLUE:'#2979ff' };
 
-        // === 1. 修改：仅使用指定的蓝橙配色，并使用高饱和度色值 ===
+        // === 1. 修改：定义两套基于参考图的赛博朋克渐变配色方案 ===
+        // c1 是左侧队伍的主色，c2 是右侧队伍的主色
         const TEAM_COLOR_SCHEMES = [
-            { name: 'Blue & Orange', c1: '#0000ff', c2: '#ff4500' } // 纯蓝 & 橙红
+            // 方案 1 (类似第一张图): 左青蓝 vs 右粉紫
+            { name: 'Cyan/Blue vs Magenta/Pink', c1: '#00ffff', c2: '#ff00ff' },
+            // 方案 2 (类似第二张图): 左粉紫 vs 右青蓝
+            { name: 'Magenta/Pink vs Cyan/Blue', c1: '#ff00ff', c2: '#00ffff' }
         ];
         // 当前使用的队伍颜色，初始为默认
         let currentTeam1Color = TEAM_COLOR_SCHEMES[0].c1; 
@@ -800,7 +809,7 @@
             noteIndex = 0; 
         }
 
-        // === 2. 修改：动态更新队伍颜色的CSS (红绿灯模式的强内发光风格) ===
+        // === 2. 修改：动态更新队伍颜色的CSS (基于参考图的线性渐变+发光效果) ===
         function updateTeamColorsCSS(c1, c2) {
             let styleEl = document.getElementById('dynamic-team-styles');
             if (!styleEl) {
@@ -809,31 +818,35 @@
                 document.head.appendChild(styleEl);
             }
 
-            // 使用极深的背景色配合强烈的 inset box-shadow 来模拟红绿灯的发光效果
+            // 使用线性渐变 (linear-gradient) 来模拟参考图中的色彩过渡效果
+            // 并配合 drop-shadow filter 增加发光感
             const css = `
-                /* Team 1 (Left Side - Blue) */
+                /* Team 1 (Left Side) */
                 #tug-blue-zone {
-                    background: #000515 !important; /* 极深蓝背景 */
-                    box-shadow: inset 0 0 100px ${c1}, inset 0 0 30px ${c1} !important; /* 强内发光 */
-                    border-right: 4px solid #fff;
+                    background: linear-gradient(90deg, ${c1} 10%, transparent 50%) !important;
+                    box-shadow: none !important; /* 移除旧的内发光 */
+                    border-right: 2px solid rgba(255,255,255,0.5); /* 柔和的边界线 */
+                    filter: drop-shadow(0 0 15px ${c1}); /* 整体发光 */
                 }
-                /* 手机端按钮保持高亮纯色 */
+                /* 手机端按钮 Team 1 - 使用渐变色 */
                 .btn-team-blue {
-                    background: ${c1} !important;
+                    background: linear-gradient(135deg, #333, ${c1}) !important;
                     border-color: #fff !important;
-                    box-shadow: 0 0 30px ${c1} !important;
+                    box-shadow: 0 0 25px ${c1} !important;
                     text-shadow: 0 0 5px #000 !important;
                 }
                 
-                /* Team 2 (Right Side - Orange) */
+                /* Team 2 (Right Side) */
                 #tug-red-zone {
-                    background: #150500 !important; /* 极深橙背景 */
-                    box-shadow: inset 0 0 100px ${c2}, inset 0 0 30px ${c2} !important; /* 强内发光 */
+                    background: linear-gradient(-90deg, ${c2} 10%, transparent 50%) !important;
+                    box-shadow: none !important;
+                    filter: drop-shadow(0 0 15px ${c2}); /* 整体发光 */
                 }
+                /* 手机端按钮 Team 2 - 使用渐变色 */
                 .btn-team-red {
-                    background: ${c2} !important;
+                    background: linear-gradient(135deg, ${c2}, #333) !important;
                     border-color: #fff !important;
-                    box-shadow: 0 0 30px ${c2} !important;
+                    box-shadow: 0 0 25px ${c2} !important;
                     text-shadow: 0 0 5px #000 !important;
                 }
             `;
@@ -1134,8 +1147,8 @@
             
             // === 预先分配队伍 ===
             if (currentGameMode === 'TUG') {
-                // --- 修改：不再随机，使用固定的蓝橙方案 ---
-                const scheme = TEAM_COLOR_SCHEMES[0];
+                // --- 修改：从两套新方案中随机选择一套 ---
+                const scheme = TEAM_COLOR_SCHEMES[Math.floor(Math.random() * TEAM_COLOR_SCHEMES.length)];
                 currentTeam1Color = scheme.c1;
                 currentTeam2Color = scheme.c2;
                 // 应用到 CSS
