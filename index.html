@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - RANDOM TEAMS</title>
+    <title>HORSE RUNRUN - BLUE vs ORANGE</title>
     <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -56,7 +56,7 @@
             box-shadow: none;
             overflow: hidden;
             flex-shrink: 0;
-            transition: background-color 0.1s;
+            transition: background-color 0.1s, border-color 0.1s, box-shadow 0.1s;
         }
 
         /* === 红绿灯模式背景样式 === */
@@ -68,25 +68,18 @@
         #tug-layer {
             position: absolute; inset: 0; z-index: 1; display: none;
         }
-        /* 蓝色区域（左侧）- 默认样式，会被动态CSS覆盖 */
+        /* 注意：#tug-blue-zone 和 #tug-red-zone 的样式现在完全由 JS 动态生成 */
         #tug-blue-zone {
             position: absolute; left: 0; top: 0; bottom: 0;
             width: 50%; 
-            background: #001133; 
-            box-shadow: inset 0 0 80px #2979ff; 
-            border-right: 6px solid #fff; 
-            filter: drop-shadow(0 0 10px #fff);
-            transition: width 0.1s linear, background-color 0.3s, box-shadow 0.3s; 
+            transition: width 0.1s linear; 
             z-index: 2;
         }
-        /* 红色区域（右侧）- 默认样式，会被动态CSS覆盖 */
         #tug-red-zone {
             position: absolute; right: 0; top: 0; bottom: 0;
             width: 50%;
-            background: #330000; 
-            box-shadow: inset 0 0 80px #ff0000; 
             z-index: 1;
-            transition: width 0.1s linear, background-color 0.3s, box-shadow 0.3s; 
+            transition: width 0.1s linear; 
         }
         
         .icon-vs {
@@ -272,7 +265,7 @@
         /* 拔河对撞粒子 */
         .tug-spark {
             position: absolute; width: 4px; height: 4px; background: #fff;
-            box-shadow: 0 0 10px #fff, 0 0 20px #ff00ff;
+            box-shadow: 0 0 10px #fff;
             pointer-events: none; z-index: 20;
             border-radius: 50%;
         }
@@ -625,17 +618,13 @@
 
         const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#ffffff', BLUE:'#2979ff' };
 
-        // === 新增：定义双色配色方案 ===
+        // === 1. 修改：仅使用指定的蓝橙配色，并使用高饱和度色值 ===
         const TEAM_COLOR_SCHEMES = [
-            { name: 'Purple & Lime', c1: '#d500f9', c2: '#76ff03' }, // 类似参考图05
-            { name: 'Blue & Orange', c1: '#2979ff', c2: '#ff6d00' }, // 类似参考图08 (经典蓝橙)
-            { name: 'Cyan & Red',    c1: '#00e5ff', c2: '#ff3d00' }, // 类似参考图01
-            { name: 'Pink & Mint',   c1: '#f50057', c2: '#1de9b6' }, // 类似参考图22
-            { name: 'Teal & Yellow', c1: '#00bfa5', c2: '#ffd600' }  // 类似参考图13
+            { name: 'Blue & Orange', c1: '#0000ff', c2: '#ff4500' } // 纯蓝 & 橙红
         ];
-        // 当前使用的队伍颜色，初始为默认蓝红
-        let currentTeam1Color = TEAM_COLOR_SCHEMES[1].c1; 
-        let currentTeam2Color = TEAM_COLOR_SCHEMES[1].c2;
+        // 当前使用的队伍颜色，初始为默认
+        let currentTeam1Color = TEAM_COLOR_SCHEMES[0].c1; 
+        let currentTeam2Color = TEAM_COLOR_SCHEMES[0].c2;
 
         const DEFAULT_PIXELS = [
             [0,0,0,0,0,0,0,0,0,0,0], [0,0,0,0,0,0,0,0,1,0,0], [0,0,0,0,0,0,0,1,1,1,0], [0,0,0,0,0,0,0,1,1,1,1], [0,1,0,0,0,0,1,1,1,0,0],
@@ -811,9 +800,8 @@
             noteIndex = 0; 
         }
 
-        // === 新增：动态更新队伍颜色的CSS ===
+        // === 2. 修改：动态更新队伍颜色的CSS (红绿灯模式的强内发光风格) ===
         function updateTeamColorsCSS(c1, c2) {
-            // 找到或创建用于动态样式的 style 标签
             let styleEl = document.getElementById('dynamic-team-styles');
             if (!styleEl) {
                 styleEl = document.createElement('style');
@@ -821,27 +809,32 @@
                 document.head.appendChild(styleEl);
             }
 
+            // 使用极深的背景色配合强烈的 inset box-shadow 来模拟红绿灯的发光效果
             const css = `
-                /* Team 1 (原蓝色队) */
+                /* Team 1 (Left Side - Blue) */
                 #tug-blue-zone {
-                    background: ${c1}33 !important; /* 加一点透明度作为背景 */
-                    box-shadow: inset 0 0 80px ${c1} !important;
+                    background: #000515 !important; /* 极深蓝背景 */
+                    box-shadow: inset 0 0 100px ${c1}, inset 0 0 30px ${c1} !important; /* 强内发光 */
+                    border-right: 4px solid #fff;
                 }
+                /* 手机端按钮保持高亮纯色 */
                 .btn-team-blue {
                     background: ${c1} !important;
                     border-color: #fff !important;
-                    box-shadow: 0 0 30px ${c1}99 !important; /* 加透明度 */
+                    box-shadow: 0 0 30px ${c1} !important;
+                    text-shadow: 0 0 5px #000 !important;
                 }
                 
-                /* Team 2 (原红色队) */
+                /* Team 2 (Right Side - Orange) */
                 #tug-red-zone {
-                    background: ${c2}33 !important;
-                    box-shadow: inset 0 0 80px ${c2} !important;
+                    background: #150500 !important; /* 极深橙背景 */
+                    box-shadow: inset 0 0 100px ${c2}, inset 0 0 30px ${c2} !important; /* 强内发光 */
                 }
                 .btn-team-red {
                     background: ${c2} !important;
                     border-color: #fff !important;
-                    box-shadow: 0 0 30px ${c2}99 !important;
+                    box-shadow: 0 0 30px ${c2} !important;
+                    text-shadow: 0 0 5px #000 !important;
                 }
             `;
             styleEl.innerHTML = css;
@@ -990,23 +983,27 @@
             }
         }
 
-        // 产生交界线碰撞火花
+        // 产生交界线碰撞火花 (配合当前队伍颜色)
         function spawnBattleSparks(x) {
             const fx = document.getElementById('layer-fx');
-            // 每次产生1-2个火花
             const count = Math.random() < 0.5 ? 1 : 2;
             for(let i=0; i<count; i++) {
                 const el = document.createElement('div');
                 el.className = 'tug-spark';
                 el.style.left = x + 'px';
                 el.style.top = (Math.random() * GAME_H) + 'px';
+                
+                // 让火花的辉光颜色跟随当前占优势的一方，或者随机混色
+                const sparkColor = Math.random() < 0.5 ? currentTeam1Color : currentTeam2Color;
+                el.style.boxShadow = `0 0 10px #fff, 0 0 20px ${sparkColor}`; // 使用高纯度颜色作为辉光
+                
                 fx.appendChild(el);
                 
-                const angle = (Math.random() - 0.5) * Math.PI; // 向左或向右随机
+                // ... (其余物理逻辑保持不变) ...
+                const angle = (Math.random() - 0.5) * Math.PI; 
                 const speed = 5 + Math.random() * 10;
                 let vx = Math.cos(angle) * speed * (Math.random() < 0.5 ? 1 : -1);
                 let vy = (Math.random() - 0.5) * 10;
-                
                 let life = 30;
                 const tick = () => {
                     life--;
@@ -1014,7 +1011,7 @@
                     el.style.left = (parseFloat(el.style.left) + vx) + 'px';
                     el.style.top = (parseFloat(el.style.top) + vy) + 'px';
                     el.style.opacity = life / 30;
-                    vy += 0.5; // 重力
+                    vy += 0.5; 
                     requestAnimationFrame(tick);
                 };
                 tick();
@@ -1137,8 +1134,8 @@
             
             // === 预先分配队伍 ===
             if (currentGameMode === 'TUG') {
-                // --- 新增：随机选择配色方案 ---
-                const scheme = TEAM_COLOR_SCHEMES[Math.floor(Math.random() * TEAM_COLOR_SCHEMES.length)];
+                // --- 修改：不再随机，使用固定的蓝橙方案 ---
+                const scheme = TEAM_COLOR_SCHEMES[0];
                 currentTeam1Color = scheme.c1;
                 currentTeam2Color = scheme.c2;
                 // 应用到 CSS
