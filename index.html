@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HORSE RUNRUN - PARTY EDITION</title>
-    
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    
+    <title>HORSE RUNRUN - TEAM MODE</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/peerjs/1.4.7/peerjs.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 
     <style>
@@ -61,10 +59,41 @@
             transition: background-color 0.1s;
         }
 
-        /* === 模式背景样式 === */
+        /* === 红绿灯模式背景样式 === */
         .bg-green { background: #002200 !important; box-shadow: inset 0 0 50px #00ff00 !important; border-color: #00ff00 !important; }
         .bg-yellow { background: #332200 !important; box-shadow: inset 0 0 50px #ffb300 !important; border-color: #ffb300 !important; }
         .bg-red { background: #440000 !important; box-shadow: inset 0 0 100px #ff0000 !important; border-color: #ff0000 !important; }
+
+        /* === 拔河模式专用视觉层 === */
+        #tug-layer {
+            position: absolute; inset: 0; z-index: 1; display: none;
+        }
+        /* 蓝色区域（左侧）- 升级为强发光风格 */
+        #tug-blue-zone {
+            position: absolute; left: 0; top: 0; bottom: 0;
+            width: 50%; 
+            background: #001133; 
+            box-shadow: inset 0 0 80px #2979ff; 
+            border-right: 6px solid #fff; 
+            filter: drop-shadow(0 0 10px #fff);
+            transition: width 0.1s linear; 
+            z-index: 2;
+        }
+        /* 红色区域（右侧）- 升级为强发光风格 */
+        #tug-red-zone {
+            position: absolute; right: 0; top: 0; bottom: 0;
+            width: 50%;
+            background: #330000; 
+            box-shadow: inset 0 0 80px #ff0000; 
+            z-index: 1;
+            transition: width 0.1s linear; 
+        }
+        
+        .icon-vs {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 60px; color: #fff; text-shadow: 0 0 20px #fff, 0 0 40px #ff00ff; z-index: 10;
+            opacity: 1; pointer-events: none; mix-blend-mode: overlay;
+        }
 
         #track-wrapper {
             display: flex;
@@ -98,7 +127,9 @@
             text-shadow: 1px 1px 0 #000;
         }
 
-        .flash-active { animation: track-flash 0.2s ease-out; }
+        .flash-active {
+            animation: track-flash 0.2s ease-out;
+        }
         @keyframes track-flash {
             0% { background-color: rgba(255, 255, 255, 0.4); box-shadow: inset 0 0 150px var(--primary); border-color: #fff; }
             100% { background-color: #000; box-shadow: none; border-color: var(--primary); }
@@ -117,6 +148,7 @@
             background-size: 12px 12px; opacity: 0.8; z-index: 0;
         }
 
+        /* HUD */
         .hud { position: absolute; bottom: 4px; right: 10px; font-size: 32px; opacity: 0.5; letter-spacing: 2px; z-index: 110; }
 
         #track-display-bar {
@@ -129,16 +161,35 @@
             pointer-events: none;
         }
 
-        .bar-container { width: 100%; display: flex; align-items: center; justify-content: center; }
+        .bar-container {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
         .bar-text-item {
-            font-size: 80px; letter-spacing: 2px; text-shadow: 0 0 20px currentColor; font-weight: bold;
-            width: 260px; display: flex; justify-content: center; flex-shrink: 0; margin: 0;
+            font-size: 80px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px currentColor;
+            font-weight: bold;
+            width: 260px;
+            display: flex;
+            justify-content: center;
+            flex-shrink: 0;
+            margin: 0;
             animation: text-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
 
-        @keyframes text-pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1.0); opacity: 1; } }
-        @keyframes text-vanish { 0% { opacity: 1; } 100% { opacity: 0; } }
+        @keyframes text-pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1.0); opacity: 1; }
+        }
+
+        @keyframes text-vanish {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
 
         .queue-alert {
             position: absolute; top: 10px; right: 20px;
@@ -147,15 +198,30 @@
         }
 
         #vfd-overlay {
-            position: absolute; inset: 0; display: flex; align-items: center; justify-content: flex-start;
-            overflow: hidden; opacity: 0; pointer-events: none; z-index: 95; padding-left: 0;
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: flex-start;
+            overflow: hidden;
+            opacity: 0;
+            pointer-events: none; z-index: 95;
+            padding-left: 0;
         }
+
         #vfd-overlay i {
-            display: inline-block; width: 0; height: 0; border-top: 15px solid transparent; border-bottom: 15px solid transparent; border-left: 80px solid var(--primary);
-            margin-right: 20px; flex-shrink: 0; opacity: 0; transform: scale(0.8) skewX(-20deg); filter: drop-shadow(0 0 5px var(--primary));
+            display: inline-block;
+            width: 0; height: 0;
+            border-top: 15px solid transparent;
+            border-bottom: 15px solid transparent;
+            border-left: 80px solid var(--primary);
+            margin-right: 20px;
+            flex-shrink: 0;
+            opacity: 0;
+            transform: scale(0.8) skewX(-20deg);
+            filter: drop-shadow(0 0 5px var(--primary));
         }
+
         .vfd-active { opacity: 1 !important; }
         .vfd-active i { animation: vfd-flash 0.4s ease-out forwards calc(var(--d) * 1s); }
+
         @keyframes vfd-flash {
             0% { opacity: 0; transform: scale(0.8) translateX(0); }
             10% { opacity: 1; transform: scale(1.2) translateX(10px); filter: drop-shadow(0 0 15px var(--primary)) drop-shadow(0 0 30px #fff); }
@@ -164,15 +230,25 @@
         }
 
         .entity { position: absolute; width: 44px; height: 44px; will-change: transform; }
-        .pixel-grid { display: grid; grid-template-columns: repeat(11, 1fr); width: 100%; height: 100%; transform-origin: bottom center; transition: transform 0.2s; }
+        .pixel-grid {
+            display: grid;
+            grid-template-columns: repeat(11, 1fr);
+            width: 100%; height: 100%;
+            transform-origin: bottom center;
+            transition: transform 0.2s;
+        }
 
         .crown-container {
-            position: absolute; top: -31px; left: 50%; transform: translateX(-50%); width: 18px; height: 18px;
-            animation: bounce 1s infinite; z-index: 10; display: flex; flex-direction: column-reverse; align-items: center;
+            position: absolute; top: -31px; left: 50%; transform: translateX(-50%);
+            width: 18px; height: 18px;
+            animation: bounce 1s infinite; z-index: 10;
+            display: flex; flex-direction: column-reverse; align-items: center;
         }
         .aura {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 160%; height: 160%; border-radius: 50%;
-            background: radial-gradient(circle, rgba(250,204,21,0.4) 0%, transparent 70%); box-shadow: 0 0 10px #facc15; z-index: -1;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 160%; height: 160%; border-radius: 50%;
+            background: radial-gradient(circle, rgba(250,204,21,0.4) 0%, transparent 70%);
+            box-shadow: 0 0 10px #facc15; z-index: -1;
             animation: pulse 0.5s infinite alternate; display: none;
         }
         @keyframes pulse { from { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } }
@@ -182,55 +258,119 @@
             font-size: 20px; white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000;
         }
         .grass { position: absolute; width: 6px; height: 6px; background: #69f0ae; box-shadow: 0 0 4px #69f0ae; }
+        
         .obstacle {
-            position: absolute; width: 10px; height: 30px; background: #ff5252; border: 2px solid #fff; box-shadow: 0 0 10px #ff5252; z-index: 5; bottom: 5px;
+            position: absolute;
+            width: 10px; height: 30px; 
+            background: #ffffff; 
+            border: 2px solid #ffffff; 
+            box-shadow: 0 0 15px #ffffff; 
+            z-index: 5;
+            bottom: 5px;
         }
+
+        /* 拔河对撞粒子 */
+        .tug-spark {
+            position: absolute; width: 4px; height: 4px; background: #fff;
+            box-shadow: 0 0 10px #fff, 0 0 20px #ff00ff;
+            pointer-events: none; z-index: 20;
+            border-radius: 50%;
+        }
+
+        /* 拔河点击震荡波 */
+        .shockwave {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 10px; height: 10px; border-radius: 50%;
+            border: 4px solid rgba(255, 255, 255, 0.8);
+            pointer-events: none; z-index: 5;
+            animation: shock-expand 0.4s ease-out forwards;
+        }
+        @keyframes shock-expand {
+            0% { width: 10px; height: 10px; opacity: 1; border-width: 4px; }
+            100% { width: 100px; height: 100px; opacity: 0; border-width: 0px; }
+        }
+
         .explosion { position: absolute; width: 6px; height: 6px; background: #ff5252; pointer-events: none; }
         @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
 
         #layer-snow { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
         .snowflake {
-            position: absolute; top: -10px; background: #ffffff; border-radius: 50%; box-shadow: 0 0 4px #ffffff;
+            position: absolute; top: -10px;
+            background: #ffffff; border-radius: 50%; box-shadow: 0 0 4px #ffffff;
             animation-name: snowfall; animation-timing-function: linear; animation-fill-mode: forwards;
         }
         @keyframes snowfall { to { transform: translateY(calc(var(--game-h) + 20px)); } }
 
         .trail-segment {
-            position: absolute; height: 4px; width: 50px; border-radius: 0px; pointer-events: none; opacity: 0.8;
-            animation: trail-fade 0.4s ease-out forwards; z-index: 90; mix-blend-mode: screen; 
+            position: absolute; height: 4px; width: 50px; border-radius: 0px; 
+            pointer-events: none; opacity: 0.8;
+            animation: trail-fade 0.4s ease-out forwards;
+            z-index: 90; mix-blend-mode: screen; 
         }
         @keyframes trail-fade { to { opacity: 0; transform: translateX(-40px) scaleX(0.5); } }
 
         .trail-active .p-grid {
             filter: drop-shadow(-10px 0 5px var(--trail-c)) drop-shadow(-20px 0 10px var(--trail-c)) opacity(0.95);
-            transform: scaleX(1.3) skewX(-15deg); transition: filter 0.1s ease-out, transform 0.1s ease-out;
+            transform: scaleX(1.3) skewX(-15deg);
+            transition: filter 0.1s ease-out, transform 0.1s ease-out;
         }
 
-        .pixel-emoji-container { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 200; animation: pixel-float-smooth 2.5s linear forwards; }
+        .pixel-emoji-container {
+            position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+            pointer-events: none; z-index: 200;
+            animation: pixel-float-smooth 2.5s linear forwards;
+        }
+
         .pop-text {
-            position: absolute; top: -24px; left: 50%; transform: translateX(-50%); color: var(--accent); font-size: 28px; letter-spacing: 2px;
-            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000; white-space: nowrap; pointer-events: none; z-index: 210;
-            font-family: 'VT323', monospace; animation: pixel-float-smooth 2.5s linear forwards;
-        }
-        .pixel-icon-base { background: transparent; position: relative; }
-        @keyframes pixel-float-smooth {
-            0% { opacity: 0; transform: translate(-50%, 10px) scale(0.5); } 10% { opacity: 1; transform: translate(-50%, -10px) scale(1); }
-            25% { transform: translate(calc(-50% + 20px), -40px) scale(1); } 50% { transform: translate(calc(-50% - 20px), -80px) scale(1); }
-            75% { transform: translate(calc(-50% + 15px), -120px) scale(1); opacity: 0.8; } 100% { transform: translate(-50%, -160px) scale(1); opacity: 0; }
+            position: absolute; top: -24px; left: 50%; transform: translateX(-50%);
+            color: var(--accent); font-size: 28px; letter-spacing: 2px;
+            text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+            white-space: nowrap; pointer-events: none; z-index: 210;
+            font-family: 'VT323', monospace;
+            animation: pixel-float-smooth 2.5s linear forwards;
         }
 
-        .emoji-bar { display: none !important; }
+        .pixel-icon-base { background: transparent; position: relative; }
+
+        @keyframes pixel-float-smooth {
+            0% { opacity: 0; transform: translate(-50%, 10px) scale(0.5); }
+            10% { opacity: 1; transform: translate(-50%, -10px) scale(1); }
+            25% { transform: translate(calc(-50% + 20px), -40px) scale(1); }
+            50% { transform: translate(calc(-50% - 20px), -80px) scale(1); }
+            75% { transform: translate(calc(-50% + 15px), -120px) scale(1); opacity: 0.8; }
+            100% { transform: translate(-50%, -160px) scale(1); opacity: 0; }
+        }
+
+        .emoji-bar {
+            display: none !important; /* 隐藏表情栏 */
+            gap: 15px; margin-top: 40px; pointer-events: auto; z-index: 22001; justify-content: center;
+        }
+        .emoji-btn {
+            background: #222; border: 2px solid #555; color: #fff;
+            width: 60px; height: 60px; border-radius: 12px; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            transition: transform 0.1s; -webkit-tap-highlight-color: transparent;
+            overflow: hidden; font-family: 'VT323', monospace;
+        }
+        .emoji-btn:active { transform: scale(0.8); background: #fff; border-color: #fff; color: #000; }
+        .emoji-btn:active .pixel-icon-base { filter: invert(1); }
 
         #bottom-controls {
-            position: fixed; bottom: 20px; left: 20px; display: flex; align-items: center; gap: 15px;
-            padding: 15px; background: rgba(0, 0, 0, 0.85); border: 1px solid var(--border); border-radius: 8px; z-index: 1000; box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            position: fixed; bottom: 20px; left: 20px;
+            display: flex; align-items: center; gap: 15px;
+            padding: 15px; background: rgba(0, 0, 0, 0.85);
+            border: 1px solid var(--border); border-radius: 8px; z-index: 1000;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
         }
         #qrcode {
-            background: white; padding: 3px; width: 90px; height: 90px; display: flex; justify-content: center; align-items: center; border-radius: 2px;
+            background: white; padding: 3px; width: 90px; height: 90px;
+            display: flex; justify-content: center; align-items: center; border-radius: 2px;
         }
         #qrcode img { display: block; width: 100%; height: 100%; }
 
-        .control-group { display: flex; flex-direction: column; gap: 5px; border-left: 1px solid #333; padding-left: 15px; width: 140px; }
+        .control-group {
+            display: flex; flex-direction: column; gap: 5px; border-left: 1px solid #333; padding-left: 15px; width: 140px;
+        }
         .control-label { font-size: 0.8rem; color: #888; letter-spacing: 1px; }
         .input-wrapper { display: flex; align-items: center; gap: 5px; width: 100%; }
 
@@ -238,28 +378,36 @@
         input[type=range]:focus { outline: none; }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: #333; border-radius: 3px; border: 1px solid #555; }
         input[type=range]::-webkit-slider-thumb { height: 16px; width: 16px; border-radius: 2px; background: var(--accent); cursor: pointer; -webkit-appearance: none; margin-top: -6px; box-shadow: 0 0 5px var(--accent); }
+        
         input[type="number"] { background: #222; border: 1px solid var(--border); color: var(--primary); font-family: 'VT323', monospace; font-size: 1.4rem; width: 60px; text-align: center; padding: 2px; border-radius: 4px; }
         .unit-label { font-size: 1.2rem; color: #555; }
 
         select {
-            background: #222; border: 2px solid var(--border); color: white; padding: 8px; font-family: 'VT323', monospace; font-size: 1.2rem; margin-right: 10px; cursor: pointer;
+            background: #222; border: 2px solid var(--border); color: white;
+            padding: 8px; font-family: 'VT323', monospace; font-size: 1.2rem;
+            margin-right: 10px; cursor: pointer;
         }
 
         .btn {
-            background: #222; border: 2px solid var(--primary); color: var(--primary); padding: 10px 20px; font-family: 'VT323', monospace; font-size: 1.2rem;
-            cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(255, 255, 255, 0.2); transition: all 0.2s; margin-left: 5px;
+            background: #222; border: 2px solid var(--primary); color: var(--primary);
+            padding: 10px 20px; font-family: 'VT323', monospace; font-size: 1.2rem;
+            cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            transition: all 0.2s; margin-left: 5px;
         }
         .btn:hover { background: var(--primary); color: #000; }
         .btn:active { transform: translateY(2px); }
 
         #modal-editor {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; display: none; justify-content: center; align-items: center;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000;
+            display: none; justify-content: center; align-items: center;
         }
         .modal-content {
-            background: #1a1c20; border: 2px solid var(--primary); padding: 30px; display: flex; flex-direction: column; align-items: center; gap: 20px;
+            background: #1a1c20; border: 2px solid var(--primary); padding: 30px;
+            display: flex; flex-direction: column; align-items: center; gap: 20px;
         }
         .editor-grid {
-            display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr); gap: 2px; background: #333; border: 2px solid #555; touch-action: none;
+            display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr);
+            gap: 2px; background: #333; border: 2px solid #555; touch-action: none;
         }
         .editor-cell { width: 28px; height: 28px; background: #000; }
         .color-picker { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
@@ -269,33 +417,51 @@
         .btn-flex { flex: 1; display: flex; justify-content: center; align-items: center; }
 
         #mobile-view {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111; display: flex; flex-direction: column; z-index: 20000; padding: 20px; align-items: center;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #111; display: flex; flex-direction: column; z-index: 20000;
+            padding: 20px; align-items: center;
         }
         .m-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; flex-shrink: 0; width: 100%; max-width: 400px; }
         .m-title { font-size: 1.5rem; color: #fff; }
         .m-status { background: #222; padding: 4px 8px; border-radius: 4px; font-size: 1rem; color: #fff; border: 1px solid #444; }
         .m-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; flex-shrink: 0; width: 100%; max-width: 400px; }
         input[type="text"] {
-            background: #222; border: 1px solid #444; color: white; padding: 12px; font-family: inherit; text-align: center; font-size: 1.5rem; width: 100%; border-radius: 4px;
+            background: #222; border: 1px solid #444; color: white; padding: 12px;
+            font-family: inherit; text-align: center; font-size: 1.5rem; width: 100%; border-radius: 4px;
         }
         .m-canvas-container {
-            flex: 1; display: flex; justify-content: center; align-items: center; background: #1a1a1a; border-radius: 8px; margin-bottom: 20px; overflow: hidden; width: 100%; max-width: 400px;
+            flex: 1; display: flex; justify-content: center; align-items: center;
+            background: #1a1a1a; border-radius: 8px; margin-bottom: 20px;
+            overflow: hidden; width: 100%; max-width: 400px;
         }
         .m-footer { display: flex; gap: 15px; height: 60px; flex-shrink: 0; width: 100%; max-width: 400px; }
 
         #m-controller {
-            position: fixed; inset: 0; background: #111; z-index: 22000; display: none; flex-direction: column; align-items: center; justify-content: center;
+            position: fixed; inset: 0; background: #111; z-index: 22000;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
         }
         
-        #m-mode-wrapper { margin-bottom: 20px; width: 100%; max-width: 300px; display: none; justify-content: center; }
+        /* 手机端选择框容器 */
+        #m-mode-wrapper {
+            margin-bottom: 20px; width: 100%; max-width: 300px; display: none; justify-content: center;
+        }
         #m-mode-select {
-            background: #222; border: 2px solid #555; color: #fff; padding: 10px; font-family: 'VT323'; font-size: 1.8rem; width: 100%; text-align: center; border-radius: 8px;
+            background: #222; border: 2px solid #555; color: #fff; padding: 10px;
+            font-family: 'VT323'; font-size: 1.8rem; width: 100%; text-align: center;
+            border-radius: 8px;
         }
 
         .push-btn {
-            width: 250px; height: 250px; border-radius: 50%; background: #222; border: 8px solid #444; color: #888; font-size: 4rem; font-family: 'VT323', monospace;
-            display: flex; justify-content: center; align-items: center; box-shadow: 0 0 50px rgba(0,0,0, 0.4); transition: all 0.1s; user-select: none;
-            cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none; text-align: center; line-height: 1; padding: 20px;
+            width: 250px; height: 250px; 
+            border-radius: 50%;
+            background: #222; border: 8px solid #444;
+            color: #888; font-size: 4rem; font-family: 'VT323', monospace;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 0 50px rgba(0,0,0, 0.4);
+            transition: all 0.1s; user-select: none;
+            cursor: pointer; -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+            text-align: center; line-height: 1; padding: 20px;
         }
         .push-btn:active { transform: scale(0.95); }
         .controller-info { font-size: 1.5rem; color: #888; margin-bottom: 30px; text-align: center; }
@@ -303,6 +469,22 @@
         .btn-mash { background: #fff !important; border-color: #ccc !important; color: #000 !important; box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; }
         .btn-start { background: #ffffff !important; border: 8px solid #ccc !important; color: #000000 !important; box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; }
         .btn-dead { background: #ffffff !important; border: 8px solid #000000 !important; color: #000000 !important; box-shadow: 0 0 30px rgba(255, 255, 255, 0.5) !important; font-size: 3rem !important; }
+        
+        /* 手机端队伍按钮颜色 - 强制覆盖，置于底部以确保优先级 */
+        .btn-team-red { 
+            background: #ff0000 !important; 
+            border-color: #ff5252 !important; 
+            color: #fff !important; 
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.6) !important;
+            text-shadow: 0 0 10px #fff !important;
+        }
+        .btn-team-blue { 
+            background: #0044ff !important; 
+            border-color: #40e0d0 !important; 
+            color: #fff !important; 
+            box-shadow: 0 0 30px rgba(0, 100, 255, 0.6) !important;
+            text-shadow: 0 0 10px #fff !important;
+        }
     </style>
 </head>
 <body>
@@ -312,6 +494,13 @@
             <div id="track-wrapper">
                 <div id="game-screen">
                     <div class="grid-bg"></div>
+                    
+                    <div id="tug-layer">
+                        <div id="tug-red-zone"></div> <div id="tug-blue-zone">
+                            <span class="tug-icon" style="right: 10px; color: #fff;">&#9664;</span> </div>
+                        <div class="icon-vs">VS</div>
+                    </div>
+
                     <div class="finish-line"></div>
 
                     <div id="hud" class="hud">NOWHERE TO RUN</div>
@@ -357,9 +546,10 @@
                 <span class="control-label">GAME MODE</span>
                 <select id="mode-select">
                     <option value="RANDOM">RANDOM</option>
-                    <option value="CLASSIC">RUN</option>
+                    <option value="CLASSIC">RUN</option> 
                     <option value="HURDLE">JUMP</option>
-                    <option value="RED_LIGHT">STOP?</option>
+                    <option value="RED_LIGHT">STOP?</option> 
+                    <option value="TUG">TEAM</option>
                 </select>
             </div>
 
@@ -407,13 +597,20 @@
             <div id="m-mode-wrapper">
                 <select id="m-mode-select">
                     <option value="RANDOM">RANDOM</option>
-                    <option value="CLASSIC">RUN</option>
-                    <option value="HURDLE">JUMP</option>
+                    <option value="CLASSIC">RUN</option> <option value="HURDLE">JUMP</option>
                     <option value="RED_LIGHT">STOP?</option>
+                    <option value="TUG">TEAM</option>
                 </select>
             </div>
 
             <div id="m-btn" class="push-btn btn-wait">WAIT</div>
+            
+            <div class="emoji-bar">
+                <div class="emoji-btn" onclick="sendEmoji('HEART')" data-icon="HEART"></div>
+                <div class="emoji-btn" onclick="sendEmoji('POOP')" data-icon="POOP"></div>
+                <div class="emoji-btn" onclick="sendEmoji('BOLT')" data-icon="BOLT"></div>
+                <div class="emoji-btn" onclick="sendEmoji('FACE')" style="font-size: 2rem;">?</div>
+            </div>
         </div>
     </div>
 
@@ -469,6 +666,9 @@
         let redLightTimer = 0;
         let lightState = 'GREEN'; 
 
+        // === 拔河变量 ===
+        let tugValue = 50; 
+        
         let peer = null, conn = null;
         let pcGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
         let mobileGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
@@ -483,8 +683,6 @@
         let currentBarText = '';
         let lastBroadcastText = '';
 
-        let touchStartY = 0;
-        let isSwiping = false;
         let lastShakeTime = 0; // 摇一摇防抖
 
         const PEER_CONFIG = {
@@ -498,6 +696,11 @@
         };
 
         /* ==================== FUNCTIONS ==================== */
+
+        // 震动辅助函数
+        function vibrate(pattern) {
+            if (navigator.vibrate) navigator.vibrate(pattern);
+        }
 
         function createPixelIcon(type, pixelSize = 2, color = '#fff') {
             const container = document.createElement('div');
@@ -594,6 +797,12 @@
         }
 
         window.onload = function() {
+            const btns = document.querySelectorAll('.emoji-btn');
+            btns.forEach(btn => {
+                const type = btn.getAttribute('data-icon');
+                if (type) { btn.appendChild(createPixelIcon(type, 3, '#fff')); }
+            });
+
             const zoomSlider = document.getElementById('zoom-slider');
             const zoomInput = document.getElementById('zoom-input');
             const ySlider = document.getElementById('y-slider');
@@ -674,16 +883,10 @@
                 peer = new Peer(null, PEER_CONFIG);
                 peer.on('open', id => {
                     const url = `${location.href}?host=${id}`;
-                    // 清空并重新生成二维码
-                    document.getElementById("qrcode").innerHTML = "";
                     new QRCode(document.getElementById("qrcode"), {
                         text: url, width: 86, height: 86,
                         colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L
                     });
-                });
-                peer.on('error', (err) => { 
-                    console.error("PeerJS Error:", err); 
-                    alert("Connection Error: " + err.type + "\nPlease refresh the page."); 
                 });
                 peer.on('connection', c => {
                     c.on('data', data => {
@@ -695,6 +898,12 @@
                             const uuid = data.payload.uuid;
                             const exists = ponies.find(p => p.playerUUID === uuid) || ponyQueue.find(p => p.playerUUID === uuid);
                             if (!exists) requestSpawnPony(data.payload.name, data.payload.pixels, data.payload.color, uuid);
+                            
+                            // === 修正：如果游戏正在进行中，强制让这个新连接的玩家进入等待状态 ===
+                            if (gameState === 'RACING') {
+                                c.send({ type: 'sync_ui', label: 'WAITING', mode: 'wait' });
+                            }
+                            
                         } else if (data.type === 'tap') {
                             handleTap(data.uuid);
                         } else if (data.type === 'jump') {
@@ -710,6 +919,7 @@
                         }
                     });
                 });
+                peer.on('error', (err) => { console.error("PeerJS Error:", err); alert("Network Error: " + err.type + "\nTry refreshing."); });
             } catch(e) { console.error(e); }
         }
 
@@ -720,10 +930,88 @@
             requestSpawnPony(rName, DEFAULT_PIXELS, COLORS[rColorKey], null);
         }
 
+        function applyTugForce(team) {
+            const power = 1.5; 
+            if (team === 1) {
+                tugValue = Math.min(100, tugValue + power);
+            } else {
+                tugValue = Math.max(0, tugValue - power);
+            }
+        }
+
+        // 产生交界线碰撞火花
+        function spawnBattleSparks(x) {
+            const fx = document.getElementById('layer-fx');
+            // 每次产生1-2个火花
+            const count = Math.random() < 0.5 ? 1 : 2;
+            for(let i=0; i<count; i++) {
+                const el = document.createElement('div');
+                el.className = 'tug-spark';
+                el.style.left = x + 'px';
+                el.style.top = (Math.random() * GAME_H) + 'px';
+                fx.appendChild(el);
+                
+                const angle = (Math.random() - 0.5) * Math.PI; // 向左或向右随机
+                const speed = 5 + Math.random() * 10;
+                let vx = Math.cos(angle) * speed * (Math.random() < 0.5 ? 1 : -1);
+                let vy = (Math.random() - 0.5) * 10;
+                
+                let life = 30;
+                const tick = () => {
+                    life--;
+                    if(life <= 0) { el.remove(); return; }
+                    el.style.left = (parseFloat(el.style.left) + vx) + 'px';
+                    el.style.top = (parseFloat(el.style.top) + vy) + 'px';
+                    el.style.opacity = life / 30;
+                    vy += 0.5; // 重力
+                    requestAnimationFrame(tick);
+                };
+                tick();
+            }
+        }
+
         function handleTap(uuid) {
             if (!uuid) return;
             const pony = ponies.find(p => p.playerUUID === uuid);
+            
             if (pony && pony.state === 'racing') {
+                
+                if (currentGameMode === 'TUG') {
+                    applyTugForce(pony.team);
+                    pony.tapCount++; 
+                    pony.isWalkAnimating = true;
+                    pony.manualAnimTimer = 5;
+
+                    // === 修改：点击冲刺距离改为35 ===
+                    pony.pullOffset = (pony.team === 1 ? 35 : -35); 
+                    
+                    // === 新增：点击震荡波特效 ===
+                    const fx = document.getElementById('layer-fx');
+                    const shock = document.createElement('div');
+                    shock.className = 'shockwave';
+                    shock.style.left = (pony.x + 25) + 'px'; // 居中
+                    shock.style.top = (pony.y + 25) + 'px';
+                    // 根据队伍颜色改变震荡波颜色
+                    shock.style.borderColor = (pony.team === 1) ? '#2979ff' : '#ff5252';
+                    fx.appendChild(shock);
+                    setTimeout(() => shock.remove(), 400);
+
+                    // 尘土特效
+                    if (Math.random() < 0.5) {
+                        const d = document.createElement('div');
+                        d.style.position = 'absolute';
+                        d.style.left = (pony.x + 20) + 'px';
+                        d.style.top = (pony.y + 40) + 'px';
+                        d.style.width = '6px'; d.style.height = '6px';
+                        d.style.background = '#888';
+                        d.style.opacity = '0.6';
+                        d.style.animation = 'text-vanish 0.5s forwards';
+                        fx.appendChild(d);
+                        setTimeout(() => d.remove(), 500);
+                    }
+                    return;
+                }
+
                 if (pony.isStunned) return;
 
                 if (currentGameMode === 'RED_LIGHT' && lightState === 'RED') {
@@ -733,8 +1021,6 @@
                         pony.invincibleTimer = 90;
                         pony.manualSpeed = -15; 
                         triggerPonyEmoji(p.playerUUID, 'POOP');
-                        const conn = getConnByUUID(uuid);
-                        if(conn) conn.send({ type: 'vibrate', duration: 300 });
                     }
                     return;
                 }
@@ -752,21 +1038,10 @@
             const pony = ponies.find(p => p.playerUUID === uuid);
             if (pony && pony.state === 'racing' && !pony.isStunned && !pony.isJumping) {
                 if (currentGameMode === 'RED_LIGHT') return;
-
                 pony.isJumping = true;
                 pony.vz = 12; 
                 pony.isManual = true; 
             }
-        }
-
-        function getConnByUUID(uuid) {
-            if(!peer || !peer.connections) return null;
-            Object.values(peer.connections).forEach(conns => {
-                conns.forEach(c => {
-                    if(c.open) c.send({ type: 'vibrate_check', target_uuid: uuid });
-                });
-            });
-            return null;
         }
 
         function requestSpawnPony(name, pixels, color, uuid = null) {
@@ -778,57 +1053,131 @@
                 hasCrown: false, isStreak: false, crownCount: 0, timer: 0, frame: 0, finishedWalking: false,
                 targetX: null, targetY: null, isWalkAnimating: false, manualAnimTimer: 0, roamSpeed: 0.5,
                 isTurbo: false, turboCharge: 0,
-                z: 0, vz: 0, isJumping: false, isStunned: false, stunTimer: 0, invincibleTimer: 0 
+                z: 0, vz: 0, isJumping: false, isStunned: false, stunTimer: 0, invincibleTimer: 0,
+                pullOffset: 0 
             };
             if (gameState === 'RACING' || gameState === 'COOLDOWN' || gameState === 'WAITING_TO_START') {
-                ponyQueue.push(newPony); updateHUD();
+                ponyQueue.push(newPony); 
             } else {
                 ponies.push(newPony); startCooldown();
             }
         }
 
         function startCooldown() {
-            const selected = document.getElementById('mode-select').value;
+            if (ponyQueue.length > 0) { ponies = ponies.concat(ponyQueue); ponyQueue = []; }
+
+            let selected = document.getElementById('mode-select').value;
+            
+            if (selected === 'TUG' && ponies.length < 2) {
+                alert("NOT ENOUGH PLAYERS FOR TUG WAR (MIN 2)");
+                selected = 'CLASSIC'; 
+                document.getElementById('mode-select').value = 'CLASSIC';
+            }
+
             if (selected === 'RANDOM') {
-                const modes = ['CLASSIC', 'HURDLE', 'RED_LIGHT'];
+                let modes = ['CLASSIC', 'HURDLE', 'RED_LIGHT'];
+                if (ponies.length >= 2) modes.push('TUG'); 
                 currentGameMode = modes[Math.floor(Math.random() * modes.length)];
             } else {
                 currentGameMode = selected;
             }
 
             gameState = 'COOLDOWN'; cooldownTimer = 240;
-            if (ponyQueue.length > 0) { ponies = ponies.concat(ponyQueue); ponyQueue = []; }
+            
+            // === 预先分配队伍 ===
+            if (currentGameMode === 'TUG') {
+                const allPonies = [...ponies].sort(() => Math.random() - 0.5);
+                const teamMap = {};
+                allPonies.forEach((p, index) => {
+                    p.team = (index % 2 === 0) ? 1 : -1; 
+                    p.tapCount = 0; 
+                    if (p.playerUUID) teamMap[p.playerUUID] = (p.team === 1) ? 'BLUE' : 'RED';
+                });
+                broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait', teamMap: teamMap });
+            } else {
+                broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
+            }
+
             ponies.forEach(p => {
-                p.x = 20; p.y = 30 + Math.random() * (GAME_H - PONY_SIZE - 30); p.targetX = null; p.targetY = null;
-                p.facing = 1; p.state = 'ready'; p.manualSpeed = 0; p.tapCount = 0;
+                p.state = 'ready'; 
+                p.manualSpeed = 0; p.tapCount = 0;
                 p.isWalkAnimating = false; p.manualAnimTimer = 0; p.isTurbo = false; p.turboCharge = 0;
                 p.z = 0; p.vz = 0; p.isStunned = false; p.stunTimer = 0; p.invincibleTimer = 0;
+                p.pullOffset = 0;
+
+                // === 拔河模式：预备阶段整齐站位 ===
+                if (currentGameMode === 'TUG') {
+                    // 按照ID排序，确保每个人都有固定的位置
+                    const teamMembers = ponies.filter(tm => tm.team === p.team).sort((a,b) => a.id.localeCompare(b.id));
+                    const myIndex = teamMembers.findIndex(tm => tm.id === p.id);
+                    
+                    const baseY = (GAME_H - PONY_SIZE) / 2 + 10; // 垂直居中
+
+                    if (p.team === 1) {
+                        // 蓝队
+                        p.x = (GAME_W / 2) - 100 - (myIndex * 50); 
+                        p.facing = 1; 
+                    } else {
+                        // 红队
+                        p.x = (GAME_W / 2) + 100 + (myIndex * 50);
+                        p.facing = -1;
+                    }
+                    p.y = baseY; 
+                } else {
+                    p.x = 20; 
+                    p.facing = 1;
+                    p.y = 30 + Math.random() * (GAME_H - PONY_SIZE - 30);
+                }
             });
+
             document.getElementById('hud').style.display = 'none'; document.getElementById('queue-text').style.display = 'none';
             setBarVisibility(true); 
             
-            let modeName = "RUN";
+            let modeName = "CLASSIC";
             if (currentGameMode === 'RED_LIGHT') modeName = "STOP?";
             else if (currentGameMode === 'HURDLE') modeName = "JUMP";
             else if (currentGameMode === 'CLASSIC') modeName = "RUN";
+            else if (currentGameMode === 'TUG') modeName = "TEAM"; // 修改点：拔河改名
 
-            updateBarText(modeName, "#ffb300"); 
-            broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait' });
+            updateBarText(modeName, "#ffffff"); 
+            
+            // 安全显示拔河层
+            const tugLayer = document.getElementById('tug-layer');
+            if (currentGameMode === 'TUG' && tugLayer) {
+                tugValue = 50;
+                tugLayer.style.display = 'block';
+                
+                const bZone = document.getElementById('tug-blue-zone');
+                if(bZone) bZone.style.width = '50%';
+                const rZone = document.getElementById('tug-red-zone');
+                if(rZone) rZone.style.width = '50%';
+                
+                // 摄像机归位到战场中心
+                const targetX = (window.innerWidth / 2) - (1700 * layout.scale); 
+                layout.x = targetX;
+                applyLayout(false);
+            } else if (tugLayer) {
+                document.getElementById('game-screen').className = ''; 
+                lightState = 'GREEN'; 
+                tugLayer.style.display = 'none';
+            }
             
             obstacles = [];
-            document.getElementById('game-screen').className = ''; 
-            lightState = 'GREEN';
         }
 
         function startRace() {
             updateBarText("GO!", "#ffffff");
             
-            let statusText = "STATUS: RUN";
+            let statusText = "STATUS: RACING";
             let mobileInfo = "RUN (TAP)";
+            
+            // 重置拔河视觉
+            const tugLayer = document.getElementById('tug-layer');
+            if(tugLayer) tugLayer.style.display = 'none';
 
             if (currentGameMode === 'HURDLE') {
                 statusText = "STATUS: JUMP";
-                mobileInfo = "TAP: RUN / SHAKE: JUMP"; 
+                mobileInfo = "TAP: RUN / UP: JUMP"; 
                 obstacles = [];
                 for(let ox = 500; ox < FINISH_X - 200; ox += (400 + Math.random() * 300)) {
                     obstacles.push({ x: ox, width: 10, passed: false });
@@ -841,6 +1190,20 @@
                 redLightTimer = (120 + Math.random() * 100) * 0.8; 
                 document.getElementById('game-screen').classList.add('bg-green');
                 playSignalSound('GREEN');
+            } else if (currentGameMode === 'TUG') {
+                statusText = "TEAM BATTLE";
+                mobileInfo = "PULL!";
+                tugValue = 50; 
+                obstacles = [];
+                
+                // 再次显示
+                if(tugLayer) tugLayer.style.display = 'block';
+
+                const teamMap = {};
+                ponies.forEach(p => {
+                    if (p.playerUUID) teamMap[p.playerUUID] = (p.team === 1) ? 'BLUE' : 'RED';
+                });
+                broadcast({ type: 'sync_ui', label: 'PULL!', mode: 'tug', teamMap: teamMap });
             } else {
                 statusText = "STATUS: RUN";
                 obstacles = [];
@@ -854,14 +1217,19 @@
             setTimeout(() => { if (gameState === 'RACING') { setBarVisibility(false); vfdOverlay.classList.remove('vfd-active'); } }, 1500);
             
             ponies.forEach(p => { 
-                p.speed = 3.0 + Math.random() * 2.5; 
+                if (currentGameMode !== 'TUG') p.speed = 3.0 + Math.random() * 2.5; 
                 p.state = 'racing'; 
                 p.finishedWalking = false; 
                 p.z = 0; p.vz = 0; p.isStunned = false; p.stunTimer = 0; p.invincibleTimer = 0;
                 if(p.isManual) p.lastTapTime = Date.now(); 
             });
-            grass = []; gameState = 'RACING'; 
-            broadcast({ type: 'sync_ui', label: 'RUN!', mode: 'mash', infoText: mobileInfo });
+            
+            if (currentGameMode !== 'TUG') {
+                grass = []; gameState = 'RACING'; 
+                broadcast({ type: 'sync_ui', label: 'RUN!', mode: 'mash', infoText: mobileInfo });
+            } else {
+                gameState = 'RACING';
+            }
         }
 
         function gameLoop() { updateGameLogic(); draw(); requestAnimationFrame(gameLoop); }
@@ -869,6 +1237,12 @@
         function updateGameLogic() {
             spawnSnow();
             const alert = document.getElementById('queue-text'); const hud = document.getElementById('hud');
+            
+            // 确保倒计时阶段，拔河的小马保持整齐在位
+            if (gameState === 'COOLDOWN' && currentGameMode === 'TUG') {
+                ponies.forEach(p => { p.frame++; });
+            }
+
             if (gameState === 'WAITING_TO_START') {
                 waitTimer--; alert.style.display = 'block'; const sec = Math.ceil(waitTimer / 60); alert.innerText = `NEXT ROUND IN ${sec}`;
                 if (sec > 0 && lastBroadcastText !== sec) { broadcast({ type: 'sync_ui', label: `STARTING ${sec}`, mode: 'wait' }); lastBroadcastText = sec; }
@@ -880,21 +1254,87 @@
                     if (cooldownTimer % 60 === 59) triggerFlash();
                     if (sec > 0 && lastBroadcastText !== sec) { broadcast({ type: 'sync_ui', label: sec.toString(), mode: 'wait' }); lastBroadcastText = sec; }
                 }
-                if (cooldownTimer <= 0) startRace(); updatePoniesMovement();
+                if (cooldownTimer <= 0) startRace(); 
+                if (currentGameMode !== 'TUG') updatePoniesMovement(); 
             } else if (gameState === 'RACING') {
                 if (ponyQueue.length > 0) { alert.style.display = 'block'; alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`; } else { alert.style.display = 'none'; }
                 
-                if (currentGameMode === 'RED_LIGHT') {
+                if (currentGameMode === 'TUG') {
+                    // === 拔河逻辑 ===
+                    
+                    // 1. Bot 自动拉力
+                    ponies.forEach(p => {
+                        if (!p.playerUUID && Math.random() < 0.015) { 
+                            if (p.team === 1) tugValue = Math.min(100, tugValue + 1.0);
+                            else tugValue = Math.max(0, tugValue - 1.0);
+                            p.isWalkAnimating = true;
+                            p.pullOffset = (p.team === 1 ? 10 : -10);
+                        }
+                    });
+
+                    // 安全更新宽度
+                    const bZone = document.getElementById('tug-blue-zone');
+                    if(bZone) bZone.style.width = tugValue + '%';
+                    const rZone = document.getElementById('tug-red-zone');
+                    if(rZone) rZone.style.width = (100 - tugValue) + '%';
+
+                    const targetX = (window.innerWidth / 2) - (1700 * layout.scale);
+                    layout.x = targetX;
+                    applyLayout(false);
+
+                    const battleFront = GAME_W * (tugValue / 100);
+                    
+                    // === 产生交界线碰撞粒子 ===
+                    spawnBattleSparks(battleFront);
+
+                    // === 平滑移动逻辑 (LERP) ===
+                    ponies.forEach(p => {
+                        const teamMembers = ponies.filter(tm => tm.team === p.team).sort((a,b) => a.id.localeCompare(b.id));
+                        const myIndex = teamMembers.findIndex(tm => tm.id === p.id);
+                        
+                        let basePositionX;
+                        if (p.team === 1) {
+                            basePositionX = battleFront - 80 - (myIndex * 45);
+                        } else {
+                            basePositionX = battleFront + 80 + (myIndex * 45);
+                        }
+                        
+                        // 目标位置 = 基础位置 + 冲击偏移
+                        const desiredX = basePositionX + (p.pullOffset || 0);
+                        
+                        // 平滑移动
+                        const smoothFactor = 0.15;
+                        p.x = p.x + (desiredX - p.x) * smoothFactor;
+                        
+                        // 让冲击力自然衰减
+                        if (p.pullOffset) p.pullOffset *= 0.8;
+                        if (Math.abs(p.pullOffset) < 1) p.pullOffset = 0;
+                        
+                        // 动画管理
+                        if (Math.abs(desiredX - p.x) < 1 && !p.isManual) {
+                             p.isWalkAnimating = false;
+                        } else {
+                             p.isWalkAnimating = true;
+                        }
+                    });
+
+                    if (tugValue >= 95) {
+                        endTugWar(1); // Blue Wins
+                    } else if (tugValue <= 5) {
+                        endTugWar(-1); // Red Wins
+                    }
+
+                } else if (currentGameMode === 'RED_LIGHT') {
+                    // ... 红绿灯 ...
                     redLightTimer--;
                     if (redLightTimer <= 0) {
                         const screen = document.getElementById('game-screen');
                         screen.className = ''; 
-
                         if (lightState === 'GREEN') {
                             lightState = 'YELLOW';
                             redLightTimer = 30; 
                             screen.classList.add('bg-yellow');
-                            updateBarText("STOP?", "#ffb300"); // 黄灯提示 STOP?
+                            updateBarText("STOP?", "#ffb300"); 
                             setBarVisibility(true);
                             playSignalSound('YELLOW');
                         } else if (lightState === 'YELLOW') {
@@ -912,15 +1352,20 @@
                             setTimeout(() => { if (lightState === 'GREEN') setBarVisibility(false); }, 500);
                         }
                     }
+                    updatePoniesMovement(); 
+                    checkRaceEnd();
+                } else {
+                    updatePoniesMovement(); 
+                    checkRaceEnd();
                 }
 
-                updatePoniesMovement(); checkRaceEnd();
             } else if (gameState === 'ROAMING') {
                 hud.style.display = 'block'; hud.innerText = "NOWHERE TO RUN";
                 document.getElementById('game-screen').className = ''; 
                 if (ponyQueue.length > 0) { alert.style.display = 'block'; alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`; } else { alert.style.display = 'none'; }
                 updatePoniesMovement();
             }
+            
             const active = ponies.filter(p => p.state === 'racing');
             if (active.length === 0 && Math.random() < 0.2) {
                 const segmentSize = 500; const totalSegments = Math.ceil(GAME_W / segmentSize);
@@ -932,11 +1377,75 @@
             }
         }
 
+        function endTugWar(winnerTeam) {
+            gameState = 'FINISHED';
+            const totalPlayers = ponies.length;
+            const eliminationCount = Math.max(0, totalPlayers - 10);
+            let losers = ponies.filter(p => p.team !== winnerTeam);
+            losers.sort((a, b) => a.tapCount - b.tapCount);
+            const toExplode = new Set(losers.slice(0, eliminationCount).map(p => p.id));
+            let mvpPony = null;
+            let maxTaps = -1;
+
+            ponies.forEach(p => {
+                p.hasCrown = false;
+                p.isStreak = false;
+
+                if (toExplode.has(p.id)) {
+                    explode(p); 
+                } else {
+                    p.state = 'roaming'; 
+                    p.targetX = null;
+                    p.targetY = null;
+                    p.timer = 0;
+                    if (p.team === winnerTeam) {
+                        if (p.tapCount > maxTaps) {
+                            maxTaps = p.tapCount;
+                            mvpPony = p;
+                        }
+                    }
+                }
+            });
+
+            if (mvpPony) {
+                mvpPony.hasCrown = true;
+                mvpPony.isStreak = true;
+            }
+            
+            // 修改点：简化胜利文字
+            const winnerText = "WIN"; // 统一显示 WIN
+            const winnerColor = (winnerTeam === 1) ? "#2979ff" : "#ff0000"; // 颜色区分胜负
+            updateBarText(winnerText, winnerColor);
+            setBarVisibility(true);
+
+            const tugLayer = document.getElementById('tug-layer');
+            if(tugLayer) tugLayer.style.display = 'none';
+            
+            setTimeout(() => {
+                // 修改点：检测排队，自动开始下一轮
+                if (ponyQueue.length > 0) {
+                    gameState = 'WAITING_TO_START';
+                    waitTimer = 180;
+                    // updateGameLogic 会接管倒计时逻辑
+                } else {
+                    gameState = 'ROAMING';
+                    setBarVisibility(false);
+                    layout.x = 0; applyLayout(false); 
+                    broadcast({ type: 'sync_ui', label: 'DONE', mode: 'wait' });
+                    
+                    setTimeout(() => {
+                        if (gameState === 'ROAMING') {
+                             // 修改点：手机端显示 START RACE
+                             broadcast({ type: 'sync_ui', label: 'START RACE', mode: 'start' });
+                        }
+                    }, 2000);
+                }
+            }, 4000);
+        }
+
         function checkRaceEnd() {
             const finished = ponies.filter(p => p.state === 'finished'); let raceOverTrigger = false;
-            
             if (ponies.length > 10) { if (finished.length >= 10) raceOverTrigger = true; } else { if (ponies.length > 0 && finished.length === ponies.length) raceOverTrigger = true; }
-
             if (raceOverTrigger) {
                 if (ponies.length > 10) {
                     const losers = ponies.filter(p => p.state === 'racing'); losers.forEach(p => explode(p));
@@ -952,15 +1461,18 @@
             }
         }
 
+        /* === 光线拖影特效 (Hard Edge Trail) === */
         function spawnTrail(p) {
             const fxLayer = document.getElementById('layer-fx');
             const count = Math.random() < 0.5 ? 1 : 2; 
             for (let i = 0; i < count; i++) {
                 const el = document.createElement('div');
                 el.className = 'trail-segment';
+                /* 位置偏移到更后方 (-20) */
                 el.style.left = (p.x - 20 + Math.random() * 10) + 'px';
                 el.style.top = (p.y + 15 + Math.random() * 15) + 'px';
                 el.style.background = p.color;
+                /* 0px 的阴影半径 (Hard Edge) */
                 el.style.boxShadow = `0 0 0px ${p.color}`;
                 fxLayer.appendChild(el);
                 setTimeout(() => el.remove(), 400);
@@ -983,9 +1495,14 @@
             ponies.forEach(p => {
                 p.frame++; p.isWalkAnimating = false; p.isTurbo = false;
                 if (p.manualAnimTimer > 0) p.manualAnimTimer--; p.turboCharge = Math.max(0, p.turboCharge - 1);
+                
                 if (p.invincibleTimer > 0) p.invincibleTimer--;
 
-                if (p.state === 'ready') { p.x = 20; return; }
+                if (p.state === 'ready') { 
+                    if (currentGameMode !== 'TUG') p.x = 20; 
+                    return; 
+                }
+
                 if (p.state === 'racing') {
                     if (p.isStunned) {
                         p.stunTimer--;
@@ -1029,11 +1546,11 @@
                                     if (p.x + 40 > obs.x && p.x < obs.x + obs.width) {
                                         if (p.z < 20) { 
                                             p.isStunned = true;
-                                            p.stunTimer = 30; p.invincibleTimer = 90;
-                                            p.manualSpeed = 0; p.x = obs.x - 10; 
-                                            triggerPonyEmoji(p.playerUUID, 'POOP');
-                                            const conn = getConnByUUID(p.playerUUID);
-                                            if(conn) conn.send({ type: 'vibrate', duration: 200 }); 
+                                            p.stunTimer = 30; 
+                                            p.invincibleTimer = 90; 
+                                            p.manualSpeed = 0; 
+                                            p.x = obs.x - 10; 
+                                            triggerPonyEmoji(p.playerUUID, 'POOP'); 
                                         }
                                     }
                                 });
@@ -1043,7 +1560,6 @@
                         if (p.turboCharge > 60 && Math.random() < 0.4) spawnTrail(p);
                         if (p.turboCharge > 30) p.isTurbo = true;
                         p.facing = 1;
-                        
                         if (p.x >= FINISH_X) {
                             if (p.state === 'racing') {
                                 p.state = 'finished';
@@ -1099,6 +1615,9 @@
                 tick();
             }
             const grassCount = Math.floor(Math.random() * 3) + 1; for(let i=0; i<grassCount; i++) { grass.push({ x: p.x + (Math.random()-0.5) * 60, y: p.y + (Math.random()-0.5) * 40 }); }
+            
+            ponies = ponies.filter(target => target.id !== p.id); 
+            
             if (p.playerUUID) { broadcast({ type: 'eliminated', uuid: p.playerUUID }); }
         }
 
@@ -1121,15 +1640,12 @@
                     ponyL.appendChild(el);
                 }
                 
-                // === Z轴跳跃偏移 ===
                 el.style.transform = `translate(${p.x}px, ${p.y - p.z}px) scale(1.1)`; 
                 el.style.zIndex = Math.floor(p.y);
                 
-                // 眩晕与无敌效果
                 if (p.isStunned) {
                     el.style.filter = "grayscale(100%) opacity(0.5)";
                 } else if (p.invincibleTimer > 0) {
-                    // 无敌闪烁：每5帧切换一次透明度
                     el.style.filter = (Math.floor(p.invincibleTimer / 5) % 2 === 0) ? "opacity(0.3)" : "opacity(0.8)";
                 } else {
                     el.style.filter = "none";
@@ -1163,21 +1679,37 @@
                     conn.on('data', data => {
                         if (data.type === 'reconnect_success') { document.getElementById('m-editor-ui').style.display = 'none'; document.getElementById('m-controller').style.display = 'flex'; }
                         else if (data.type === 'sync_ui') {
+                            if (mobileBtnState === 'dead') return;
+
                             const btn = document.getElementById('m-btn'); 
                             const info = document.getElementById('m-info'); 
                             const modeWrapper = document.getElementById('m-mode-wrapper');
                             
                             mobileBtnState = data.mode; 
                             btn.className = 'push-btn'; 
+
                             modeWrapper.style.display = 'none';
 
-                            if (data.mode === 'wait') { 
+                            if (data.mode === 'tug') {
+                                btn.classList.add('btn-mash');
+                                btn.innerText = "PULL!";
+                                
+                                if (data.teamMap && data.teamMap[playerUUID]) {
+                                    const myTeam = data.teamMap[playerUUID];
+                                    info.innerText = `TEAM ${myTeam}`;
+                                    info.style.color = (myTeam === 'RED') ? '#ff5252' : '#2979ff';
+                                    btn.classList.add(myTeam === 'RED' ? 'btn-team-red' : 'btn-team-blue');
+                                } else {
+                                    info.innerText = "SPECTATING"; 
+                                }
+                            }
+                            else if (data.mode === 'wait') { 
                                 btn.classList.add('btn-wait'); btn.innerText = data.label; info.innerText = "GET READY..."; 
+                                info.style.color = "#888"; 
                             }
                             else if (data.mode === 'mash') { 
                                 btn.classList.add('btn-mash'); 
                                 btn.innerText = "RUN"; 
-                                // 根据传入的 infoText 显示提示
                                 info.innerText = data.infoText || "TAP TO RUN"; 
                                 randomizeMusic();
                             }
@@ -1189,10 +1721,10 @@
                             const btn = document.getElementById('m-btn'); const info = document.getElementById('m-info'); 
                             mobileBtnState = 'dead'; 
                             btn.className = 'push-btn btn-dead'; 
-                            btn.innerText = "TRY\nAGAIN"; 
+                            btn.innerText = "CREATE\nAGAIN"; 
                             info.innerText = "ELIMINATED";
                             document.getElementById('m-mode-wrapper').style.display = 'none';
-                            if(navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 500]); 
+                            vibrate([100, 50, 100]); 
                         } else if (data.type === 'player_finished' && data.uuid === playerUUID) {
                             mobileBtnState = 'finished';
                             const btn = document.getElementById('m-btn');
@@ -1200,60 +1732,66 @@
                             btn.innerText = "DONE";
                             document.getElementById('m-info').innerText = "WAITING...";
                             document.getElementById('m-mode-wrapper').style.display = 'none';
-                        } else if (data.type === 'vibrate' || (data.type === 'vibrate_check' && data.target_uuid === playerUUID)) {
-                            if(navigator.vibrate) navigator.vibrate(data.duration || 200);
+                            vibrate([200]); 
                         }
                     });
                 });
             } catch(e) { console.error(e); }
         }
 
-        /* === 手机端：摇一摇监测函数 === */
         function handleMotion(event) {
             const acc = event.acceleration; 
             if (!acc) return;
             const magnitude = Math.sqrt(acc.x*acc.x + acc.y*acc.y + acc.z*acc.z);
-            if (magnitude > 15) { // 阈值
+            if (magnitude > 15) {
                 const now = Date.now();
                 if (now - lastShakeTime > 500) { 
                     lastShakeTime = now;
                     if(conn) conn.send({ type: 'jump', uuid: playerUUID }); 
+                    vibrate(200); 
                 }
             }
         }
 
-        /* === 手机端：初始化监听 === */
         const mBtn = document.getElementById('m-btn');
+        let touchStartY = 0;
+        let touchStartTime = 0;
+
         mBtn.addEventListener('touchstart', (e) => {
             if (mobileBtnState === 'dead') { resetMobile(); return; }
             if (mobileBtnState === 'finished') return;
             if (mobileBtnState === 'start') { 
                 const selectedMode = document.getElementById('m-mode-select').value;
                 if(conn) conn.send({ type: 'force_start', mode: selectedMode }); 
+                vibrate(50);
                 return; 
             }
-            if (mobileBtnState !== 'mash') return;
+            if (mobileBtnState !== 'mash' && mobileBtnState !== 'tug') return;
 
             e.preventDefault(); 
-            // 触感反馈（轻微）
-            if(navigator.vibrate) navigator.vibrate(30);
-            
+            touchStartY = e.changedTouches[0].clientY;
+            touchStartTime = Date.now();
             mBtn.style.transform = 'scale(0.95)'; 
-            setTimeout(() => { mBtn.style.transform = 'scale(1)'; }, 50);
-
-            if(conn) conn.send({ type: 'tap', uuid: playerUUID }); 
-            initAudio(); playNextNote(); 
         }, {passive: false});
 
-        mBtn.addEventListener('touchmove', (e) => {
-            if (mobileBtnState !== 'mash') return;
-            e.preventDefault(); 
-            const currentY = e.touches[0].clientY;
-            if (!isSwiping && touchStartY - currentY > 50) {
-                isSwiping = true;
-                if(conn) conn.send({ type: 'jump', uuid: playerUUID }); 
+        mBtn.addEventListener('touchend', (e) => {
+            if (mobileBtnState !== 'mash' && mobileBtnState !== 'tug') return;
+            e.preventDefault();
+            mBtn.style.transform = 'scale(1)'; 
+
+            const touchEndY = e.changedTouches[0].clientY;
+            const diffY = touchStartY - touchEndY; 
+            const timeDiff = Date.now() - touchStartTime;
+
+            if (diffY > 50) {
+                if(conn) conn.send({ type: 'jump', uuid: playerUUID });
+                vibrate(100); 
+            } else {
+                if(conn) conn.send({ type: 'tap', uuid: playerUUID });
+                initAudio(); playNextNote();
+                vibrate(15); 
             }
-        }, {passive: false});
+        });
 
         function sendMobile() {
             if(!conn) return alert("Not Connected!");
@@ -1263,7 +1801,7 @@
             
             initAudio(); randomizeMusic();
 
-            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+            if (typeof DeviceMotionEvent.requestPermission === 'function') {
                 DeviceMotionEvent.requestPermission()
                     .then(permissionState => {
                         if (permissionState === 'granted') {
@@ -1281,7 +1819,6 @@
 
         function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
 
-        /* === 修改后：处理 FACE 为文字 ? === */
         function triggerPonyEmoji(uuid, emojiType) {
             const pony = ponies.find(p => p.playerUUID === uuid); if (!pony) return;
             const pEl = document.getElementById(pony.id); if (!pEl) return;
@@ -1308,9 +1845,15 @@
         function sendEmoji(type) {
             if(!conn) return; conn.send({ type: 'emoji', uuid: playerUUID, content: type });
             const btn = event.currentTarget; btn.style.transform = 'scale(0.8)'; setTimeout(() => btn.style.transform = 'scale(1)', 100);
+            vibrate(10); 
         }
 
-        function resetMobile() { document.getElementById('m-controller').style.display = 'none'; document.getElementById('m-editor-ui').style.display = 'block'; document.getElementById('m-name').value = ''; restoreGridData(mobileGrid); renderGrid('m-grid', mobileGrid, selectedColor); mobileBtnState = 'wait'; }
+        function resetMobile() { 
+            document.getElementById('m-controller').style.display = 'none'; 
+            document.getElementById('m-editor-ui').style.display = 'block'; 
+            renderGrid('m-grid', mobileGrid, selectedColor); 
+            mobileBtnState = 'wait'; 
+        }
         function clearMobile() { clearGridData(mobileGrid); renderGrid('m-grid', mobileGrid, selectedColor); }
         function clearDesktop() { clearGridData(pcGrid); renderGrid('pc-grid', pcGrid, selectedColor); }
         function clearGridData(grid) { for(let r=0; r<11; r++) for(let c=0; c<11; c++) grid[r][c] = 0; }
