@@ -17,6 +17,10 @@
       --game-w: 3400px;
       --game-h: 100px;
       --accent: #40e0d0;
+
+      /* ✅ Track border controls (host-controlled) */
+      --track-border-on: 1;           /* 1 or 0 */
+      --track-border-w: 2px;          /* px */
     }
 
     * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
@@ -51,8 +55,13 @@
     #game-screen {
       width: var(--game-w); height: var(--game-h);
       background: #000; position: relative;
-      border: 2px solid var(--primary);
-      border-right: none;
+
+      /* ✅ Border now controlled by CSS variables */
+      border-style: solid;
+      border-color: var(--primary);
+      border-width: calc(var(--track-border-on) * var(--track-border-w));
+      border-right-width: 0;
+
       box-shadow: none;
       overflow: hidden;
       flex-shrink: 0;
@@ -68,7 +77,6 @@
     #tug-layer {
       position: absolute; inset: 0; z-index: 1; display: none;
     }
-    /* 蓝色区域（左侧）- 升级为强发光风格 */
     #tug-blue-zone {
       position: absolute; left: 0; top: 0; bottom: 0;
       width: 50%;
@@ -79,7 +87,6 @@
       transition: width 0.1s linear;
       z-index: 2;
     }
-    /* 红色区域（右侧）- 升级为强发光风格 */
     #tug-red-zone {
       position: absolute; right: 0; top: 0; bottom: 0;
       width: 50%;
@@ -108,7 +115,12 @@
       width: var(--game-h);
       height: var(--game-h);
       background: #000;
-      border: 2px solid var(--primary);
+
+      /* ✅ Border now controlled by CSS variables */
+      border-style: solid;
+      border-color: var(--primary);
+      border-width: calc(var(--track-border-on) * var(--track-border-w));
+
       display: flex;
       justify-content: center;
       align-items: center;
@@ -146,7 +158,6 @@
       background-size: 12px 12px; opacity: 0.8; z-index: 0;
     }
 
-    /* HUD */
     .hud { position: absolute; bottom: 4px; right: 10px; font-size: 32px; opacity: 0.5; letter-spacing: 2px; z-index: 110; }
 
     #track-display-bar {
@@ -159,13 +170,7 @@
       pointer-events: none;
     }
 
-    .bar-container {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
+    .bar-container { width: 100%; display: flex; align-items: center; justify-content: center; }
     .bar-text-item {
       font-size: 80px;
       letter-spacing: 2px;
@@ -178,16 +183,8 @@
       margin: 0;
       animation: text-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
-
-    @keyframes text-pop {
-      0% { transform: scale(0.5); opacity: 0; }
-      100% { transform: scale(1.0); opacity: 1; }
-    }
-
-    @keyframes text-vanish {
-      0% { opacity: 1; }
-      100% { opacity: 0; }
-    }
+    @keyframes text-pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1.0); opacity: 1; } }
+    @keyframes text-vanish { 0% { opacity: 1; } 100% { opacity: 0; } }
 
     .queue-alert {
       position: absolute; top: 10px; right: 20px;
@@ -228,13 +225,7 @@
     }
 
     .entity { position: absolute; width: 44px; height: 44px; will-change: transform; }
-    .pixel-grid {
-      display: grid;
-      grid-template-columns: repeat(11, 1fr);
-      width: 100%; height: 100%;
-      transform-origin: bottom center;
-      transition: transform 0.2s;
-    }
+    .pixel-grid { display: grid; grid-template-columns: repeat(11, 1fr); width: 100%; height: 100%; transform-origin: bottom center; transition: transform 0.2s; }
 
     .crown-container {
       position: absolute; top: -31px; left: 50%; transform: translateX(-50%);
@@ -267,7 +258,6 @@
       bottom: 5px;
     }
 
-    /* 拔河对撞粒子 */
     .tug-spark {
       position: absolute; width: 4px; height: 4px; background: #fff;
       box-shadow: 0 0 10px #fff, 0 0 20px #ff00ff;
@@ -275,7 +265,6 @@
       border-radius: 50%;
     }
 
-    /* 拔河点击震荡波 */
     .shockwave {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
       width: 10px; height: 10px; border-radius: 50%;
@@ -339,10 +328,7 @@
       100% { transform: translate(-50%, -160px) scale(1); opacity: 0; }
     }
 
-    .emoji-bar {
-      display: none !important; /* 隐藏表情栏 */
-      gap: 15px; margin-top: 40px; pointer-events: auto; z-index: 22001; justify-content: center;
-    }
+    .emoji-bar { display: none !important; gap: 15px; margin-top: 40px; pointer-events: auto; z-index: 22001; justify-content: center; }
     .emoji-btn {
       background: #222; border: 2px solid #555; color: #fff;
       width: 60px; height: 60px; border-radius: 12px; cursor: pointer;
@@ -360,10 +346,7 @@
       border: 1px solid var(--border); border-radius: 8px; z-index: 1000;
       box-shadow: 0 0 20px rgba(0,0,0,0.8);
     }
-    #qrcode {
-      background: white; padding: 3px; width: 90px; height: 90px;
-      display: flex; justify-content: center; align-items: center; border-radius: 2px;
-    }
+    #qrcode { background: white; padding: 3px; width: 90px; height: 90px; display: flex; justify-content: center; align-items: center; border-radius: 2px; }
     #qrcode img { display: block; width: 100%; height: 100%; }
 
     .control-group {
@@ -377,7 +360,6 @@
     input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: #333; border-radius: 3px; border: 1px solid #555; }
     input[type=range]::-webkit-slider-thumb { height: 16px; width: 16px; border-radius: 2px; background: var(--accent); cursor: pointer; -webkit-appearance: none; margin-top: -6px; box-shadow: 0 0 5px var(--accent); }
 
-    /* ✅ 允许小数：zoom-input step 改为 0.1；y-input也允许小数 */
     input[type="number"] {
       background: #222; border: 1px solid var(--border); color: var(--primary);
       font-family: 'VT323', monospace; font-size: 1.4rem; width: 70px;
@@ -446,10 +428,7 @@
       display: none; flex-direction: column; align-items: center; justify-content: center;
     }
 
-    /* 手机端选择框容器 */
-    #m-mode-wrapper {
-      margin-bottom: 20px; width: 100%; max-width: 300px; display: none; justify-content: center;
-    }
+    #m-mode-wrapper { margin-bottom: 20px; width: 100%; max-width: 300px; display: none; justify-content: center; }
     #m-mode-select {
       background: #222; border: 2px solid #555; color: #fff; padding: 10px;
       font-family: 'VT323'; font-size: 1.8rem; width: 100%; text-align: center;
@@ -475,7 +454,6 @@
     .btn-start { background: #ffffff !important; border: 8px solid #ccc !important; color: #000000 !important; box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; }
     .btn-dead { background: #ffffff !important; border: 8px solid #000000 !important; color: #000000 !important; box-shadow: 0 0 30px rgba(255, 255, 255, 0.5) !important; font-size: 3rem !important; }
 
-    /* 手机端队伍按钮颜色 - 强制覆盖，置于底部以确保优先级 */
     .btn-team-red {
       background: #ff0000 !important;
       border-color: #ff5252 !important;
@@ -619,10 +597,11 @@
     <div id="bottom-controls">
       <div class="control-group" style="border-left: none;">
         <span class="control-label">ZOOM</span>
-        <!-- ✅ 允许小数：step=0.1 -->
+        <!-- ✅ decimals ok -->
         <input type="range" id="zoom-slider" min="1" max="500" step="0.1" value="100" />
         <div class="input-wrapper">
-          <input type="number" id="zoom-input" value="100" min="1" max="500" step="0.1" />
+          <!-- ✅ step=0.1 makes up/down use 0.1 in most browsers; we also enforce in JS -->
+          <input type="number" id="zoom-input" value="100" min="1" max="500" step="0.1" inputmode="decimal" />
           <span class="unit-label">%</span>
         </div>
       </div>
@@ -631,7 +610,7 @@
         <span class="control-label">Y OFFSET</span>
         <input type="range" id="y-slider" min="-1200" max="1200" step="1" value="0" />
         <div class="input-wrapper">
-          <input type="number" id="y-input" value="0" step="0.1" />
+          <input type="number" id="y-input" value="0" step="0.1" inputmode="decimal" />
           <span class="unit-label">PX</span>
         </div>
       </div>
@@ -653,6 +632,19 @@
         <div class="input-wrapper">
           <input type="checkbox" id="snow-toggle" checked />
           <span class="unit-label" id="snow-toggle-label">ON</span>
+        </div>
+      </div>
+
+      <!-- ✅ 桌面端跑道描边控制 -->
+      <div class="control-group">
+        <span class="control-label">BORDER</span>
+        <div class="input-wrapper">
+          <input type="checkbox" id="border-toggle" checked />
+          <span class="unit-label" id="border-toggle-label">ON</span>
+        </div>
+        <div class="input-wrapper">
+          <input type="number" id="border-width-input" value="2" min="0" max="20" step="0.5" inputmode="decimal" />
+          <span class="unit-label">PX</span>
         </div>
       </div>
 
@@ -708,12 +700,12 @@
           <span>HOST CONTROL</span>
           <span style="font-size:1rem; color:#888;">(hidden)</span>
         </div>
-        <div class="m-admin-hint">Zoom / Y Offset supports decimals. Game Mode & Snow apply to host instantly.</div>
+        <div class="m-admin-hint">Zoom / Y Offset supports decimals. Mode / Snow / Border apply to host instantly.</div>
 
         <div class="m-admin-row">
           <div class="m-admin-label">ZOOM</div>
           <div class="m-admin-control">
-            <input type="number" id="m-admin-zoom" min="1" max="500" step="0.1" value="100" />
+            <input type="number" id="m-admin-zoom" min="1" max="500" step="0.1" value="100" inputmode="decimal" />
             <span class="unit-label">%</span>
           </div>
         </div>
@@ -721,7 +713,7 @@
         <div class="m-admin-row">
           <div class="m-admin-label">Y OFFSET</div>
           <div class="m-admin-control">
-            <input type="number" id="m-admin-y" min="-1200" max="1200" step="0.1" value="0" />
+            <input type="number" id="m-admin-y" min="-1200" max="1200" step="0.1" value="0" inputmode="decimal" />
             <span class="unit-label">PX</span>
           </div>
         </div>
@@ -744,6 +736,23 @@
           <div class="m-admin-control" style="justify-content:flex-end;">
             <input type="checkbox" id="m-admin-snow" checked />
             <span class="unit-label" id="m-admin-snow-label">ON</span>
+          </div>
+        </div>
+
+        <!-- ✅ 手机端：跑道描边控制 -->
+        <div class="m-admin-row">
+          <div class="m-admin-label">BORDER</div>
+          <div class="m-admin-control" style="justify-content:flex-end;">
+            <input type="checkbox" id="m-admin-border" checked />
+            <span class="unit-label" id="m-admin-border-label">ON</span>
+          </div>
+        </div>
+
+        <div class="m-admin-row">
+          <div class="m-admin-label">B WIDTH</div>
+          <div class="m-admin-control">
+            <input type="number" id="m-admin-borderw" min="0" max="20" step="0.5" value="2" inputmode="decimal" />
+            <span class="unit-label">PX</span>
           </div>
         </div>
 
@@ -831,7 +840,6 @@
     let redLightTimer = 0;
     let lightState = 'GREEN';
 
-    // === 拔河变量 ===
     let tugValue = 50;
 
     let peer = null, conn = null;
@@ -842,19 +850,22 @@
 
     let mobileBtnState = 'wait';
     let audioCtx = null;
-    let lastTapTime = 0;
 
     let layout = { scale: 1.0, x: 0, y: 0 };
     let currentBarText = '';
     let lastBroadcastText = '';
 
-    let lastShakeTime = 0; // 摇一摇防抖
+    let lastShakeTime = 0;
 
-    // ✅ 需求：关闭“上滑跳跃”（仍保留抬手机跳）
+    // ✅ 关闭“上滑跳跃”（仍保留抬手机跳）
     let swipeJumpEnabled = false;
 
-    // ✅ 桌面端/网页端下雪开关（可被手机端控制）
+    // ✅ 下雪开关（host controlled）
     let snowEnabled = true;
+
+    // ✅ 跑道描边控制（host controlled）
+    let trackBorderEnabled = true;
+    let trackBorderWidth = 2;
 
     // ✅ 手机端隐藏控制面板：标题五连击
     let mTitleTapCount = 0;
@@ -870,11 +881,7 @@
       }
     };
 
-    /* ==================== FUNCTIONS ==================== */
-
-    function vibrate(pattern) {
-      if (navigator.vibrate) navigator.vibrate(pattern);
-    }
+    function vibrate(pattern) { if (navigator.vibrate) navigator.vibrate(pattern); }
 
     function createPixelIcon(type, pixelSize = 2, color = '#fff') {
       const container = document.createElement('div');
@@ -967,7 +974,26 @@
       noteIndex = 0;
     }
 
-    // ✅ 桌面端：同步雪开关UI
+    function setTrackBorder(enabled, widthPx, updateUI=true) {
+      trackBorderEnabled = !!enabled;
+      const w = parseFloat(widthPx);
+      if (!isNaN(w)) trackBorderWidth = Math.max(0, Math.min(20, w));
+
+      document.documentElement.style.setProperty('--track-border-on', trackBorderEnabled ? 1 : 0);
+      document.documentElement.style.setProperty('--track-border-w', trackBorderWidth + 'px');
+
+      if (updateUI) syncDesktopBorderUI();
+    }
+
+    function syncDesktopBorderUI() {
+      const cb = document.getElementById('border-toggle');
+      const lbl = document.getElementById('border-toggle-label');
+      const wInput = document.getElementById('border-width-input');
+      if (cb) cb.checked = !!trackBorderEnabled;
+      if (lbl) lbl.textContent = trackBorderEnabled ? 'ON' : 'OFF';
+      if (wInput) wInput.value = String(trackBorderWidth);
+    }
+
     function syncDesktopSnowUI() {
       const snowToggle = document.getElementById('snow-toggle');
       const snowLabel = document.getElementById('snow-toggle-label');
@@ -979,16 +1005,11 @@
       }
     }
 
-    // ✅ 手机端：打开/关闭隐藏面板
     function openMobileAdmin() {
       const panel = document.getElementById('m-admin');
       if (!panel) return;
       panel.style.display = 'flex';
-
-      // 请求一次 host 当前设置
-      if (conn && conn.open) {
-        conn.send({ type: 'request_settings' });
-      }
+      if (conn && conn.open) conn.send({ type: 'request_settings' });
     }
     function closeMobileAdmin() {
       const panel = document.getElementById('m-admin');
@@ -996,7 +1017,6 @@
       panel.style.display = 'none';
     }
 
-    // ✅ 手机端：发送控制指令到 host
     function sendHostControl(payload) {
       if (!conn || !conn.open) return;
       conn.send({ type: 'host_control', payload });
@@ -1014,7 +1034,7 @@
       const ySlider = document.getElementById('y-slider');
       const yInput = document.getElementById('y-input');
 
-      // ✅ 允许小数：parseFloat + 不再强制整数
+      // ✅ Zoom: decimals + enforce ArrowUp/Down increment 0.1
       zoomSlider.oninput = function() {
         zoomInput.value = this.value;
         layout.scale = parseFloat(this.value) / 100;
@@ -1028,6 +1048,20 @@
           applyLayout(false);
         }
       };
+      zoomInput.addEventListener('keydown', (e) => {
+        if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+        e.preventDefault();
+        let v = parseFloat(zoomInput.value);
+        if (isNaN(v)) v = layout.scale * 100;
+        const delta = (e.key === 'ArrowUp') ? 0.1 : -0.1;
+        v = Math.max(parseFloat(zoomInput.min || '1'), Math.min(parseFloat(zoomInput.max || '500'), v + delta));
+        v = Math.round(v * 10) / 10;
+        zoomInput.value = v.toFixed(1);
+        zoomSlider.value = v.toFixed(1);
+        layout.scale = v / 100;
+        applyLayout(false);
+      });
+
       ySlider.oninput = function() {
         yInput.value = this.value;
         layout.y = parseFloat(this.value);
@@ -1042,7 +1076,7 @@
         }
       };
 
-      // ✅ SNOW 开关绑定（桌面端）
+      // ✅ SNOW toggle
       const snowToggle = document.getElementById('snow-toggle');
       const snowLabel = document.getElementById('snow-toggle-label');
       if (snowToggle) {
@@ -1057,6 +1091,31 @@
           }
         });
       }
+
+      // ✅ BORDER controls (desktop)
+      const borderToggle = document.getElementById('border-toggle');
+      const borderLabel = document.getElementById('border-toggle-label');
+      const borderWidthInput = document.getElementById('border-width-input');
+
+      if (borderToggle) {
+        trackBorderEnabled = borderToggle.checked;
+        if (borderLabel) borderLabel.textContent = trackBorderEnabled ? 'ON' : 'OFF';
+        borderToggle.addEventListener('change', () => {
+          trackBorderEnabled = borderToggle.checked;
+          if (borderLabel) borderLabel.textContent = trackBorderEnabled ? 'ON' : 'OFF';
+          setTrackBorder(trackBorderEnabled, trackBorderWidth, false);
+        });
+      }
+      if (borderWidthInput) {
+        trackBorderWidth = parseFloat(borderWidthInput.value) || 2;
+        borderWidthInput.addEventListener('input', () => {
+          const w = parseFloat(borderWidthInput.value);
+          if (!isNaN(w)) setTrackBorder(trackBorderEnabled, w, false);
+        });
+      }
+
+      // Apply initial border vars
+      setTrackBorder(trackBorderEnabled, trackBorderWidth, true);
 
       const gameContainer = document.getElementById('desktop-view');
       gameContainer.addEventListener('wheel', (e) => {
@@ -1139,7 +1198,6 @@
       applyLayout(true);
     }
 
-    // ✅ 小数显示：zoom 输入保留 1 位小数；slider 同步小数值
     function applyLayout(updateInput = true) {
       const el = document.getElementById('track-wrapper');
       el.style.transform = `scale(${layout.scale}) translate(${layout.x}px, ${layout.y}px)`;
@@ -1168,7 +1226,6 @@
 
         peer.on('connection', c => {
           c.on('data', data => {
-            // ✅ 手机端请求当前设置
             if (data.type === 'request_settings') {
               const modeSel = document.getElementById('mode-select');
               c.send({
@@ -1176,12 +1233,13 @@
                 zoom: layout.scale * 100,
                 y: layout.y,
                 mode: modeSel ? modeSel.value : 'CLASSIC',
-                snowEnabled: !!snowEnabled
+                snowEnabled: !!snowEnabled,
+                borderEnabled: !!trackBorderEnabled,
+                borderWidth: trackBorderWidth
               });
               return;
             }
 
-            // ✅ 手机端发送 host 控制指令
             if (data.type === 'host_control' && data.payload) {
               const p = data.payload;
 
@@ -1203,6 +1261,12 @@
                 syncDesktopSnowUI();
               }
 
+              if (p.action === 'set_border') {
+                const en = (p.enabled !== undefined) ? !!p.enabled : trackBorderEnabled;
+                const w = (p.width !== undefined) ? p.width : trackBorderWidth;
+                setTrackBorder(en, w, true);
+              }
+
               if (p.action === 'add_bot') {
                 spawnTestPony();
               }
@@ -1210,7 +1274,6 @@
               return;
             }
 
-            // 原有逻辑
             if (data.type === 'check_reconnect') {
               const uuid = data.uuid;
               const exists = ponies.find(p => p.playerUUID === uuid) || ponyQueue.find(p => p.playerUUID === uuid);
@@ -1554,7 +1617,6 @@
     function gameLoop() { updateGameLogic(); draw(); requestAnimationFrame(gameLoop); }
 
     function updateGameLogic() {
-      // ✅ 下雪开关生效
       if (snowEnabled) spawnSnow();
 
       const alert = document.getElementById('queue-text');
@@ -1814,21 +1876,6 @@
       }
     }
 
-    function spawnTrail(p) {
-      const fxLayer = document.getElementById('layer-fx');
-      const count = Math.random() < 0.5 ? 1 : 2;
-      for (let i = 0; i < count; i++) {
-        const el = document.createElement('div');
-        el.className = 'trail-segment';
-        el.style.left = (p.x - 20 + Math.random() * 10) + 'px';
-        el.style.top = (p.y + 15 + Math.random() * 15) + 'px';
-        el.style.background = p.color;
-        el.style.boxShadow = `0 0 0px ${p.color}`;
-        fxLayer.appendChild(el);
-        setTimeout(() => el.remove(), 400);
-      }
-    }
-
     function spawnSnow() {
       const snowLayer = document.getElementById('layer-snow');
       const count = Math.random() < 0.5 ? 1 : 2;
@@ -1844,6 +1891,21 @@
         el.style.animationDuration = duration + 'ms';
         snowLayer.appendChild(el);
         setTimeout(() => el.remove(), duration + 100);
+      }
+    }
+
+    function spawnTrail(p) {
+      const fxLayer = document.getElementById('layer-fx');
+      const count = Math.random() < 0.5 ? 1 : 2;
+      for (let i = 0; i < count; i++) {
+        const el = document.createElement('div');
+        el.className = 'trail-segment';
+        el.style.left = (p.x - 20 + Math.random() * 10) + 'px';
+        el.style.top = (p.y + 15 + Math.random() * 15) + 'px';
+        el.style.background = p.color;
+        el.style.boxShadow = `0 0 0px ${p.color}`;
+        fxLayer.appendChild(el);
+        setTimeout(() => el.remove(), 400);
       }
     }
 
@@ -2143,7 +2205,6 @@
 
       initEditor('m-grid', 'm-colors', mobileGrid);
 
-      // ✅ 五次点击标题进入隐藏面板
       const titleEl = document.getElementById('m-title');
       if (titleEl) {
         titleEl.addEventListener('click', () => {
@@ -2159,13 +2220,16 @@
         });
       }
 
-      // ✅ 绑定隐藏面板按钮
       const applyBtn = document.getElementById('m-admin-apply');
       const addBotBtn = document.getElementById('m-admin-addbot');
       const backBtn = document.getElementById('m-admin-back');
       const snowCb = document.getElementById('m-admin-snow');
       const snowLbl = document.getElementById('m-admin-snow-label');
       const modeSel = document.getElementById('m-admin-mode');
+
+      const borderCb = document.getElementById('m-admin-border');
+      const borderLbl = document.getElementById('m-admin-border-label');
+      const borderW = document.getElementById('m-admin-borderw');
 
       if (applyBtn) {
         applyBtn.addEventListener('click', () => {
@@ -2202,6 +2266,24 @@
         });
       }
 
+      if (borderCb) {
+        borderCb.addEventListener('change', () => {
+          const enabled = borderCb.checked;
+          if (borderLbl) borderLbl.textContent = enabled ? 'ON' : 'OFF';
+          const w = borderW ? parseFloat(borderW.value) : 2;
+          sendHostControl({ action: 'set_border', enabled, width: w });
+          vibrate(10);
+        });
+      }
+      if (borderW) {
+        borderW.addEventListener('change', () => {
+          const w = parseFloat(borderW.value);
+          const enabled = borderCb ? borderCb.checked : true;
+          sendHostControl({ action: 'set_border', enabled, width: w });
+          vibrate(10);
+        });
+      }
+
       try {
         peer = new Peer(null, PEER_CONFIG);
         peer.on('open', () => {
@@ -2210,18 +2292,18 @@
             document.getElementById('m-status').innerText = "CONNECTED";
             document.getElementById('m-status').style.color = "#69f0ae";
             conn.send({ type: 'check_reconnect', uuid: playerUUID });
-
-            // 可选：连接成功后也请求一次设置，方便面板首次打开就有值
             conn.send({ type: 'request_settings' });
           });
 
           conn.on('data', data => {
-            // ✅ host 返回设置：填充隐藏面板
             if (data.type === 'settings') {
               const z = (typeof data.zoom === 'number') ? data.zoom : 100;
               const y = (typeof data.y === 'number') ? data.y : 0;
               const mode = data.mode || 'CLASSIC';
               const sn = !!data.snowEnabled;
+
+              const ben = (data.borderEnabled !== undefined) ? !!data.borderEnabled : true;
+              const bw = (typeof data.borderWidth === 'number') ? data.borderWidth : 2;
 
               const zEl = document.getElementById('m-admin-zoom');
               const yEl = document.getElementById('m-admin-y');
@@ -2229,11 +2311,20 @@
               const sEl = document.getElementById('m-admin-snow');
               const sLbl = document.getElementById('m-admin-snow-label');
 
+              const bEl = document.getElementById('m-admin-border');
+              const bLbl = document.getElementById('m-admin-border-label');
+              const bwEl = document.getElementById('m-admin-borderw');
+
               if (zEl) zEl.value = Number(z).toFixed(1);
               if (yEl) yEl.value = Number(y).toFixed(1);
               if (mEl) mEl.value = mode;
               if (sEl) sEl.checked = sn;
               if (sLbl) sLbl.textContent = sn ? 'ON' : 'OFF';
+
+              if (bEl) bEl.checked = ben;
+              if (bLbl) bLbl.textContent = ben ? 'ON' : 'OFF';
+              if (bwEl) bwEl.value = String(bw);
+
               return;
             }
 
@@ -2325,7 +2416,6 @@
 
     const mBtn = document.getElementById('m-btn');
     let touchStartY = 0;
-    let touchStartTime = 0;
 
     mBtn.addEventListener('touchstart', (e) => {
       if (mobileBtnState === 'dead') { resetMobile(); return; }
@@ -2340,7 +2430,6 @@
 
       e.preventDefault();
       touchStartY = e.changedTouches[0].clientY;
-      touchStartTime = Date.now();
       mBtn.style.transform = 'scale(0.95)';
     }, {passive: false});
 
@@ -2352,7 +2441,6 @@
       const touchEndY = e.changedTouches[0].clientY;
       const diffY = touchStartY - touchEndY;
 
-      // ✅ 关闭上滑跳跃：swipeJumpEnabled=false 时，上滑也只当作 tap
       if (swipeJumpEnabled && diffY > 50) {
         if(conn) conn.send({ type: 'jump', uuid: playerUUID });
         vibrate(100);
