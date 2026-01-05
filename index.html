@@ -14,8 +14,11 @@
       --primary: #ffffff;
       --panel: #222222;
       --border: #444444;
+
+      /* ✅ Track size (host-controlled length) */
       --game-w: 3400px;
       --game-h: 100px;
+
       --accent: #40e0d0;
 
       /* ✅ Track border controls (host-controlled) */
@@ -152,8 +155,12 @@
       background-size: 50px 50px;
       pointer-events: none;
     }
+
+    /* ✅ Finish line follows track length */
     .finish-line {
-      position: absolute; top: 0; bottom: 0; right: 400px; width: 12px;
+      position: absolute; top: 0; bottom: 0;
+      left: calc(var(--game-w) - 400px);
+      width: 12px;
       background-image: linear-gradient(45deg, #fff 25%, transparent 25%, transparent 50%, #fff 50%, #fff 75%, transparent 75%, transparent);
       background-size: 12px 12px; opacity: 0.8; z-index: 0;
     }
@@ -345,6 +352,7 @@
       padding: 15px; background: rgba(0, 0, 0, 0.85);
       border: 1px solid var(--border); border-radius: 8px; z-index: 1000;
       box-shadow: 0 0 20px rgba(0,0,0,0.8);
+      flex-wrap: wrap;
     }
     #qrcode { background: white; padding: 3px; width: 90px; height: 90px; display: flex; justify-content: center; align-items: center; border-radius: 2px; }
     #qrcode img { display: block; width: 100%; height: 100%; }
@@ -362,7 +370,7 @@
 
     input[type="number"] {
       background: #222; border: 1px solid var(--border); color: var(--primary);
-      font-family: 'VT323', monospace; font-size: 1.4rem; width: 70px;
+      font-family: 'VT323', monospace; font-size: 1.4rem; width: 80px;
       text-align: center; padding: 2px; border-radius: 4px;
     }
     .unit-label { font-size: 1.2rem; color: #555; }
@@ -523,7 +531,7 @@
       justify-content: flex-end;
     }
     .m-admin-control input[type="number"]{
-      width: 120px;
+      width: 140px;
       font-size: 1.4rem;
       padding: 6px 8px;
       border-radius: 6px;
@@ -597,12 +605,20 @@
     <div id="bottom-controls">
       <div class="control-group" style="border-left: none;">
         <span class="control-label">ZOOM</span>
-        <!-- ✅ decimals ok -->
         <input type="range" id="zoom-slider" min="1" max="500" step="0.1" value="100" />
         <div class="input-wrapper">
-          <!-- ✅ step=0.1 makes up/down use 0.1 in most browsers; we also enforce in JS -->
           <input type="number" id="zoom-input" value="100" min="1" max="500" step="0.1" inputmode="decimal" />
           <span class="unit-label">%</span>
+        </div>
+      </div>
+
+      <!-- ✅ NEW: X OFFSET (left/right pan) -->
+      <div class="control-group">
+        <span class="control-label">X OFFSET</span>
+        <input type="range" id="x-slider" min="-3000" max="3000" step="1" value="0" />
+        <div class="input-wrapper">
+          <input type="number" id="x-input" value="0" step="0.1" inputmode="decimal" />
+          <span class="unit-label">PX</span>
         </div>
       </div>
 
@@ -611,6 +627,15 @@
         <input type="range" id="y-slider" min="-1200" max="1200" step="1" value="0" />
         <div class="input-wrapper">
           <input type="number" id="y-input" value="0" step="0.1" inputmode="decimal" />
+          <span class="unit-label">PX</span>
+        </div>
+      </div>
+
+      <!-- ✅ NEW: TRACK LENGTH (px) -->
+      <div class="control-group">
+        <span class="control-label">LENGTH</span>
+        <div class="input-wrapper">
+          <input type="number" id="len-input" value="3400" min="800" max="12000" step="10" inputmode="numeric" />
           <span class="unit-label">PX</span>
         </div>
       </div>
@@ -626,7 +651,6 @@
         </select>
       </div>
 
-      <!-- ✅ 桌面端下雪开关 -->
       <div class="control-group">
         <span class="control-label">SNOW</span>
         <div class="input-wrapper">
@@ -635,7 +659,6 @@
         </div>
       </div>
 
-      <!-- ✅ 桌面端跑道描边控制 -->
       <div class="control-group">
         <span class="control-label">BORDER</span>
         <div class="input-wrapper">
@@ -700,7 +723,7 @@
           <span>HOST CONTROL</span>
           <span style="font-size:1rem; color:#888;">(hidden)</span>
         </div>
-        <div class="m-admin-hint">Zoom / Y Offset supports decimals. Mode / Snow / Border apply to host instantly.</div>
+        <div class="m-admin-hint">Zoom / X / Y supports decimals. Length changes track size (height fixed).</div>
 
         <div class="m-admin-row">
           <div class="m-admin-label">ZOOM</div>
@@ -710,10 +733,28 @@
           </div>
         </div>
 
+        <!-- ✅ NEW: X OFFSET -->
+        <div class="m-admin-row">
+          <div class="m-admin-label">X OFFSET</div>
+          <div class="m-admin-control">
+            <input type="number" id="m-admin-x" min="-3000" max="3000" step="0.1" value="0" inputmode="decimal" />
+            <span class="unit-label">PX</span>
+          </div>
+        </div>
+
         <div class="m-admin-row">
           <div class="m-admin-label">Y OFFSET</div>
           <div class="m-admin-control">
             <input type="number" id="m-admin-y" min="-1200" max="1200" step="0.1" value="0" inputmode="decimal" />
+            <span class="unit-label">PX</span>
+          </div>
+        </div>
+
+        <!-- ✅ NEW: TRACK LENGTH -->
+        <div class="m-admin-row">
+          <div class="m-admin-label">LENGTH</div>
+          <div class="m-admin-control">
+            <input type="number" id="m-admin-len" min="800" max="12000" step="10" value="3400" inputmode="numeric" />
             <span class="unit-label">PX</span>
           </div>
         </div>
@@ -739,7 +780,6 @@
           </div>
         </div>
 
-        <!-- ✅ 手机端：跑道描边控制 -->
         <div class="m-admin-row">
           <div class="m-admin-label">BORDER</div>
           <div class="m-admin-control" style="justify-content:flex-end;">
@@ -789,10 +829,15 @@
   </div>
 
   <script>
-    const GAME_W = 3400;
+    // ✅ Track height fixed; length is host-controlled
+    let gameW = 3400;
     const GAME_H = 100;
+
     const PONY_SIZE = 50;
-    const FINISH_X = GAME_W - 400;
+
+    function getFinishX() {
+      return Math.max(200, gameW - 400);
+    }
 
     const COLORS = { CYAN:'#40e0d0', YELLOW:'#ffb300', RED:'#ff5252', GREEN:'#69f0ae', PURPLE:'#e040fb', WHITE:'#ffffff', BLUE:'#2979ff' };
 
@@ -851,6 +896,7 @@
     let mobileBtnState = 'wait';
     let audioCtx = null;
 
+    // ✅ layout controls (zoom + x + y)
     let layout = { scale: 1.0, x: 0, y: 0 };
     let currentBarText = '';
     let lastBroadcastText = '';
@@ -882,6 +928,33 @@
     };
 
     function vibrate(pattern) { if (navigator.vibrate) navigator.vibrate(pattern); }
+
+    function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+
+    function setTrackLength(px, updateUI = true) {
+      const w = parseFloat(px);
+      if (isNaN(w)) return;
+      gameW = clamp(w, 800, 12000);
+      document.documentElement.style.setProperty('--game-w', gameW + 'px');
+
+      // clamp existing entities into new bounds
+      const maxX = gameW - 38;
+      ponies.forEach(p => { p.x = clamp(p.x, 0, maxX); });
+      ponyQueue.forEach(p => { p.x = clamp(p.x, 0, maxX); });
+
+      // If in TUG mode, re-center camera a bit
+      if (currentGameMode === 'TUG') {
+        const targetX = (window.innerWidth / 2) - ((gameW / 2) * layout.scale);
+        layout.x = targetX;
+      }
+
+      if (updateUI) {
+        const lenInput = document.getElementById('len-input');
+        if (lenInput) lenInput.value = String(Math.round(gameW));
+      }
+
+      applyLayout(false);
+    }
 
     function createPixelIcon(type, pixelSize = 2, color = '#fff') {
       const container = document.createElement('div');
@@ -1029,8 +1102,15 @@
         if (type) { btn.appendChild(createPixelIcon(type, 3, '#fff')); }
       });
 
+      // init CSS length + desktop UI length
+      document.documentElement.style.setProperty('--game-w', gameW + 'px');
+      const lenInput = document.getElementById('len-input');
+      if (lenInput) lenInput.value = String(gameW);
+
       const zoomSlider = document.getElementById('zoom-slider');
       const zoomInput = document.getElementById('zoom-input');
+      const xSlider = document.getElementById('x-slider');
+      const xInput = document.getElementById('x-input');
       const ySlider = document.getElementById('y-slider');
       const yInput = document.getElementById('y-input');
 
@@ -1062,6 +1142,22 @@
         applyLayout(false);
       });
 
+      // ✅ X offset (left-right)
+      xSlider.oninput = function() {
+        xInput.value = this.value;
+        layout.x = parseFloat(this.value);
+        applyLayout(false);
+      };
+      xInput.oninput = function() {
+        let val = parseFloat(this.value);
+        if (!isNaN(val)) {
+          xSlider.value = Math.round(val);
+          layout.x = val;
+          applyLayout(false);
+        }
+      };
+
+      // ✅ Y offset
       ySlider.oninput = function() {
         yInput.value = this.value;
         layout.y = parseFloat(this.value);
@@ -1075,6 +1171,13 @@
           applyLayout(false);
         }
       };
+
+      // ✅ Track length
+      if (lenInput) {
+        lenInput.addEventListener('change', () => {
+          setTrackLength(lenInput.value, true);
+        });
+      }
 
       // ✅ SNOW toggle
       const snowToggle = document.getElementById('snow-toggle');
@@ -1113,8 +1216,6 @@
           if (!isNaN(w)) setTrackBorder(trackBorderEnabled, w, false);
         });
       }
-
-      // Apply initial border vars
       setTrackBorder(trackBorderEnabled, trackBorderWidth, true);
 
       const gameContainer = document.getElementById('desktop-view');
@@ -1143,7 +1244,9 @@
 
       window.addEventListener('keydown', (e) => {
         if (e.target.tagName === 'INPUT') return;
-        const step = 20 / layout.scale; const zoomStep = 0.05; let changed = false;
+        const step = 20 / layout.scale;
+        const zoomStep = 0.05;
+        let changed = false;
         switch(e.key) {
           case 'ArrowUp': layout.y -= step; changed = true; break;
           case 'ArrowDown': layout.y += step; changed = true; break;
@@ -1191,9 +1294,10 @@
         conns.forEach(conn => { if(conn.open) conn.send(data); });
       });
     }
+
     function fitScreen() {
       const availableW = window.innerWidth * 0.95;
-      layout.scale = Math.min(availableW / (GAME_W + GAME_H), 1);
+      layout.scale = Math.min(availableW / (gameW + GAME_H), 1);
       layout.x = 0; layout.y = 0;
       applyLayout(true);
     }
@@ -1206,6 +1310,9 @@
         const zoomPct = layout.scale * 100;
         document.getElementById('zoom-input').value = zoomPct.toFixed(1);
         document.getElementById('zoom-slider').value = zoomPct.toFixed(1);
+
+        document.getElementById('x-input').value = Number(layout.x).toFixed(1);
+        document.getElementById('x-slider').value = Math.round(layout.x);
 
         document.getElementById('y-input').value = Number(layout.y).toFixed(1);
         document.getElementById('y-slider').value = Number(layout.y);
@@ -1231,7 +1338,9 @@
               c.send({
                 type: 'settings',
                 zoom: layout.scale * 100,
+                x: layout.x,
                 y: layout.y,
+                length: gameW,
                 mode: modeSel ? modeSel.value : 'CLASSIC',
                 snowEnabled: !!snowEnabled,
                 borderEnabled: !!trackBorderEnabled,
@@ -1245,10 +1354,16 @@
 
               if (p.action === 'set_layout') {
                 const z = parseFloat(p.zoom);
+                const x = parseFloat(p.x);
                 const y = parseFloat(p.y);
                 if (!isNaN(z)) layout.scale = z / 100;
+                if (!isNaN(x)) layout.x = x;
                 if (!isNaN(y)) layout.y = y;
                 applyLayout(true);
+              }
+
+              if (p.action === 'set_length') {
+                setTrackLength(p.length, true);
               }
 
               if (p.action === 'set_mode') {
@@ -1489,10 +1604,10 @@
           const baseY = (GAME_H - PONY_SIZE) / 2 + 10;
 
           if (p.team === 1) {
-            p.x = (GAME_W / 2) - 100 - (myIndex * 50);
+            p.x = (gameW / 2) - 100 - (myIndex * 50);
             p.facing = 1;
           } else {
-            p.x = (GAME_W / 2) + 100 + (myIndex * 50);
+            p.x = (gameW / 2) + 100 + (myIndex * 50);
             p.facing = -1;
           }
           p.y = baseY;
@@ -1524,7 +1639,7 @@
         const rZone = document.getElementById('tug-red-zone');
         if(rZone) rZone.style.width = '50%';
 
-        const targetX = (window.innerWidth / 2) - (1700 * layout.scale);
+        const targetX = (window.innerWidth / 2) - ((gameW / 2) * layout.scale);
         layout.x = targetX;
         applyLayout(false);
       } else if (tugLayer) {
@@ -1549,7 +1664,7 @@
         statusText = "STATUS: JUMP";
         mobileInfo = "TAP: RUN / UP: JUMP";
         obstacles = [];
-        for(let ox = 500; ox < FINISH_X - 200; ox += (400 + Math.random() * 300)) {
+        for(let ox = 500; ox < getFinishX() - 200; ox += (400 + Math.random() * 300)) {
           obstacles.push({ x: ox, width: 10, passed: false });
         }
       } else if (currentGameMode === 'RED_LIGHT') {
@@ -1679,11 +1794,11 @@
           const rZone = document.getElementById('tug-red-zone');
           if(rZone) rZone.style.width = (100 - tugValue) + '%';
 
-          const targetX = (window.innerWidth / 2) - (1700 * layout.scale);
+          const targetX = (window.innerWidth / 2) - ((gameW / 2) * layout.scale);
           layout.x = targetX;
           applyLayout(false);
 
-          const battleFront = GAME_W * (tugValue / 100);
+          const battleFront = gameW * (tugValue / 100);
           spawnBattleSparks(battleFront);
 
           ponies.forEach(p => {
@@ -1759,7 +1874,7 @@
       const active = ponies.filter(p => p.state === 'racing');
       if (active.length === 0 && Math.random() < 0.2) {
         const segmentSize = 500;
-        const totalSegments = Math.ceil(GAME_W / segmentSize);
+        const totalSegments = Math.ceil(gameW / segmentSize);
         for(let i=0; i<totalSegments; i++) {
           const startX = i * segmentSize;
           const endX = (i + 1) * segmentSize;
@@ -1806,9 +1921,7 @@
         mvpPony.isStreak = true;
       }
 
-      const winnerText = "WIN";
-      const winnerColor = (winnerTeam === 1) ? "#2979ff" : "#ff0000";
-      updateBarText(winnerText, winnerColor);
+      updateBarText("WIN", (winnerTeam === 1) ? "#2979ff" : "#ff0000");
       setBarVisibility(true);
 
       const tugLayer = document.getElementById('tug-layer');
@@ -1882,7 +1995,7 @@
       for(let i=0; i<count; i++) {
         const el = document.createElement('div');
         el.className = 'snowflake';
-        el.style.left = (Math.random() * GAME_W) + 'px';
+        el.style.left = (Math.random() * gameW) + 'px';
         const size = 2 + Math.random() * 3;
         el.style.width = size + 'px';
         el.style.height = size + 'px';
@@ -1994,7 +2107,7 @@
 
             p.facing = 1;
 
-            if (p.x >= FINISH_X) {
+            if (p.x >= getFinishX()) {
               if (p.state === 'racing') {
                 p.state = 'finished';
                 p.isTurbo = false;
@@ -2011,14 +2124,14 @@
           }
         } else if (p.state === 'finished') {
           p.z = 0;
-          if (p.x < GAME_W - 50) { p.x += 0.8; p.finishedWalking = true; p.isWalkAnimating = true; }
+          if (p.x < gameW - 50) { p.x += 0.8; p.finishedWalking = true; p.isWalkAnimating = true; }
           else { p.finishedWalking = false; aiBehavior(p, true); }
         } else {
           p.finishedWalking = false;
           aiBehavior(p, false);
         }
 
-        p.x = Math.max(0, Math.min(GAME_W - 38, p.x));
+        p.x = Math.max(0, Math.min(gameW - 38, p.x));
         p.y = Math.max(p.hasCrown ? 35 : 20, Math.min(GAME_H - 44 - 6, p.y));
       });
     }
@@ -2043,7 +2156,7 @@
         if (p.timer-- <= 0) {
           const action = Math.random();
           if (action < 0.3) {
-            p.targetX = (p.x < GAME_W / 2) ? GAME_W - 100 - Math.random() * 400 : 50 + Math.random() * 400;
+            p.targetX = (p.x < gameW / 2) ? gameW - 100 - Math.random() * 400 : 50 + Math.random() * 400;
             p.targetY = minY + Math.random() * (maxY - minY);
             p.timer = 400 + Math.random() * 400;
             p.roamSpeed = 2.0;
@@ -2234,8 +2347,13 @@
       if (applyBtn) {
         applyBtn.addEventListener('click', () => {
           const z = parseFloat(document.getElementById('m-admin-zoom').value);
+          const x = parseFloat(document.getElementById('m-admin-x').value);
           const y = parseFloat(document.getElementById('m-admin-y').value);
-          sendHostControl({ action: 'set_layout', zoom: z, y: y });
+          const len = parseFloat(document.getElementById('m-admin-len').value);
+
+          sendHostControl({ action: 'set_layout', zoom: z, x: x, y: y });
+          sendHostControl({ action: 'set_length', length: len });
+
           vibrate(10);
         });
       }
@@ -2298,7 +2416,10 @@
           conn.on('data', data => {
             if (data.type === 'settings') {
               const z = (typeof data.zoom === 'number') ? data.zoom : 100;
+              const x = (typeof data.x === 'number') ? data.x : 0;
               const y = (typeof data.y === 'number') ? data.y : 0;
+              const len = (typeof data.length === 'number') ? data.length : 3400;
+
               const mode = data.mode || 'CLASSIC';
               const sn = !!data.snowEnabled;
 
@@ -2306,7 +2427,10 @@
               const bw = (typeof data.borderWidth === 'number') ? data.borderWidth : 2;
 
               const zEl = document.getElementById('m-admin-zoom');
+              const xEl = document.getElementById('m-admin-x');
               const yEl = document.getElementById('m-admin-y');
+              const lenEl = document.getElementById('m-admin-len');
+
               const mEl = document.getElementById('m-admin-mode');
               const sEl = document.getElementById('m-admin-snow');
               const sLbl = document.getElementById('m-admin-snow-label');
@@ -2316,7 +2440,10 @@
               const bwEl = document.getElementById('m-admin-borderw');
 
               if (zEl) zEl.value = Number(z).toFixed(1);
+              if (xEl) xEl.value = Number(x).toFixed(1);
               if (yEl) yEl.value = Number(y).toFixed(1);
+              if (lenEl) lenEl.value = String(Math.round(len));
+
               if (mEl) mEl.value = mode;
               if (sEl) sEl.checked = sn;
               if (sLbl) sLbl.textContent = sn ? 'ON' : 'OFF';
