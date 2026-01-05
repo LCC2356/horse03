@@ -71,24 +71,24 @@
         /* 蓝色区域（左侧）- 升级为强发光风格 */
         #tug-blue-zone {
             position: absolute; left: 0; top: 0; bottom: 0;
-            width: 50%; 
-            background: #001133; 
-            box-shadow: inset 0 0 80px #2979ff; 
-            border-right: 6px solid #fff; 
+            width: 50%;
+            background: #001133;
+            box-shadow: inset 0 0 80px #2979ff;
+            border-right: 6px solid #fff;
             filter: drop-shadow(0 0 10px #fff);
-            transition: width 0.1s linear; 
+            transition: width 0.1s linear;
             z-index: 2;
         }
         /* 红色区域（右侧）- 升级为强发光风格 */
         #tug-red-zone {
             position: absolute; right: 0; top: 0; bottom: 0;
             width: 50%;
-            background: #330000; 
-            box-shadow: inset 0 0 80px #ff0000; 
+            background: #330000;
+            box-shadow: inset 0 0 80px #ff0000;
             z-index: 1;
-            transition: width 0.1s linear; 
+            transition: width 0.1s linear;
         }
-        
+
         .icon-vs {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             font-size: 60px; color: #fff; text-shadow: 0 0 20px #fff, 0 0 40px #ff00ff; z-index: 10;
@@ -258,13 +258,13 @@
             font-size: 20px; white-space: nowrap; color: #40e0d0; text-shadow: 1px 1px 0 #000;
         }
         .grass { position: absolute; width: 6px; height: 6px; background: #69f0ae; box-shadow: 0 0 4px #69f0ae; }
-        
+
         .obstacle {
             position: absolute;
-            width: 10px; height: 30px; 
-            background: #ffffff; 
-            border: 2px solid #ffffff; 
-            box-shadow: 0 0 15px #ffffff; 
+            width: 10px; height: 30px;
+            background: #ffffff;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 15px #ffffff;
             z-index: 5;
             bottom: 5px;
         }
@@ -302,10 +302,10 @@
         @keyframes snowfall { to { transform: translateY(calc(var(--game-h) + 20px)); } }
 
         .trail-segment {
-            position: absolute; height: 4px; width: 50px; border-radius: 0px; 
+            position: absolute; height: 4px; width: 50px; border-radius: 0px;
             pointer-events: none; opacity: 0.8;
             animation: trail-fade 0.4s ease-out forwards;
-            z-index: 90; mix-blend-mode: screen; 
+            z-index: 90; mix-blend-mode: screen;
         }
         @keyframes trail-fade { to { opacity: 0; transform: translateX(-40px) scaleX(0.5); } }
 
@@ -372,15 +372,18 @@
             display: flex; flex-direction: column; gap: 5px; border-left: 1px solid #333; padding-left: 15px; width: 140px;
         }
         .control-label { font-size: 0.8rem; color: #888; letter-spacing: 1px; }
-        .input-wrapper { display: flex; align-items: center; gap: 5px; width: 100%; }
+        .input-wrapper { display: flex; align-items: center; gap: 8px; width: 100%; }
 
         input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; margin: 5px 0; }
         input[type=range]:focus { outline: none; }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: #333; border-radius: 3px; border: 1px solid #555; }
         input[type=range]::-webkit-slider-thumb { height: 16px; width: 16px; border-radius: 2px; background: var(--accent); cursor: pointer; -webkit-appearance: none; margin-top: -6px; box-shadow: 0 0 5px var(--accent); }
-        
+
         input[type="number"] { background: #222; border: 1px solid var(--border); color: var(--primary); font-family: 'VT323', monospace; font-size: 1.4rem; width: 60px; text-align: center; padding: 2px; border-radius: 4px; }
         .unit-label { font-size: 1.2rem; color: #555; }
+
+        /* ✅ 新增：让 checkbox 看起来不那么小 */
+        input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
 
         select {
             background: #222; border: 2px solid var(--border); color: white;
@@ -440,7 +443,7 @@
             position: fixed; inset: 0; background: #111; z-index: 22000;
             display: none; flex-direction: column; align-items: center; justify-content: center;
         }
-        
+
         /* 手机端选择框容器 */
         #m-mode-wrapper {
             margin-bottom: 20px; width: 100%; max-width: 300px; display: none; justify-content: center;
@@ -452,7 +455,7 @@
         }
 
         .push-btn {
-            width: 250px; height: 250px; 
+            width: 250px; height: 250px;
             border-radius: 50%;
             background: #222; border: 8px solid #444;
             color: #888; font-size: 4rem; font-family: 'VT323', monospace;
@@ -469,19 +472,19 @@
         .btn-mash { background: #fff !important; border-color: #ccc !important; color: #000 !important; box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; }
         .btn-start { background: #ffffff !important; border: 8px solid #ccc !important; color: #000000 !important; box-shadow: 0 0 60px rgba(255, 255, 255, 0.6) !important; }
         .btn-dead { background: #ffffff !important; border: 8px solid #000000 !important; color: #000000 !important; box-shadow: 0 0 30px rgba(255, 255, 255, 0.5) !important; font-size: 3rem !important; }
-        
+
         /* 手机端队伍按钮颜色 - 强制覆盖，置于底部以确保优先级 */
-        .btn-team-red { 
-            background: #ff0000 !important; 
-            border-color: #ff5252 !important; 
-            color: #fff !important; 
+        .btn-team-red {
+            background: #ff0000 !important;
+            border-color: #ff5252 !important;
+            color: #fff !important;
             box-shadow: 0 0 30px rgba(255, 0, 0, 0.6) !important;
             text-shadow: 0 0 10px #fff !important;
         }
-        .btn-team-blue { 
-            background: #0044ff !important; 
-            border-color: #40e0d0 !important; 
-            color: #fff !important; 
+        .btn-team-blue {
+            background: #0044ff !important;
+            border-color: #40e0d0 !important;
+            color: #fff !important;
             box-shadow: 0 0 30px rgba(0, 100, 255, 0.6) !important;
             text-shadow: 0 0 10px #fff !important;
         }
@@ -494,7 +497,7 @@
             <div id="track-wrapper">
                 <div id="game-screen">
                     <div class="grid-bg"></div>
-                    
+
                     <div id="tug-layer">
                         <div id="tug-red-zone"></div> <div id="tug-blue-zone">
                             <span class="tug-icon" style="right: 10px; color: #fff;">&#9664;</span> </div>
@@ -546,11 +549,20 @@
                 <span class="control-label">GAME MODE</span>
                 <select id="mode-select">
                     <option value="RANDOM">RANDOM</option>
-                    <option value="CLASSIC">RUN</option> 
+                    <option value="CLASSIC">RUN</option>
                     <option value="HURDLE">JUMP</option>
-                    <option value="RED_LIGHT">STOP?</option> 
+                    <option value="RED_LIGHT">STOP?</option>
                     <option value="TUG">TEAM</option>
                 </select>
+            </div>
+
+            <!-- ✅ 新增：桌面端下雪开关 -->
+            <div class="control-group">
+                <span class="control-label">SNOW</span>
+                <div class="input-wrapper">
+                    <input type="checkbox" id="snow-toggle" checked>
+                    <span class="unit-label" id="snow-toggle-label">ON</span>
+                </div>
             </div>
 
             <button class="btn" onclick="spawnTestPony()">+ BOT</button>
@@ -593,7 +605,7 @@
 
         <div id="m-controller">
             <div id="m-info" class="controller-info">GET READY</div>
-            
+
             <div id="m-mode-wrapper">
                 <select id="m-mode-select">
                     <option value="RANDOM">RANDOM</option>
@@ -604,7 +616,7 @@
             </div>
 
             <div id="m-btn" class="push-btn btn-wait">WAIT</div>
-            
+
             <div class="emoji-bar">
                 <div class="emoji-btn" onclick="sendEmoji('HEART')" data-icon="HEART"></div>
                 <div class="emoji-btn" onclick="sendEmoji('POOP')" data-icon="POOP"></div>
@@ -657,18 +669,18 @@
         let ponies = [];
         let ponyQueue = [];
         let grass = [];
-        let obstacles = []; 
+        let obstacles = [];
         let gameState = 'ROAMING';
         let cooldownTimer = 0;
         let waitTimer = 0;
-        
-        let currentGameMode = 'CLASSIC'; 
+
+        let currentGameMode = 'CLASSIC';
         let redLightTimer = 0;
-        let lightState = 'GREEN'; 
+        let lightState = 'GREEN';
 
         // === 拔河变量 ===
-        let tugValue = 50; 
-        
+        let tugValue = 50;
+
         let peer = null, conn = null;
         let pcGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
         let mobileGrid = JSON.parse(JSON.stringify(DEFAULT_PIXELS));
@@ -678,12 +690,18 @@
         let mobileBtnState = 'wait';
         let audioCtx = null;
         let lastTapTime = 0;
-        
+
         let layout = { scale: 1.0, x: 0, y: 0 };
         let currentBarText = '';
         let lastBroadcastText = '';
 
         let lastShakeTime = 0; // 摇一摇防抖
+
+        // ✅ 需求1：关闭“上滑跳跃”（仍保留抬手机跳）
+        let swipeJumpEnabled = false;
+
+        // ✅ 需求2：桌面端控制是否下雪
+        let snowEnabled = true;
 
         const PEER_CONFIG = {
             debug: 2,
@@ -725,7 +743,7 @@
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             const now = audioCtx.currentTime;
-            
+
             gain.connect(audioCtx.destination);
             osc.connect(gain);
 
@@ -742,9 +760,9 @@
                 osc.frequency.setValueAtTime(400, now);
                 gain.gain.setValueAtTime(0.2, now);
                 gain.gain.linearRampToValueAtTime(0, now + 0.1);
-                
+
                 osc.start(now); osc.stop(now + 0.1);
-                
+
                 const osc2 = audioCtx.createOscillator();
                 const gain2 = audioCtx.createGain();
                 gain2.connect(audioCtx.destination);
@@ -779,11 +797,11 @@
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = style.type;
-            osc.frequency.setValueAtTime(freq, now); 
+            osc.frequency.setValueAtTime(freq, now);
             gain.connect(audioCtx.destination);
             gain.gain.setValueAtTime(0, now);
             gain.gain.linearRampToValueAtTime(0.3, now + style.attack);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + style.attack + style.decay); 
+            gain.gain.exponentialRampToValueAtTime(0.01, now + style.attack + style.decay);
             osc.connect(gain);
             osc.start(now);
             osc.stop(now + style.attack + style.decay + 0.1);
@@ -793,7 +811,7 @@
             const songKeys = Object.keys(SONGS);
             myCurrentSongKey = songKeys[Math.floor(Math.random() * songKeys.length)];
             myStyleKey = STYLE_KEYS[Math.floor(Math.random() * STYLE_KEYS.length)];
-            noteIndex = 0; 
+            noteIndex = 0;
         }
 
         window.onload = function() {
@@ -812,6 +830,22 @@
             zoomInput.oninput = function() { let val = parseFloat(this.value); if(val) { zoomSlider.value = val; layout.scale = val / 100; applyLayout(false); } };
             ySlider.oninput = function() { yInput.value = this.value; layout.y = parseFloat(this.value); applyLayout(false); };
             yInput.oninput = function() { let val = parseFloat(this.value); if(!isNaN(val)) { ySlider.value = val; layout.y = val; applyLayout(false); } };
+
+            // ✅ SNOW 开关绑定（桌面端）
+            const snowToggle = document.getElementById('snow-toggle');
+            const snowLabel = document.getElementById('snow-toggle-label');
+            if (snowToggle) {
+                snowEnabled = snowToggle.checked;
+                if (snowLabel) snowLabel.textContent = snowEnabled ? 'ON' : 'OFF';
+                snowToggle.addEventListener('change', () => {
+                    snowEnabled = snowToggle.checked;
+                    if (snowLabel) snowLabel.textContent = snowEnabled ? 'ON' : 'OFF';
+                    if (!snowEnabled) {
+                        const snowLayer = document.getElementById('layer-snow');
+                        if (snowLayer) snowLayer.innerHTML = '';
+                    }
+                });
+            }
 
             const gameContainer = document.getElementById('desktop-view');
             gameContainer.addEventListener('wheel', (e) => {
@@ -898,12 +932,12 @@
                             const uuid = data.payload.uuid;
                             const exists = ponies.find(p => p.playerUUID === uuid) || ponyQueue.find(p => p.playerUUID === uuid);
                             if (!exists) requestSpawnPony(data.payload.name, data.payload.pixels, data.payload.color, uuid);
-                            
+
                             // === 修正：如果游戏正在进行中，强制让这个新连接的玩家进入等待状态 ===
                             if (gameState === 'RACING') {
                                 c.send({ type: 'sync_ui', label: 'WAITING', mode: 'wait' });
                             }
-                            
+
                         } else if (data.type === 'tap') {
                             handleTap(data.uuid);
                         } else if (data.type === 'jump') {
@@ -931,7 +965,7 @@
         }
 
         function applyTugForce(team) {
-            const power = 1.5; 
+            const power = 1.5;
             if (team === 1) {
                 tugValue = Math.min(100, tugValue + power);
             } else {
@@ -950,12 +984,12 @@
                 el.style.left = x + 'px';
                 el.style.top = (Math.random() * GAME_H) + 'px';
                 fx.appendChild(el);
-                
+
                 const angle = (Math.random() - 0.5) * Math.PI; // 向左或向右随机
                 const speed = 5 + Math.random() * 10;
                 let vx = Math.cos(angle) * speed * (Math.random() < 0.5 ? 1 : -1);
                 let vy = (Math.random() - 0.5) * 10;
-                
+
                 let life = 30;
                 const tick = () => {
                     life--;
@@ -973,18 +1007,18 @@
         function handleTap(uuid) {
             if (!uuid) return;
             const pony = ponies.find(p => p.playerUUID === uuid);
-            
+
             if (pony && pony.state === 'racing') {
-                
+
                 if (currentGameMode === 'TUG') {
                     applyTugForce(pony.team);
-                    pony.tapCount++; 
+                    pony.tapCount++;
                     pony.isWalkAnimating = true;
                     pony.manualAnimTimer = 5;
 
                     // === 修改：点击冲刺距离改为35 ===
-                    pony.pullOffset = (pony.team === 1 ? 35 : -35); 
-                    
+                    pony.pullOffset = (pony.team === 1 ? 35 : -35);
+
                     // === 新增：点击震荡波特效 ===
                     const fx = document.getElementById('layer-fx');
                     const shock = document.createElement('div');
@@ -1017,10 +1051,10 @@
                 if (currentGameMode === 'RED_LIGHT' && lightState === 'RED') {
                     if (pony.invincibleTimer <= 0) {
                         pony.isStunned = true;
-                        pony.stunTimer = 60; 
+                        pony.stunTimer = 60;
                         pony.invincibleTimer = 90;
-                        pony.manualSpeed = -15; 
-                        triggerPonyEmoji(p.playerUUID, 'POOP');
+                        pony.manualSpeed = -15;
+                        triggerPonyEmoji(pony.playerUUID, 'POOP');
                     }
                     return;
                 }
@@ -1032,15 +1066,15 @@
                 if (pony.manualAnimTimer === 0) pony.manualAnimTimer = 10;
             }
         }
-        
+
         function handleJump(uuid) {
             if (!uuid) return;
             const pony = ponies.find(p => p.playerUUID === uuid);
             if (pony && pony.state === 'racing' && !pony.isStunned && !pony.isJumping) {
                 if (currentGameMode === 'RED_LIGHT') return;
                 pony.isJumping = true;
-                pony.vz = 12; 
-                pony.isManual = true; 
+                pony.vz = 12;
+                pony.isManual = true;
             }
         }
 
@@ -1054,10 +1088,10 @@
                 targetX: null, targetY: null, isWalkAnimating: false, manualAnimTimer: 0, roamSpeed: 0.5,
                 isTurbo: false, turboCharge: 0,
                 z: 0, vz: 0, isJumping: false, isStunned: false, stunTimer: 0, invincibleTimer: 0,
-                pullOffset: 0 
+                pullOffset: 0
             };
             if (gameState === 'RACING' || gameState === 'COOLDOWN' || gameState === 'WAITING_TO_START') {
-                ponyQueue.push(newPony); 
+                ponyQueue.push(newPony);
             } else {
                 ponies.push(newPony); startCooldown();
             }
@@ -1067,30 +1101,30 @@
             if (ponyQueue.length > 0) { ponies = ponies.concat(ponyQueue); ponyQueue = []; }
 
             let selected = document.getElementById('mode-select').value;
-            
+
             if (selected === 'TUG' && ponies.length < 2) {
                 alert("NOT ENOUGH PLAYERS FOR TUG WAR (MIN 2)");
-                selected = 'CLASSIC'; 
+                selected = 'CLASSIC';
                 document.getElementById('mode-select').value = 'CLASSIC';
             }
 
             if (selected === 'RANDOM') {
                 let modes = ['CLASSIC', 'HURDLE', 'RED_LIGHT'];
-                if (ponies.length >= 2) modes.push('TUG'); 
+                if (ponies.length >= 2) modes.push('TUG');
                 currentGameMode = modes[Math.floor(Math.random() * modes.length)];
             } else {
                 currentGameMode = selected;
             }
 
             gameState = 'COOLDOWN'; cooldownTimer = 240;
-            
+
             // === 预先分配队伍 ===
             if (currentGameMode === 'TUG') {
                 const allPonies = [...ponies].sort(() => Math.random() - 0.5);
                 const teamMap = {};
                 allPonies.forEach((p, index) => {
-                    p.team = (index % 2 === 0) ? 1 : -1; 
-                    p.tapCount = 0; 
+                    p.team = (index % 2 === 0) ? 1 : -1;
+                    p.tapCount = 0;
                     if (p.playerUUID) teamMap[p.playerUUID] = (p.team === 1) ? 'BLUE' : 'RED';
                 });
                 broadcast({ type: 'sync_ui', label: 'READY', mode: 'wait', teamMap: teamMap });
@@ -1099,7 +1133,7 @@
             }
 
             ponies.forEach(p => {
-                p.state = 'ready'; 
+                p.state = 'ready';
                 p.manualSpeed = 0; p.tapCount = 0;
                 p.isWalkAnimating = false; p.manualAnimTimer = 0; p.isTurbo = false; p.turboCharge = 0;
                 p.z = 0; p.vz = 0; p.isStunned = false; p.stunTimer = 0; p.invincibleTimer = 0;
@@ -1110,92 +1144,92 @@
                     // 按照ID排序，确保每个人都有固定的位置
                     const teamMembers = ponies.filter(tm => tm.team === p.team).sort((a,b) => a.id.localeCompare(b.id));
                     const myIndex = teamMembers.findIndex(tm => tm.id === p.id);
-                    
+
                     const baseY = (GAME_H - PONY_SIZE) / 2 + 10; // 垂直居中
 
                     if (p.team === 1) {
                         // 蓝队
-                        p.x = (GAME_W / 2) - 100 - (myIndex * 50); 
-                        p.facing = 1; 
+                        p.x = (GAME_W / 2) - 100 - (myIndex * 50);
+                        p.facing = 1;
                     } else {
                         // 红队
                         p.x = (GAME_W / 2) + 100 + (myIndex * 50);
                         p.facing = -1;
                     }
-                    p.y = baseY; 
+                    p.y = baseY;
                 } else {
-                    p.x = 20; 
+                    p.x = 20;
                     p.facing = 1;
                     p.y = 30 + Math.random() * (GAME_H - PONY_SIZE - 30);
                 }
             });
 
             document.getElementById('hud').style.display = 'none'; document.getElementById('queue-text').style.display = 'none';
-            setBarVisibility(true); 
-            
+            setBarVisibility(true);
+
             let modeName = "CLASSIC";
             if (currentGameMode === 'RED_LIGHT') modeName = "STOP?";
             else if (currentGameMode === 'HURDLE') modeName = "JUMP";
             else if (currentGameMode === 'CLASSIC') modeName = "RUN";
             else if (currentGameMode === 'TUG') modeName = "TEAM"; // 修改点：拔河改名
 
-            updateBarText(modeName, "#ffffff"); 
-            
+            updateBarText(modeName, "#ffffff");
+
             // 安全显示拔河层
             const tugLayer = document.getElementById('tug-layer');
             if (currentGameMode === 'TUG' && tugLayer) {
                 tugValue = 50;
                 tugLayer.style.display = 'block';
-                
+
                 const bZone = document.getElementById('tug-blue-zone');
                 if(bZone) bZone.style.width = '50%';
                 const rZone = document.getElementById('tug-red-zone');
                 if(rZone) rZone.style.width = '50%';
-                
+
                 // 摄像机归位到战场中心
-                const targetX = (window.innerWidth / 2) - (1700 * layout.scale); 
+                const targetX = (window.innerWidth / 2) - (1700 * layout.scale);
                 layout.x = targetX;
                 applyLayout(false);
             } else if (tugLayer) {
-                document.getElementById('game-screen').className = ''; 
-                lightState = 'GREEN'; 
+                document.getElementById('game-screen').className = '';
+                lightState = 'GREEN';
                 tugLayer.style.display = 'none';
             }
-            
+
             obstacles = [];
         }
 
         function startRace() {
             updateBarText("GO!", "#ffffff");
-            
+
             let statusText = "STATUS: RACING";
             let mobileInfo = "RUN (TAP)";
-            
+
             // 重置拔河视觉
             const tugLayer = document.getElementById('tug-layer');
             if(tugLayer) tugLayer.style.display = 'none';
 
             if (currentGameMode === 'HURDLE') {
                 statusText = "STATUS: JUMP";
-                mobileInfo = "TAP: RUN / UP: JUMP"; 
+                mobileInfo = "TAP: RUN / UP: JUMP";
                 obstacles = [];
                 for(let ox = 500; ox < FINISH_X - 200; ox += (400 + Math.random() * 300)) {
                     obstacles.push({ x: ox, width: 10, passed: false });
                 }
             } else if (currentGameMode === 'RED_LIGHT') {
-                statusText = "STATUS: STOP?"; 
-                mobileInfo = "WATCH!"; 
-                obstacles = []; 
+                statusText = "STATUS: STOP?";
+                mobileInfo = "WATCH!";
+                obstacles = [];
                 lightState = 'GREEN';
-                redLightTimer = (120 + Math.random() * 100) * 0.8; 
+                redLightTimer = (120 + Math.random() * 100) * 0.8;
                 document.getElementById('game-screen').classList.add('bg-green');
                 playSignalSound('GREEN');
             } else if (currentGameMode === 'TUG') {
                 statusText = "TEAM BATTLE";
                 mobileInfo = "PULL!";
-                tugValue = 50; 
+                tugValue = 50;
                 obstacles = [];
-                
+
                 // 再次显示
                 if(tugLayer) tugLayer.style.display = 'block';
 
@@ -1215,17 +1249,17 @@
             const textItems = document.querySelectorAll('.bar-text-item');
             textItems.forEach((item, index) => { item.style.animation = `text-vanish 0.05s linear forwards ${delay = 0.02 + (index * 0.06)}s`; });
             setTimeout(() => { if (gameState === 'RACING') { setBarVisibility(false); vfdOverlay.classList.remove('vfd-active'); } }, 1500);
-            
-            ponies.forEach(p => { 
-                if (currentGameMode !== 'TUG') p.speed = 3.0 + Math.random() * 2.5; 
-                p.state = 'racing'; 
-                p.finishedWalking = false; 
+
+            ponies.forEach(p => {
+                if (currentGameMode !== 'TUG') p.speed = 3.0 + Math.random() * 2.5;
+                p.state = 'racing';
+                p.finishedWalking = false;
                 p.z = 0; p.vz = 0; p.isStunned = false; p.stunTimer = 0; p.invincibleTimer = 0;
-                if(p.isManual) p.lastTapTime = Date.now(); 
+                if(p.isManual) p.lastTapTime = Date.now();
             });
-            
+
             if (currentGameMode !== 'TUG') {
-                grass = []; gameState = 'RACING'; 
+                grass = []; gameState = 'RACING';
                 broadcast({ type: 'sync_ui', label: 'RUN!', mode: 'mash', infoText: mobileInfo });
             } else {
                 gameState = 'RACING';
@@ -1235,9 +1269,11 @@
         function gameLoop() { updateGameLogic(); draw(); requestAnimationFrame(gameLoop); }
 
         function updateGameLogic() {
-            spawnSnow();
+            // ✅ 需求2：根据开关决定是否下雪
+            if (snowEnabled) spawnSnow();
+
             const alert = document.getElementById('queue-text'); const hud = document.getElementById('hud');
-            
+
             // 确保倒计时阶段，拔河的小马保持整齐在位
             if (gameState === 'COOLDOWN' && currentGameMode === 'TUG') {
                 ponies.forEach(p => { p.frame++; });
@@ -1254,17 +1290,17 @@
                     if (cooldownTimer % 60 === 59) triggerFlash();
                     if (sec > 0 && lastBroadcastText !== sec) { broadcast({ type: 'sync_ui', label: sec.toString(), mode: 'wait' }); lastBroadcastText = sec; }
                 }
-                if (cooldownTimer <= 0) startRace(); 
-                if (currentGameMode !== 'TUG') updatePoniesMovement(); 
+                if (cooldownTimer <= 0) startRace();
+                if (currentGameMode !== 'TUG') updatePoniesMovement();
             } else if (gameState === 'RACING') {
                 if (ponyQueue.length > 0) { alert.style.display = 'block'; alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`; } else { alert.style.display = 'none'; }
-                
+
                 if (currentGameMode === 'TUG') {
                     // === 拔河逻辑 ===
-                    
+
                     // 1. Bot 自动拉力
                     ponies.forEach(p => {
-                        if (!p.playerUUID && Math.random() < 0.015) { 
+                        if (!p.playerUUID && Math.random() < 0.015) {
                             if (p.team === 1) tugValue = Math.min(100, tugValue + 1.0);
                             else tugValue = Math.max(0, tugValue - 1.0);
                             p.isWalkAnimating = true;
@@ -1283,7 +1319,7 @@
                     applyLayout(false);
 
                     const battleFront = GAME_W * (tugValue / 100);
-                    
+
                     // === 产生交界线碰撞粒子 ===
                     spawnBattleSparks(battleFront);
 
@@ -1291,25 +1327,25 @@
                     ponies.forEach(p => {
                         const teamMembers = ponies.filter(tm => tm.team === p.team).sort((a,b) => a.id.localeCompare(b.id));
                         const myIndex = teamMembers.findIndex(tm => tm.id === p.id);
-                        
+
                         let basePositionX;
                         if (p.team === 1) {
                             basePositionX = battleFront - 80 - (myIndex * 45);
                         } else {
                             basePositionX = battleFront + 80 + (myIndex * 45);
                         }
-                        
+
                         // 目标位置 = 基础位置 + 冲击偏移
                         const desiredX = basePositionX + (p.pullOffset || 0);
-                        
+
                         // 平滑移动
                         const smoothFactor = 0.15;
                         p.x = p.x + (desiredX - p.x) * smoothFactor;
-                        
+
                         // 让冲击力自然衰减
                         if (p.pullOffset) p.pullOffset *= 0.8;
                         if (Math.abs(p.pullOffset) < 1) p.pullOffset = 0;
-                        
+
                         // 动画管理
                         if (Math.abs(desiredX - p.x) < 1 && !p.isManual) {
                              p.isWalkAnimating = false;
@@ -1329,43 +1365,43 @@
                     redLightTimer--;
                     if (redLightTimer <= 0) {
                         const screen = document.getElementById('game-screen');
-                        screen.className = ''; 
+                        screen.className = '';
                         if (lightState === 'GREEN') {
                             lightState = 'YELLOW';
-                            redLightTimer = 30; 
+                            redLightTimer = 30;
                             screen.classList.add('bg-yellow');
-                            updateBarText("STOP?", "#ffb300"); 
+                            updateBarText("STOP?", "#ffb300");
                             setBarVisibility(true);
                             playSignalSound('YELLOW');
                         } else if (lightState === 'YELLOW') {
                             lightState = 'RED';
-                            redLightTimer = 60 + Math.random() * 90; 
+                            redLightTimer = 60 + Math.random() * 90;
                             screen.classList.add('bg-red');
                             updateBarText("STOP!", "#ff5252"); setBarVisibility(true);
                             playSignalSound('RED');
                         } else if (lightState === 'RED') {
                             lightState = 'GREEN';
-                            redLightTimer = (100 + Math.random() * 150) * 0.8; 
+                            redLightTimer = (100 + Math.random() * 150) * 0.8;
                             screen.classList.add('bg-green');
-                            updateBarText("GO!", "#69f0ae"); 
+                            updateBarText("GO!", "#69f0ae");
                             playSignalSound('GREEN');
                             setTimeout(() => { if (lightState === 'GREEN') setBarVisibility(false); }, 500);
                         }
                     }
-                    updatePoniesMovement(); 
+                    updatePoniesMovement();
                     checkRaceEnd();
                 } else {
-                    updatePoniesMovement(); 
+                    updatePoniesMovement();
                     checkRaceEnd();
                 }
 
             } else if (gameState === 'ROAMING') {
                 hud.style.display = 'block'; hud.innerText = "NOWHERE TO RUN";
-                document.getElementById('game-screen').className = ''; 
+                document.getElementById('game-screen').className = '';
                 if (ponyQueue.length > 0) { alert.style.display = 'block'; alert.innerText = `${ponyQueue.length} WAITING NEXT ROUND`; } else { alert.style.display = 'none'; }
                 updatePoniesMovement();
             }
-            
+
             const active = ponies.filter(p => p.state === 'racing');
             if (active.length === 0 && Math.random() < 0.2) {
                 const segmentSize = 500; const totalSegments = Math.ceil(GAME_W / segmentSize);
@@ -1392,9 +1428,9 @@
                 p.isStreak = false;
 
                 if (toExplode.has(p.id)) {
-                    explode(p); 
+                    explode(p);
                 } else {
-                    p.state = 'roaming'; 
+                    p.state = 'roaming';
                     p.targetX = null;
                     p.targetY = null;
                     p.timer = 0;
@@ -1411,7 +1447,7 @@
                 mvpPony.hasCrown = true;
                 mvpPony.isStreak = true;
             }
-            
+
             // 修改点：简化胜利文字
             const winnerText = "WIN"; // 统一显示 WIN
             const winnerColor = (winnerTeam === 1) ? "#2979ff" : "#ff0000"; // 颜色区分胜负
@@ -1420,7 +1456,7 @@
 
             const tugLayer = document.getElementById('tug-layer');
             if(tugLayer) tugLayer.style.display = 'none';
-            
+
             setTimeout(() => {
                 // 修改点：检测排队，自动开始下一轮
                 if (ponyQueue.length > 0) {
@@ -1430,9 +1466,9 @@
                 } else {
                     gameState = 'ROAMING';
                     setBarVisibility(false);
-                    layout.x = 0; applyLayout(false); 
+                    layout.x = 0; applyLayout(false);
                     broadcast({ type: 'sync_ui', label: 'DONE', mode: 'wait' });
-                    
+
                     setTimeout(() => {
                         if (gameState === 'ROAMING') {
                              // 修改点：手机端显示 START RACE
@@ -1464,7 +1500,7 @@
         /* === 光线拖影特效 (Hard Edge Trail) === */
         function spawnTrail(p) {
             const fxLayer = document.getElementById('layer-fx');
-            const count = Math.random() < 0.5 ? 1 : 2; 
+            const count = Math.random() < 0.5 ? 1 : 2;
             for (let i = 0; i < count; i++) {
                 const el = document.createElement('div');
                 el.className = 'trail-segment';
@@ -1495,19 +1531,19 @@
             ponies.forEach(p => {
                 p.frame++; p.isWalkAnimating = false; p.isTurbo = false;
                 if (p.manualAnimTimer > 0) p.manualAnimTimer--; p.turboCharge = Math.max(0, p.turboCharge - 1);
-                
+
                 if (p.invincibleTimer > 0) p.invincibleTimer--;
 
-                if (p.state === 'ready') { 
-                    if (currentGameMode !== 'TUG') p.x = 20; 
-                    return; 
+                if (p.state === 'ready') {
+                    if (currentGameMode !== 'TUG') p.x = 20;
+                    return;
                 }
 
                 if (p.state === 'racing') {
                     if (p.isStunned) {
                         p.stunTimer--;
                         if (p.stunTimer <= 0) p.isStunned = false;
-                        p.isWalkAnimating = false; 
+                        p.isWalkAnimating = false;
                         if (p.manualSpeed < 0) { p.x += p.manualSpeed; p.manualSpeed *= 0.9; }
                     } else {
                         if (p.playerUUID) {
@@ -1520,13 +1556,13 @@
                             p.x += p.manualSpeed; p.isWalkAnimating = p.manualSpeed > 0.1;
                         } else {
                             if (currentGameMode === 'RED_LIGHT' && lightState === 'RED') {
-                                if (Math.random() < 0.02) p.x += 2; 
+                                if (Math.random() < 0.02) p.x += 2;
                             } else {
                                 p.x += p.speed * (0.9 + Math.random() * 0.2); p.isWalkAnimating = true;
                                 if (currentGameMode === 'HURDLE' && !p.isJumping) {
-                                    const nearestObs = obstacles.find(o => o.x > p.x && o.x < p.x + 150); 
-                                    if (nearestObs && Math.random() < 0.15) { 
-                                        p.isJumping = true; p.vz = 12; 
+                                    const nearestObs = obstacles.find(o => o.x > p.x && o.x < p.x + 150);
+                                    if (nearestObs && Math.random() < 0.15) {
+                                        p.isJumping = true; p.vz = 12;
                                     }
                                 }
                             }
@@ -1534,7 +1570,7 @@
 
                         if (p.isJumping) {
                             p.z += p.vz;
-                            p.vz -= 0.8; 
+                            p.vz -= 0.8;
                             if (p.z <= 0) {
                                 p.z = 0; p.vz = 0; p.isJumping = false;
                             }
@@ -1544,13 +1580,13 @@
                             if (currentGameMode === 'HURDLE') {
                                 obstacles.forEach(obs => {
                                     if (p.x + 40 > obs.x && p.x < obs.x + obs.width) {
-                                        if (p.z < 20) { 
+                                        if (p.z < 20) {
                                             p.isStunned = true;
-                                            p.stunTimer = 30; 
-                                            p.invincibleTimer = 90; 
-                                            p.manualSpeed = 0; 
-                                            p.x = obs.x - 10; 
-                                            triggerPonyEmoji(p.playerUUID, 'POOP'); 
+                                            p.stunTimer = 30;
+                                            p.invincibleTimer = 90;
+                                            p.manualSpeed = 0;
+                                            p.x = obs.x - 10;
+                                            triggerPonyEmoji(p.playerUUID, 'POOP');
                                         }
                                     }
                                 });
@@ -1615,15 +1651,15 @@
                 tick();
             }
             const grassCount = Math.floor(Math.random() * 3) + 1; for(let i=0; i<grassCount; i++) { grass.push({ x: p.x + (Math.random()-0.5) * 60, y: p.y + (Math.random()-0.5) * 40 }); }
-            
-            ponies = ponies.filter(target => target.id !== p.id); 
-            
+
+            ponies = ponies.filter(target => target.id !== p.id);
+
             if (p.playerUUID) { broadcast({ type: 'eliminated', uuid: p.playerUUID }); }
         }
 
         function draw() {
             // 渲染障碍物和草地
-            const grassL = document.getElementById('layer-grass'); 
+            const grassL = document.getElementById('layer-grass');
             let htmlContent = grass.map(g => `<div class="grass" style="left:${g.x}px; top:${g.y}px"></div>`).join('');
             if (gameState === 'RACING' || gameState === 'COOLDOWN') {
                 htmlContent += obstacles.map(o => `<div class="obstacle" style="left:${o.x}px; height:30px;"></div>`).join('');
@@ -1639,10 +1675,10 @@
                     el.innerHTML = `<div class="aura"></div><div class="crown-container" style="display: none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="#facc15" stroke="#facc15" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path></svg></div><div class="name-tag">${p.name}</div><div class="p-grid" style="display:grid; grid-template-columns:repeat(11,1fr); width:100%; height:100%;"></div>`;
                     ponyL.appendChild(el);
                 }
-                
-                el.style.transform = `translate(${p.x}px, ${p.y - p.z}px) scale(1.1)`; 
+
+                el.style.transform = `translate(${p.x}px, ${p.y - p.z}px) scale(1.1)`;
                 el.style.zIndex = Math.floor(p.y);
-                
+
                 if (p.isStunned) {
                     el.style.filter = "grayscale(100%) opacity(0.5)";
                 } else if (p.invincibleTimer > 0) {
@@ -1681,50 +1717,50 @@
                         else if (data.type === 'sync_ui') {
                             if (mobileBtnState === 'dead') return;
 
-                            const btn = document.getElementById('m-btn'); 
-                            const info = document.getElementById('m-info'); 
+                            const btn = document.getElementById('m-btn');
+                            const info = document.getElementById('m-info');
                             const modeWrapper = document.getElementById('m-mode-wrapper');
-                            
-                            mobileBtnState = data.mode; 
-                            btn.className = 'push-btn'; 
+
+                            mobileBtnState = data.mode;
+                            btn.className = 'push-btn';
 
                             modeWrapper.style.display = 'none';
 
                             if (data.mode === 'tug') {
                                 btn.classList.add('btn-mash');
                                 btn.innerText = "PULL!";
-                                
+
                                 if (data.teamMap && data.teamMap[playerUUID]) {
                                     const myTeam = data.teamMap[playerUUID];
                                     info.innerText = `TEAM ${myTeam}`;
                                     info.style.color = (myTeam === 'RED') ? '#ff5252' : '#2979ff';
                                     btn.classList.add(myTeam === 'RED' ? 'btn-team-red' : 'btn-team-blue');
                                 } else {
-                                    info.innerText = "SPECTATING"; 
+                                    info.innerText = "SPECTATING";
                                 }
                             }
-                            else if (data.mode === 'wait') { 
-                                btn.classList.add('btn-wait'); btn.innerText = data.label; info.innerText = "GET READY..."; 
-                                info.style.color = "#888"; 
+                            else if (data.mode === 'wait') {
+                                btn.classList.add('btn-wait'); btn.innerText = data.label; info.innerText = "GET READY...";
+                                info.style.color = "#888";
                             }
-                            else if (data.mode === 'mash') { 
-                                btn.classList.add('btn-mash'); 
-                                btn.innerText = "RUN"; 
-                                info.innerText = data.infoText || "TAP TO RUN"; 
+                            else if (data.mode === 'mash') {
+                                btn.classList.add('btn-mash');
+                                btn.innerText = "RUN";
+                                info.innerText = data.infoText || "TAP TO RUN";
                                 randomizeMusic();
                             }
-                            else if (data.mode === 'start') { 
-                                btn.classList.add('btn-start'); btn.innerText = data.label; info.innerText = "RACE FINISHED"; 
+                            else if (data.mode === 'start') {
+                                btn.classList.add('btn-start'); btn.innerText = data.label; info.innerText = "RACE FINISHED";
                                 modeWrapper.style.display = 'flex';
                             }
                         } else if (data.type === 'eliminated' && data.uuid === playerUUID) {
-                            const btn = document.getElementById('m-btn'); const info = document.getElementById('m-info'); 
-                            mobileBtnState = 'dead'; 
-                            btn.className = 'push-btn btn-dead'; 
-                            btn.innerText = "CREATE\nAGAIN"; 
+                            const btn = document.getElementById('m-btn'); const info = document.getElementById('m-info');
+                            mobileBtnState = 'dead';
+                            btn.className = 'push-btn btn-dead';
+                            btn.innerText = "CREATE\nAGAIN";
                             info.innerText = "ELIMINATED";
                             document.getElementById('m-mode-wrapper').style.display = 'none';
-                            vibrate([100, 50, 100]); 
+                            vibrate([100, 50, 100]);
                         } else if (data.type === 'player_finished' && data.uuid === playerUUID) {
                             mobileBtnState = 'finished';
                             const btn = document.getElementById('m-btn');
@@ -1732,7 +1768,7 @@
                             btn.innerText = "DONE";
                             document.getElementById('m-info').innerText = "WAITING...";
                             document.getElementById('m-mode-wrapper').style.display = 'none';
-                            vibrate([200]); 
+                            vibrate([200]);
                         }
                     });
                 });
@@ -1740,15 +1776,15 @@
         }
 
         function handleMotion(event) {
-            const acc = event.acceleration; 
+            const acc = event.acceleration;
             if (!acc) return;
             const magnitude = Math.sqrt(acc.x*acc.x + acc.y*acc.y + acc.z*acc.z);
             if (magnitude > 15) {
                 const now = Date.now();
-                if (now - lastShakeTime > 500) { 
+                if (now - lastShakeTime > 500) {
                     lastShakeTime = now;
-                    if(conn) conn.send({ type: 'jump', uuid: playerUUID }); 
-                    vibrate(200); 
+                    if(conn) conn.send({ type: 'jump', uuid: playerUUID });
+                    vibrate(200);
                 }
             }
         }
@@ -1760,36 +1796,37 @@
         mBtn.addEventListener('touchstart', (e) => {
             if (mobileBtnState === 'dead') { resetMobile(); return; }
             if (mobileBtnState === 'finished') return;
-            if (mobileBtnState === 'start') { 
+            if (mobileBtnState === 'start') {
                 const selectedMode = document.getElementById('m-mode-select').value;
-                if(conn) conn.send({ type: 'force_start', mode: selectedMode }); 
+                if(conn) conn.send({ type: 'force_start', mode: selectedMode });
                 vibrate(50);
-                return; 
+                return;
             }
             if (mobileBtnState !== 'mash' && mobileBtnState !== 'tug') return;
 
-            e.preventDefault(); 
+            e.preventDefault();
             touchStartY = e.changedTouches[0].clientY;
             touchStartTime = Date.now();
-            mBtn.style.transform = 'scale(0.95)'; 
+            mBtn.style.transform = 'scale(0.95)';
         }, {passive: false});
 
         mBtn.addEventListener('touchend', (e) => {
             if (mobileBtnState !== 'mash' && mobileBtnState !== 'tug') return;
             e.preventDefault();
-            mBtn.style.transform = 'scale(1)'; 
+            mBtn.style.transform = 'scale(1)';
 
             const touchEndY = e.changedTouches[0].clientY;
-            const diffY = touchStartY - touchEndY; 
+            const diffY = touchStartY - touchEndY;
             const timeDiff = Date.now() - touchStartTime;
 
-            if (diffY > 50) {
+            // ✅ 需求1：关闭上滑跳跃（swipeJumpEnabled=false 时，上滑也只当作 tap）
+            if (swipeJumpEnabled && diffY > 50) {
                 if(conn) conn.send({ type: 'jump', uuid: playerUUID });
-                vibrate(100); 
+                vibrate(100);
             } else {
                 if(conn) conn.send({ type: 'tap', uuid: playerUUID });
                 initAudio(); playNextNote();
-                vibrate(15); 
+                vibrate(15);
             }
         });
 
@@ -1798,7 +1835,7 @@
             const nameInput = document.getElementById('m-name'); let name = nameInput.value.trim().replace(/[^a-zA-Z0-9]/g, ''); if (!name) name = "PLAYER"; name = name.toUpperCase();
             let hasPixels = false; for(let r=0; r<11; r++) { for(let c=0; c<11; c++) { if (mobileGrid[r][c] === 1) { hasPixels = true; break; } } if(hasPixels) break; }
             if (!hasPixels) { alert("CANVAS IS EMPTY"); return; }
-            
+
             initAudio(); randomizeMusic();
 
             if (typeof DeviceMotionEvent.requestPermission === 'function') {
@@ -1822,7 +1859,7 @@
         function triggerPonyEmoji(uuid, emojiType) {
             const pony = ponies.find(p => p.playerUUID === uuid); if (!pony) return;
             const pEl = document.getElementById(pony.id); if (!pEl) return;
-            
+
             let container;
             if (emojiType === 'FACE') {
                 container = document.createElement('div');
@@ -1845,14 +1882,14 @@
         function sendEmoji(type) {
             if(!conn) return; conn.send({ type: 'emoji', uuid: playerUUID, content: type });
             const btn = event.currentTarget; btn.style.transform = 'scale(0.8)'; setTimeout(() => btn.style.transform = 'scale(1)', 100);
-            vibrate(10); 
+            vibrate(10);
         }
 
-        function resetMobile() { 
-            document.getElementById('m-controller').style.display = 'none'; 
-            document.getElementById('m-editor-ui').style.display = 'block'; 
-            renderGrid('m-grid', mobileGrid, selectedColor); 
-            mobileBtnState = 'wait'; 
+        function resetMobile() {
+            document.getElementById('m-controller').style.display = 'none';
+            document.getElementById('m-editor-ui').style.display = 'block';
+            renderGrid('m-grid', mobileGrid, selectedColor);
+            mobileBtnState = 'wait';
         }
         function clearMobile() { clearGridData(mobileGrid); renderGrid('m-grid', mobileGrid, selectedColor); }
         function clearDesktop() { clearGridData(pcGrid); renderGrid('pc-grid', pcGrid, selectedColor); }
