@@ -543,6 +543,14 @@
             </div>
 
             <div class="control-group">
+                <span class="control-label">SNOW</span>
+                <div class="input-wrapper" style="align-items: center;">
+                    <input type="checkbox" id="snow-toggle" checked>
+                    <span class="unit-label" id="snow-label">ON</span>
+                </div>
+            </div>
+
+            <div class="control-group">
                 <span class="control-label">GAME MODE</span>
                 <select id="mode-select">
                     <option value="RANDOM">RANDOM</option>
@@ -684,6 +692,7 @@
         let lastBroadcastText = '';
 
         let lastShakeTime = 0; // 摇一摇防抖
+        let snowEnabled = true;
 
         const PEER_CONFIG = {
             debug: 2,
@@ -807,11 +816,16 @@
             const zoomInput = document.getElementById('zoom-input');
             const ySlider = document.getElementById('y-slider');
             const yInput = document.getElementById('y-input');
+            const snowToggle = document.getElementById('snow-toggle');
+            const snowLabel = document.getElementById('snow-label');
 
             zoomSlider.oninput = function() { zoomInput.value = this.value; layout.scale = this.value / 100; applyLayout(false); };
             zoomInput.oninput = function() { let val = parseFloat(this.value); if(val) { zoomSlider.value = val; layout.scale = val / 100; applyLayout(false); } };
             ySlider.oninput = function() { yInput.value = this.value; layout.y = parseFloat(this.value); applyLayout(false); };
             yInput.oninput = function() { let val = parseFloat(this.value); if(!isNaN(val)) { ySlider.value = val; layout.y = val; applyLayout(false); } };
+            const syncSnowLabel = () => { snowLabel.innerText = snowToggle.checked ? 'ON' : 'OFF'; };
+            snowToggle.onchange = function() { snowEnabled = this.checked; syncSnowLabel(); };
+            syncSnowLabel();
 
             const gameContainer = document.getElementById('desktop-view');
             gameContainer.addEventListener('wheel', (e) => {
@@ -1177,7 +1191,7 @@
 
             if (currentGameMode === 'HURDLE') {
                 statusText = "STATUS: JUMP";
-                mobileInfo = "TAP: RUN / UP: JUMP"; 
+                mobileInfo = "TAP: RUN / SHAKE: JUMP"; 
                 obstacles = [];
                 for(let ox = 500; ox < FINISH_X - 200; ox += (400 + Math.random() * 300)) {
                     obstacles.push({ x: ox, width: 10, passed: false });
@@ -1235,7 +1249,7 @@
         function gameLoop() { updateGameLogic(); draw(); requestAnimationFrame(gameLoop); }
 
         function updateGameLogic() {
-            spawnSnow();
+            if (snowEnabled) spawnSnow();
             const alert = document.getElementById('queue-text'); const hud = document.getElementById('hud');
             
             // 确保倒计时阶段，拔河的小马保持整齐在位
@@ -1754,8 +1768,6 @@
         }
 
         const mBtn = document.getElementById('m-btn');
-        let touchStartY = 0;
-        let touchStartTime = 0;
 
         mBtn.addEventListener('touchstart', (e) => {
             if (mobileBtnState === 'dead') { resetMobile(); return; }
@@ -1769,8 +1781,6 @@
             if (mobileBtnState !== 'mash' && mobileBtnState !== 'tug') return;
 
             e.preventDefault(); 
-            touchStartY = e.changedTouches[0].clientY;
-            touchStartTime = Date.now();
             mBtn.style.transform = 'scale(0.95)'; 
         }, {passive: false});
 
@@ -1779,18 +1789,9 @@
             e.preventDefault();
             mBtn.style.transform = 'scale(1)'; 
 
-            const touchEndY = e.changedTouches[0].clientY;
-            const diffY = touchStartY - touchEndY; 
-            const timeDiff = Date.now() - touchStartTime;
-
-            if (diffY > 50) {
-                if(conn) conn.send({ type: 'jump', uuid: playerUUID });
-                vibrate(100); 
-            } else {
-                if(conn) conn.send({ type: 'tap', uuid: playerUUID });
-                initAudio(); playNextNote();
-                vibrate(15); 
-            }
+            if(conn) conn.send({ type: 'tap', uuid: playerUUID });
+            initAudio(); playNextNote();
+            vibrate(15); 
         });
 
         function sendMobile() {
