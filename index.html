@@ -613,12 +613,12 @@
         </div>
       </div>
 
-      <!-- ✅ NEW: STRETCH X (percent) -->
+      <!-- ✅ NEW: HORIZONTAL STRETCH -->
       <div class="control-group">
         <span class="control-label">STRETCH X</span>
-        <input type="range" id="stretch-slider" min="10" max="300" step="0.1" value="100" />
+        <input type="range" id="stretch-slider" min="50" max="200" step="0.1" value="100" />
         <div class="input-wrapper">
-          <input type="number" id="stretch-input" value="100" min="10" max="300" step="0.1" inputmode="decimal" />
+          <input type="number" id="stretch-input" value="100" min="50" max="200" step="0.1" inputmode="decimal" />
           <span class="unit-label">%</span>
         </div>
       </div>
@@ -648,6 +648,15 @@
         <div class="input-wrapper">
           <input type="number" id="len-input" value="3400" min="800" max="12000" step="10" inputmode="numeric" />
           <span class="unit-label">PX</span>
+        </div>
+      </div>
+
+      <!-- ✅ NEW: TUG AUTO CENTER -->
+      <div class="control-group">
+        <span class="control-label">TUG CENTER</span>
+        <div class="input-wrapper">
+          <input type="checkbox" id="tug-center-toggle" />
+          <span class="unit-label" id="tug-center-label">OFF</span>
         </div>
       </div>
 
@@ -748,7 +757,7 @@
         <div class="m-admin-row">
           <div class="m-admin-label">STRETCH</div>
           <div class="m-admin-control">
-            <input type="number" id="m-admin-stretch" min="10" max="300" step="0.1" value="100" inputmode="decimal" />
+            <input type="number" id="m-admin-stretch" min="50" max="200" step="0.1" value="100" inputmode="decimal" />
             <span class="unit-label">%</span>
           </div>
         </div>
@@ -776,6 +785,15 @@
           <div class="m-admin-control">
             <input type="number" id="m-admin-len" min="800" max="12000" step="10" value="3400" inputmode="numeric" />
             <span class="unit-label">PX</span>
+          </div>
+        </div>
+
+        <!-- ✅ NEW: TUG AUTO CENTER -->
+        <div class="m-admin-row">
+          <div class="m-admin-label">TUG CENTER</div>
+          <div class="m-admin-control" style="justify-content:flex-end;">
+            <input type="checkbox" id="m-admin-tugcenter" />
+            <span class="unit-label" id="m-admin-tugcenter-label">OFF</span>
           </div>
         </div>
 
@@ -918,7 +936,8 @@
 
     // ✅ layout controls (zoom + stretchX + x + y)
     let layout = { scale: 1.0, stretchX: 1.0, x: 0, y: 0 };
-    function getScaleX() { return layout.scale * layout.stretchX; } // ✅ effective X scale
+    function getScaleX(){ return (layout.scale || 1) * (layout.stretchX || 1); }
+    function getScaleY(){ return (layout.scale || 1); }
 
     let currentBarText = '';
     let lastBroadcastText = '';
@@ -938,6 +957,24 @@
     // ✅ 手机端隐藏控制面板：标题五连击
     let mTitleTapCount = 0;
     let mTitleTapTimer = null;
+
+    // ✅ TEAM 不要瞬移：加一个“自动居中”开关（默认关）
+    let tugAutoCenter = false;
+    const tugCenterLerp = 0.12;
+
+    function getTugCenterTargetX(){
+      const sx = getScaleX();
+      const desiredScreenShift = (window.innerWidth / 2) - ((gameW / 2) * sx);
+      return desiredScreenShift / sx;
+    }
+    function maybeAutoCenterTug(smooth=true){
+      if (currentGameMode !== 'TUG') return false;
+      if (!tugAutoCenter) return false;
+      const target = getTugCenterTargetX();
+      const before = layout.x;
+      layout.x = smooth ? (layout.x + (target - layout.x) * tugCenterLerp) : target;
+      return Math.abs(layout.x - before) > 0.0001;
+    }
 
     const PEER_CONFIG = {
       debug: 2,
@@ -964,19 +1001,35 @@
       ponies.forEach(p => { p.x = clamp(p.x, 0, maxX); });
       ponyQueue.forEach(p => { p.x = clamp(p.x, 0, maxX); });
 
-      // ✅ If in TUG mode, re-center camera (FIX: account for transform scaling)
-      if (currentGameMode === 'TUG') {
-        const sx = getScaleX();
-        const desiredScreenShift = (window.innerWidth / 2) - ((gameW / 2) * sx);
-        layout.x = desiredScreenShift / sx;
-      }
-
       if (updateUI) {
         const lenInput = document.getElementById('len-input');
         if (lenInput) lenInput.value = String(Math.round(gameW));
       }
 
       applyLayout(false);
+    }
+
+    function setStretchX(percent, updateUI=true) {
+      const v = parseFloat(percent);
+      if (isNaN(v)) return;
+      layout.stretchX = clamp(v / 100, 0.5, 2.0);
+      if (updateUI) {
+        const sIn = document.getElementById('stretch-input');
+        const sSl = document.getElementById('stretch-slider');
+        if (sIn) sIn.value = (layout.stretchX * 100).toFixed(1);
+        if (sSl) sSl.value = (layout.stretchX * 100).toFixed(1);
+      }
+      applyLayout(false);
+    }
+
+    function setTugAutoCenter(enabled, updateUI=true){
+      tugAutoCenter = !!enabled;
+      if (updateUI) {
+        const cb = document.getElementById('tug-center-toggle');
+        const lbl = document.getElementById('tug-center-label');
+        if (cb) cb.checked = tugAutoCenter;
+        if (lbl) lbl.textContent = tugAutoCenter ? 'ON' : 'OFF';
+      }
     }
 
     function createPixelIcon(type, pixelSize = 2, color = '#fff') {
@@ -1130,10 +1183,14 @@
       const lenInput = document.getElementById('len-input');
       if (lenInput) lenInput.value = String(gameW);
 
+      // init stretch UI
+      const stretchInput = document.getElementById('stretch-input');
+      const stretchSlider = document.getElementById('stretch-slider');
+      if (stretchInput) stretchInput.value = (layout.stretchX * 100).toFixed(1);
+      if (stretchSlider) stretchSlider.value = (layout.stretchX * 100).toFixed(1);
+
       const zoomSlider = document.getElementById('zoom-slider');
       const zoomInput = document.getElementById('zoom-input');
-      const stretchSlider = document.getElementById('stretch-slider');
-      const stretchInput = document.getElementById('stretch-input');
       const xSlider = document.getElementById('x-slider');
       const xInput = document.getElementById('x-input');
       const ySlider = document.getElementById('y-slider');
@@ -1167,21 +1224,33 @@
         applyLayout(false);
       });
 
-      // ✅ NEW: Stretch X (percent)
-      if (stretchSlider && stretchInput) {
+      // ✅ Stretch X: percent
+      if (stretchSlider) {
         stretchSlider.oninput = function() {
-          stretchInput.value = this.value;
-          layout.stretchX = clamp(parseFloat(this.value) / 100, 0.1, 3.0);
-          applyLayout(false);
+          if (stretchInput) stretchInput.value = this.value;
+          setStretchX(this.value, false);
         };
+      }
+      if (stretchInput) {
         stretchInput.oninput = function() {
-          let val = parseFloat(this.value);
+          const val = parseFloat(this.value);
           if (!isNaN(val)) {
-            stretchSlider.value = val;
-            layout.stretchX = clamp(val / 100, 0.1, 3.0);
-            applyLayout(false);
+            if (stretchSlider) stretchSlider.value = val;
+            setStretchX(val, false);
           }
         };
+        stretchInput.addEventListener('keydown', (e) => {
+          if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+          e.preventDefault();
+          let v = parseFloat(stretchInput.value);
+          if (isNaN(v)) v = layout.stretchX * 100;
+          const delta = (e.key === 'ArrowUp') ? 0.1 : -0.1;
+          v = clamp(v + delta, 50, 200);
+          v = Math.round(v * 10) / 10;
+          stretchInput.value = v.toFixed(1);
+          if (stretchSlider) stretchSlider.value = v.toFixed(1);
+          setStretchX(v, false);
+        });
       }
 
       // ✅ X offset (left-right)
@@ -1220,6 +1289,21 @@
           setTrackLength(lenInput.value, true);
         });
       }
+
+      // ✅ TUG CENTER toggle (desktop)
+      const tugCenterToggle = document.getElementById('tug-center-toggle');
+      const tugCenterLabel = document.getElementById('tug-center-label');
+      setTugAutoCenter(tugAutoCenter, true);
+      if (tugCenterToggle) {
+        tugCenterToggle.addEventListener('change', () => {
+          setTugAutoCenter(tugCenterToggle.checked, true);
+          if (tugAutoCenter && currentGameMode === 'TUG' && gameState === 'RACING') {
+            maybeAutoCenterTug(true);
+            applyLayout(false);
+          }
+        });
+      }
+      if (tugCenterLabel) tugCenterLabel.textContent = tugAutoCenter ? 'ON' : 'OFF';
 
       // ✅ SNOW toggle
       const snowToggle = document.getElementById('snow-toggle');
@@ -1286,7 +1370,7 @@
 
       window.addEventListener('keydown', (e) => {
         if (e.target.tagName === 'INPUT') return;
-        const step = 20 / layout.scale;
+        const step = 20 / (layout.scale || 1);
         const zoomStep = 0.05;
         let changed = false;
         switch(e.key) {
@@ -1339,30 +1423,41 @@
 
     function fitScreen() {
       const availableW = window.innerWidth * 0.95;
-      // ✅ account for stretchX
-      layout.scale = Math.min(availableW / ((gameW + GAME_H) * layout.stretchX), 1);
+      const effectiveW = (gameW + GAME_H) * (layout.stretchX || 1);
+      layout.scale = Math.min(availableW / effectiveW, 1);
       layout.x = 0; layout.y = 0;
       applyLayout(true);
     }
 
     function applyLayout(updateInput = true) {
       const el = document.getElementById('track-wrapper');
-      // ✅ FIX: keep translate but support stretchX
-      el.style.transform = `scale(${layout.scale}) scaleX(${layout.stretchX}) translate(${layout.x}px, ${layout.y}px)`;
+
+      // ✅ non-uniform scale: stretchX only affects X
+      el.style.transform = `scale(${getScaleX()}, ${getScaleY()}) translate(${layout.x}px, ${layout.y}px)`;
 
       if(updateInput) {
         const zoomPct = layout.scale * 100;
-        document.getElementById('zoom-input').value = zoomPct.toFixed(1);
-        document.getElementById('zoom-slider').value = zoomPct.toFixed(1);
+        const stretchPct = (layout.stretchX || 1) * 100;
 
-        document.getElementById('stretch-input').value = (layout.stretchX * 100).toFixed(1);
-        document.getElementById('stretch-slider').value = (layout.stretchX * 100).toFixed(1);
+        const zi = document.getElementById('zoom-input');
+        const zs = document.getElementById('zoom-slider');
+        if (zi) zi.value = zoomPct.toFixed(1);
+        if (zs) zs.value = zoomPct.toFixed(1);
 
-        document.getElementById('x-input').value = Number(layout.x).toFixed(1);
-        document.getElementById('x-slider').value = Math.round(layout.x);
+        const si = document.getElementById('stretch-input');
+        const ss = document.getElementById('stretch-slider');
+        if (si) si.value = stretchPct.toFixed(1);
+        if (ss) ss.value = stretchPct.toFixed(1);
 
-        document.getElementById('y-input').value = Number(layout.y).toFixed(1);
-        document.getElementById('y-slider').value = Number(layout.y);
+        const xi = document.getElementById('x-input');
+        const xs = document.getElementById('x-slider');
+        if (xi) xi.value = Number(layout.x).toFixed(1);
+        if (xs) xs.value = Math.round(layout.x);
+
+        const yi = document.getElementById('y-input');
+        const ys = document.getElementById('y-slider');
+        if (yi) yi.value = Number(layout.y).toFixed(1);
+        if (ys) ys.value = Number(layout.y);
       }
     }
 
@@ -1385,10 +1480,11 @@
               c.send({
                 type: 'settings',
                 zoom: layout.scale * 100,
-                stretch: layout.stretchX * 100, // ✅ NEW
+                stretch: layout.stretchX * 100,
                 x: layout.x,
                 y: layout.y,
                 length: gameW,
+                tugAutoCenter: !!tugAutoCenter,
                 mode: modeSel ? modeSel.value : 'CLASSIC',
                 snowEnabled: !!snowEnabled,
                 borderEnabled: !!trackBorderEnabled,
@@ -1402,17 +1498,13 @@
 
               if (p.action === 'set_layout') {
                 const z = parseFloat(p.zoom);
+                const st = parseFloat(p.stretch);
                 const x = parseFloat(p.x);
                 const y = parseFloat(p.y);
                 if (!isNaN(z)) layout.scale = z / 100;
+                if (!isNaN(st)) layout.stretchX = clamp(st / 100, 0.5, 2.0);
                 if (!isNaN(x)) layout.x = x;
                 if (!isNaN(y)) layout.y = y;
-                applyLayout(true);
-              }
-
-              if (p.action === 'set_stretch') {
-                const st = parseFloat(p.stretch);
-                if (!isNaN(st)) layout.stretchX = clamp(st / 100, 0.1, 3.0);
                 applyLayout(true);
               }
 
@@ -1434,6 +1526,10 @@
                 const en = (p.enabled !== undefined) ? !!p.enabled : trackBorderEnabled;
                 const w = (p.width !== undefined) ? p.width : trackBorderWidth;
                 setTrackBorder(en, w, true);
+              }
+
+              if (p.action === 'set_tug_center') {
+                setTugAutoCenter(!!p.enabled, true);
               }
 
               if (p.action === 'add_bot') {
@@ -1693,11 +1789,8 @@
         const rZone = document.getElementById('tug-red-zone');
         if(rZone) rZone.style.width = '50%';
 
-        // ✅ FIX: center with effective scaleX + translate scaled compensation
-        const sx = getScaleX();
-        const desiredScreenShift = (window.innerWidth / 2) - ((gameW / 2) * sx);
-        layout.x = desiredScreenShift / sx;
-        applyLayout(false);
+        // ✅ 关键修复：TEAM准备阶段不强制改 layout.x（避免跑道跳到右边）
+        // 如果你想在TEAM中自动居中，打开 TUG CENTER，会在RACING阶段平滑居中
       } else if (tugLayer) {
         document.getElementById('game-screen').className = '';
         lightState = 'GREEN';
@@ -1744,6 +1837,9 @@
           if (p.playerUUID) teamMap[p.playerUUID] = (p.team === 1) ? 'BLUE' : 'RED';
         });
         broadcast({ type: 'sync_ui', label: 'PULL!', mode: 'tug', teamMap: teamMap });
+
+        // ✅ TEAM开始也不强制改layout.x（避免跳）
+        // 自动居中只在RACING阶段且开关开启时平滑执行
       } else {
         statusText = "STATUS: RUN";
         obstacles = [];
@@ -1850,11 +1946,10 @@
           const rZone = document.getElementById('tug-red-zone');
           if(rZone) rZone.style.width = (100 - tugValue) + '%';
 
-          // ✅ FIX: center with effective scaleX + translate scaled compensation
-          const sx = getScaleX();
-          const desiredScreenShift = (window.innerWidth / 2) - ((gameW / 2) * sx);
-          layout.x = desiredScreenShift / sx;
-          applyLayout(false);
+          // ✅ 仅在开关开启时才自动居中，并且是平滑（不瞬移）
+          if (maybeAutoCenterTug(true)) {
+            applyLayout(false);
+          }
 
           const battleFront = gameW * (tugValue / 100);
           spawnBattleSparks(battleFront);
@@ -2402,6 +2497,9 @@
       const borderLbl = document.getElementById('m-admin-border-label');
       const borderW = document.getElementById('m-admin-borderw');
 
+      const tugCb = document.getElementById('m-admin-tugcenter');
+      const tugLbl = document.getElementById('m-admin-tugcenter-label');
+
       if (applyBtn) {
         applyBtn.addEventListener('click', () => {
           const z = parseFloat(document.getElementById('m-admin-zoom').value);
@@ -2410,9 +2508,10 @@
           const y = parseFloat(document.getElementById('m-admin-y').value);
           const len = parseFloat(document.getElementById('m-admin-len').value);
 
-          sendHostControl({ action: 'set_layout', zoom: z, x: x, y: y });
-          sendHostControl({ action: 'set_stretch', stretch: st });
+          sendHostControl({ action: 'set_layout', zoom: z, stretch: st, x: x, y: y });
           sendHostControl({ action: 'set_length', length: len });
+
+          if (tugCb) sendHostControl({ action: 'set_tug_center', enabled: tugCb.checked });
 
           vibrate(10);
         });
@@ -2462,6 +2561,15 @@
         });
       }
 
+      if (tugCb) {
+        tugCb.addEventListener('change', () => {
+          const enabled = tugCb.checked;
+          if (tugLbl) tugLbl.textContent = enabled ? 'ON' : 'OFF';
+          sendHostControl({ action: 'set_tug_center', enabled });
+          vibrate(10);
+        });
+      }
+
       try {
         peer = new Peer(null, PEER_CONFIG);
         peer.on('open', () => {
@@ -2487,11 +2595,16 @@
               const ben = (data.borderEnabled !== undefined) ? !!data.borderEnabled : true;
               const bw = (typeof data.borderWidth === 'number') ? data.borderWidth : 2;
 
+              const tac = !!data.tugAutoCenter;
+
               const zEl = document.getElementById('m-admin-zoom');
               const stEl = document.getElementById('m-admin-stretch');
               const xEl = document.getElementById('m-admin-x');
               const yEl = document.getElementById('m-admin-y');
               const lenEl = document.getElementById('m-admin-len');
+
+              const tEl = document.getElementById('m-admin-tugcenter');
+              const tLbl = document.getElementById('m-admin-tugcenter-label');
 
               const mEl = document.getElementById('m-admin-mode');
               const sEl = document.getElementById('m-admin-snow');
@@ -2506,6 +2619,9 @@
               if (xEl) xEl.value = Number(x).toFixed(1);
               if (yEl) yEl.value = Number(y).toFixed(1);
               if (lenEl) lenEl.value = String(Math.round(len));
+
+              if (tEl) tEl.checked = tac;
+              if (tLbl) tLbl.textContent = tac ? 'ON' : 'OFF';
 
               if (mEl) mEl.value = mode;
               if (sEl) sEl.checked = sn;
