@@ -51,6 +51,39 @@
 
     .hidden { display: none !important; }
 
+    /* ✅ Join page (permanent QR landing) */
+    #join-view{
+      position:absolute; inset:0;
+      display:none;
+      align-items:center; justify-content:center;
+      padding:24px;
+      background:#0a0a0a;
+      z-index:9999;
+    }
+    #join-card{
+      width:min(520px, 92vw);
+      border:1px solid #2a2a2a;
+      border-radius:16px;
+      padding:18px 18px 16px;
+      background:#111;
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
+    }
+    #join-card h2{ margin:0 0 8px; font-size:42px; letter-spacing:.5px; }
+    #join-msg{ margin:0 0 14px; opacity:.9; font-size:22px; line-height:1.25; }
+    #join-sub{ margin:0; opacity:.6; font-size:18px; line-height:1.25; }
+    #join-actions{ margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; }
+    .join-btn{
+      font-family:'VT323', monospace;
+      font-size:22px;
+      padding:10px 14px;
+      border-radius:12px;
+      border:1px solid #3a3a3a;
+      background:#1a1a1a;
+      color:#fff;
+      cursor:pointer;
+    }
+    .join-btn:active{ transform: translateY(1px); }
+
     #desktop-view {
       position: absolute; inset: 0;
       width: 100%; height: 100%;
@@ -140,17 +173,6 @@
       align-items: center;
       position: relative;
       flex-shrink: 0;
-    }
-
-    .join-label {
-      position: absolute;
-      bottom: 2px;
-      left: 0; width: 100%;
-      text-align: center;
-      font-size: 14px;
-      color: #888;
-      pointer-events: none;
-      text-shadow: 1px 1px 0 #000;
     }
 
     .flash-active { animation: track-flash 0.2s ease-out; }
@@ -608,8 +630,7 @@
 
         <div id="side-qr-box">
           <div id="qrcode"></div>
-          <div class="join-label">JOIN</div>
-        </div>
+</div>
       </div>
     </div>
 
@@ -875,6 +896,20 @@
       </div>
     </div>
   </div>
+
+  <!-- ✅ Permanent QR landing: /join -->
+  <div id="join-view">
+    <div id="join-card">
+      <h2>Joining…</h2>
+      <p id="join-msg">Finding the current host…</p>
+      <p id="join-sub">If you’re the host, open the main page first to go online.</p>
+      <div id="join-actions">
+        <button id="join-retry" class="join-btn" style="display:none;">Retry</button>
+        <button id="join-open-main" class="join-btn">Open main page</button>
+      </div>
+    </div>
+  </div>
+
 
   <script>
     // ✅ Track height fixed; length is host-controlled
@@ -1452,8 +1487,18 @@
         if(changed) applyLayout(true);
       });
 
-      const isMobile = new URLSearchParams(window.location.search).has('host');
-      if(isMobile) {
+      // ✅ Routing:
+      // - /join (or ?join=1) : permanent QR landing
+      // - ?host=...          : mobile controller
+      // - otherwise          : desktop host view
+      const sp = new URLSearchParams(window.location.search);
+      const isJoin = (location.pathname.endsWith('/join') || sp.has('join'));
+      const isMobile = sp.has('host');
+      if(isJoin) {
+        document.getElementById('desktop-view').style.display = 'none';
+        document.getElementById('mobile-view').style.display = 'none';
+        initJoin();
+      } else if(isMobile) {
         document.getElementById('desktop-view').style.display = 'none';
         document.getElementById('mobile-view').style.display = 'flex';
         initMobile();
@@ -1534,6 +1579,50 @@
     // =========================
     const HOST_ID_STORAGE_KEY = 'HRR_HOST_ID';
 
+    // =========================
+    // ✅ Permanent QR /join routing (room-based)
+    // =========================
+    const DEFAULT_ROOM_ID = 'TEAM01';
+
+    function getRoomId() {
+      // Allow overriding room via query on the main page (useful for multiple setups):
+      //   https://nowheretorun.studionowhere.com/?room=TEAM01
+      try {
+        const sp = new URLSearchParams(window.location.search);
+        return (sp.get('room') || DEFAULT_ROOM_ID).trim() || DEFAULT_ROOM_ID;
+      } catch(e) {
+        return DEFAULT_ROOM_ID;
+      }
+    }
+
+    // =========================
+    // ✅ Host presence reporting (requires a tiny backend/serverless endpoint)
+    // =========================
+    // NOTE: For production, your developer should validate this token server-side.
+    // Leave empty if you don't use token auth.
+    const HOST_REPORT_TOKEN = '';
+
+    async function reportHostOnline(hostId) {
+      try {
+        const body = { room: getRoomId(), hostId: hostId };
+        if (HOST_REPORT_TOKEN) body.token = HOST_REPORT_TOKEN;
+
+        await fetch('/api/set-host', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
+          body: JSON.stringify(body)
+        });
+      } catch(e) {
+        // Silent fail: game should still run even if backend is not ready
+      }
+    }
+
+    function startHostHeartbeat(hostId) {
+      reportHostOnline(hostId);
+      return setInterval(() => reportHostOnline(hostId), 15000);
+    }
+
     function getOrCreateHostId() {
       let id = null;
       try { id = localStorage.getItem(HOST_ID_STORAGE_KEY); } catch(e) {}
@@ -1549,9 +1638,50 @@
       if (el) el.innerHTML = '';
     }
 
-    function buildJoinUrl(peerId) {
-      const baseUrl = `${location.origin}${location.pathname}`;
-      return `${baseUrl}?host=${encodeURIComponent(peerId)}`;
+    function buildJoinUrl() {
+      // ✅ Permanent QR: always points to /join (room-based routing)
+      const room = getRoomId();
+      const joinUrl = `${location.origin}/join?room=${encodeURIComponent(room)}`;
+      return joinUrl;
+    }
+
+    function initJoin() {
+      // Landing page used by the permanent QR: /join?room=TEAM01
+      const joinView = document.getElementById('join-view');
+      const msg = document.getElementById('join-msg');
+      const retry = document.getElementById('join-retry');
+      const openMain = document.getElementById('join-open-main');
+
+      const sp = new URLSearchParams(window.location.search);
+      const room = (sp.get('room') || DEFAULT_ROOM_ID).trim() || DEFAULT_ROOM_ID;
+
+      function showError() {
+        if (msg) msg.innerHTML = `No host online for <span style="opacity:.9">${room}</span>. Please try again in a moment.`;
+        if (retry) retry.style.display = 'inline-block';
+      }
+
+      async function go() {
+        if (retry) retry.style.display = 'none';
+        if (msg) msg.textContent = 'Finding the current host…';
+
+        try {
+          const r = await fetch(`/api/active-host?room=${encodeURIComponent(room)}`, { cache: 'no-store' });
+          if (!r.ok) throw new Error('bad status');
+          const data = await r.json();
+          if (!data || !data.hostId) throw new Error('no host');
+
+          // Redirect to the main page with the live host id
+          location.replace(`/?host=${encodeURIComponent(data.hostId)}&room=${encodeURIComponent(room)}`);
+        } catch(e) {
+          showError();
+        }
+      }
+
+      if (joinView) joinView.style.display = 'flex';
+      if (retry) retry.onclick = go;
+      if (openMain) openMain.onclick = () => { location.href = `/?room=${encodeURIComponent(room)}`; };
+
+      go();
     }
 
     function initDesktop() {
@@ -1560,7 +1690,9 @@
         const hostId = getOrCreateHostId();
         peer = new Peer(hostId, PEER_CONFIG);
         peer.on('open', id => {
-          const url = buildJoinUrl(id);
+          const url = buildJoinUrl();
+          // ✅ Tell backend this host is online (so /join can find it)
+          startHostHeartbeat(id);
           clearQr();
           new QRCode(document.getElementById("qrcode"), {
             text: url, width: 86, height: 86,
