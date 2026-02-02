@@ -28,6 +28,16 @@
 
     * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
 
+    /* ✅ iOS: prevent long-press callout / text selection popups on mobile controls */
+    html, body, #mobile-view, #m-controller, #m-btn, .push-btn {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-drag: none;
+      touch-action: manipulation;
+    }
+
     body {
       margin: 0; padding: 0;
       background-color: #0a0a0a;
@@ -944,6 +954,63 @@
 
     let lastShakeTime = 0;
 
+    // =========================
+    // ✅ Mobile iOS guards (prevent long-press popups / gesture zoom)
+    // =========================
+    let mobileGuardsInstalled = false;
+    function installMobileIOSGuards() {
+      if (mobileGuardsInstalled) return;
+      mobileGuardsInstalled = true;
+
+      // Prevent iOS long-press menu / selection overlays
+      document.addEventListener('contextmenu', (e) => e.preventDefault(), { passive: false });
+      document.addEventListener('selectstart', (e) => e.preventDefault(), { passive: false });
+
+      // Prevent pinch/gesture zoom quirks on some iOS versions
+      document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+
+      // Prevent double-tap-to-zoom
+      let lastTouchEnd = 0;
+      document.addEventListener('touchend', (e) => {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 250) e.preventDefault();
+        lastTouchEnd = now;
+      }, { passive: false });
+    }
+
+    // =========================
+    // ✅ Motion permission / re-attach after reconnect
+    // =========================
+    let motionAttached = false;
+
+    function attachMotionListener() {
+      if (motionAttached) return;
+      window.addEventListener('devicemotion', handleMotion);
+      motionAttached = true;
+    }
+
+    async function enableMotionFromGesture() {
+      try {
+        initAudio(); // keep iOS happy that a user gesture occurred
+        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+          const state = await DeviceMotionEvent.requestPermission();
+          if (state === 'granted') attachMotionListener();
+          return state;
+        } else {
+          attachMotionListener();
+          return 'granted';
+        }
+      } catch (e) {
+        console.error(e);
+        return 'error';
+      }
+    }
+
+    function forceBlur() {
+      const ae = document.activeElement;
+      if (ae && typeof ae.blur === 'function') ae.blur();
+    }
+
     // ✅ 关闭“上滑跳跃”（仍保留抬手机跳）
     let swipeJumpEnabled = false;
 
@@ -1461,12 +1528,40 @@
       }
     }
 
+
+    // =========================
+    // ✅ Stable QR / Host ID
+    // =========================
+    const HOST_ID_STORAGE_KEY = 'HRR_HOST_ID';
+
+    function getOrCreateHostId() {
+      let id = null;
+      try { id = localStorage.getItem(HOST_ID_STORAGE_KEY); } catch(e) {}
+      if (!id) {
+        id = 'HRR-' + Math.random().toString(36).slice(2, 10);
+        try { localStorage.setItem(HOST_ID_STORAGE_KEY, id); } catch(e) {}
+      }
+      return id;
+    }
+
+    function clearQr() {
+      const el = document.getElementById('qrcode');
+      if (el) el.innerHTML = '';
+    }
+
+    function buildJoinUrl(peerId) {
+      const baseUrl = `${location.origin}${location.pathname}`;
+      return `${baseUrl}?host=${encodeURIComponent(peerId)}`;
+    }
+
     function initDesktop() {
       initEditor('pc-grid', 'pc-colors', pcGrid);
       try {
-        peer = new Peer(null, PEER_CONFIG);
+        const hostId = getOrCreateHostId();
+        peer = new Peer(hostId, PEER_CONFIG);
         peer.on('open', id => {
-          const url = `${location.href}?host=${id}`;
+          const url = buildJoinUrl(id);
+          clearQr();
           new QRCode(document.getElementById("qrcode"), {
             text: url, width: 86, height: 86,
             colorDark : "#000000", colorLight : "#ffffff", correctLevel: QRCode.CorrectLevel.L
@@ -1569,7 +1664,16 @@
 
         peer.on('error', (err) => {
           console.error("PeerJS Error:", err);
-          alert("Network Error: " + err.type + "\nTry refreshing.");
+
+          // ✅ If this host id is already in use (e.g., another tab/device), regenerate once.
+          if (err && err.type === 'unavailable-id') {
+            try { localStorage.removeItem(HOST_ID_STORAGE_KEY); } catch(e) {}
+            alert("Host ID is already in use. Generating a new QR code...");
+            location.reload();
+            return;
+          }
+
+          alert("Network Error: " + (err && err.type ? err.type : "unknown") + "\nTry refreshing.");
         });
       } catch(e) { console.error(e); }
     }
@@ -2463,6 +2567,7 @@
     }
 
     function initMobile() {
+      installMobileIOSGuards();
       playerUUID = localStorage.getItem('horse_uuid');
       if (!playerUUID) {
         playerUUID = 'user_' + Math.random().toString(36).substr(2, 9);
@@ -2637,6 +2742,9 @@
             if (data.type === 'reconnect_success') {
               document.getElementById('m-editor-ui').style.display = 'none';
               document.getElementById('m-controller').style.display = 'flex';
+              forceBlur();
+              // Motion events/listeners can get dropped after leaving/re-entering; ask for a quick tap to re-enable.
+              showMotionResumeHint();
             }
             else if (data.type === 'sync_ui') {
               if (mobileBtnState === 'dead') return;
@@ -2706,6 +2814,33 @@
       } catch(e) { console.error(e); }
     }
 
+
+    function showMotionResumeHint() {
+      // If already attached, no need to bother
+      if (motionAttached) return;
+
+      const btn = document.getElementById('m-btn');
+      if (!btn) return;
+
+      // One-tap enable. Uses a user gesture so iOS permission API is allowed.
+      const oldText = btn.innerText;
+      const oldClass = btn.className;
+
+      btn.className = 'push-btn btn-wait';
+      btn.innerText = "TAP TO\nRE-ENABLE\nJUMP";
+
+      const once = async (e) => {
+        try { e && e.preventDefault && e.preventDefault(); } catch(_) {}
+        await enableMotionFromGesture();
+        btn.innerText = oldText;
+        btn.className = oldClass;
+      };
+
+      // Use both touchend and click for compatibility
+      btn.addEventListener('touchend', once, { passive: false, once: true });
+      btn.addEventListener('click', once, { once: true });
+    }
+
     function handleMotion(event) {
       const acc = event.acceleration;
       if (!acc) return;
@@ -2724,6 +2859,9 @@
     let touchStartY = 0;
 
     mBtn.addEventListener('touchstart', (e) => {
+      forceBlur();
+      if (!motionAttached) { enableMotionFromGesture(); }
+
       if (mobileBtnState === 'dead') { resetMobile(); return; }
       if (mobileBtnState === 'finished') return;
       if (mobileBtnState === 'start') {
@@ -2776,19 +2914,13 @@
       initAudio();
       randomizeMusic();
 
-      if (typeof DeviceMotionEvent.requestPermission === 'function') {
-        DeviceMotionEvent.requestPermission()
-          .then(permissionState => {
-            if (permissionState === 'granted') window.addEventListener('devicemotion', handleMotion);
-          })
-          .catch(console.error);
-      } else {
-        window.addEventListener('devicemotion', handleMotion);
-      }
+      // ✅ Enable motion (jump) using a user gesture (this button click)
+      enableMotionFromGesture();
 
       conn.send({ type: 'spawn', payload: { name: name, pixels: mobileGrid, color: selectedColor, uuid: playerUUID } });
       document.getElementById('m-editor-ui').style.display = 'none';
       document.getElementById('m-controller').style.display = 'flex';
+      forceBlur();
     }
 
     function initAudio() {
