@@ -422,26 +422,58 @@
       cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
       transition: all 0.2s; margin-left: 5px;
     }
+
+    .btn-small{ padding: 8px 10px; font-size: 1rem; }
+
+    .host-id-controls{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      background:#111;
+      border: 2px solid var(--primary);
+      padding: 8px 10px;
+      border-radius: 12px;
+      font-family: 'VT323', monospace;
+      color: var(--primary);
+    }
+    .host-id-label{
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+    }
+    .host-id-input{
+      width: 160px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 2px solid #333;
+      background:#0b0b0b;
+      color:#fff;
+      outline:none;
+      font-family: 'VT323', monospace;
+      font-size: 1.2rem;
+    }
+    .host-id-input:focus{ border-color: var(--primary); }
+
+    .m-admin-hostid{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    #m-host-id-input{
+      flex:1;
+      min-width: 0;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 2px solid #333;
+      background:#0b0b0b;
+      color:#fff;
+      outline:none;
+      font-family: 'VT323', monospace;
+      font-size: 1.2rem;
+    }
     .btn:hover { background: var(--primary); color: #000; }
     .btn:active { transform: translateY(2px); }
 
-    .host-tag{
-      background:#111;
-      border: 2px solid var(--primary);
-      color: var(--primary);
-      padding: 10px 14px;
-      font-family: 'VT323', monospace;
-      font-size: 1.2rem;
-      text-transform: uppercase;
-      box-shadow: 0 0 20px rgba(255, 255, 255, 0.12);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      line-height: 1;
-      opacity: 0.95;
-      pointer-events: none;
-    }
-
+    
 
     #modal-editor {
       position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000;
@@ -501,12 +533,6 @@
       justify-content: center;
       margin: 0 0 18px;
       pointer-events: auto;
-    }
-    #m-host-toggle{
-      width: 100%;
-      max-width: 300px;
-      padding: 10px 20px;
-      font-size: 1.4rem;
     }
 
     .push-btn {
@@ -755,7 +781,13 @@
         </div>
       </div>
 
-      <div class="host-tag">HOST</div>
+      <div class="host-id-controls" title="Fixed Host ID (used for the QR join link)">
+        <span class="host-id-label">HOST</span>
+        <input id="host-id-input" class="host-id-input" type="text" value="NOWHERE01" maxlength="32" spellcheck="false" />
+        <button class="btn btn-small" id="host-id-copy" type="button">COPY</button>
+        <button class="btn btn-small" id="host-id-apply" type="button">APPLY</button>
+      </div>
+
       <button class="btn" onclick="spawnTestPony()">+ BOT</button>
       <button class="btn" onclick="openDesktopEditor()">+ PONY</button>
     </div>
@@ -808,7 +840,16 @@
           <span>HOST CONTROL</span>
           <span style="font-size:1rem; color:#888;">(hidden)</span>
         </div>
-        <div class="m-admin-hint">Zoom / Stretch / X / Y supports decimals. Length changes track size (height fixed).</div>
+        
+        <div class="m-admin-row">
+          <div class="m-admin-label">HOST ID</div>
+          <div class="m-admin-control m-admin-hostid">
+            <input type="text" id="m-host-id-input" maxlength="32" spellcheck="false" value="NOWHERE01" />
+            <button class="btn btn-small" id="m-host-id-copy" type="button">COPY</button>
+            <button class="btn btn-small" id="m-host-id-apply" type="button">APPLY</button>
+          </div>
+        </div>
+<div class="m-admin-hint">Zoom / Stretch / X / Y supports decimals. Length changes track size (height fixed).</div>
 
         <div class="m-admin-row">
           <div class="m-admin-label">ZOOM</div>
@@ -918,10 +959,6 @@
           <option value="RED_LIGHT">STOP?</option>
           <option value="TUG">TEAM</option>
         </select>
-      </div>
-
-      <div id="m-top-actions">
-        <button id="m-host-toggle" class="btn" type="button">HOST</button>
       </div>
 
       <div id="m-btn" class="push-btn btn-wait">WAIT</div>
@@ -1322,10 +1359,25 @@
     }
 
     window.onload = function() {
-      const mHostToggle = document.getElementById('m-host-toggle');
-      if (mHostToggle) {
-        mHostToggle.addEventListener('click', () => { toggleMobileAdmin(); vibrate(10); });
-      }
+      // Host ID controls (copy/apply) - desktop + mobile hidden admin (5-tap)
+      try{
+        syncHostIdInputs();
+
+        const dIn = document.getElementById('host-id-input');
+        const dCopy = document.getElementById('host-id-copy');
+        const dApply = document.getElementById('host-id-apply');
+        if (dCopy) dCopy.addEventListener('click', () => { copyTextToClipboard(getFixedHostId()); toast('HOST ID copied'); });
+        if (dApply) dApply.addEventListener('click', () => { applyHostIdFromInput(dIn); });
+        if (dIn) dIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyHostIdFromInput(dIn); });
+
+        const mIn = document.getElementById('m-host-id-input');
+        const mCopy = document.getElementById('m-host-id-copy');
+        const mApply = document.getElementById('m-host-id-apply');
+        if (mCopy) mCopy.addEventListener('click', () => { copyTextToClipboard(getFixedHostId()); toast('HOST ID copied'); });
+        if (mApply) mApply.addEventListener('click', () => { applyHostIdFromInput(mIn); });
+        if (mIn) mIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyHostIdFromInput(mIn); });
+      }catch(e){}
+
 
       const btns = document.querySelectorAll('.emoji-btn');
       btns.forEach(btn => {
@@ -1628,26 +1680,91 @@
 
 
     // =========================
-    // ✅ Permanent QR (no backend): fixed Host ID
-    // =========================
+    // ✅ Permanent QR (no backend): fixed Host ID (editable)
+// =========================
+//
+// This scheme does NOT require any backend.
+// It keeps the host ID stable by storing it in localStorage.
+// You can copy / replace the host ID from the host panels.
+//
+// IMPORTANT: Only ONE host can be online at a time for a given hostId.
+const DEFAULT_HOST_ID = 'NOWHERE01';
+const HOST_ID_STORAGE_KEY = 'HRR_FIXED_HOST_ID';
 
-    // Change this once, print the QR once, and it will always work (as long as only ONE host is online at a time).
-    const FIXED_HOST_ID = 'NOWHERE01';
+function getFixedHostId() {
+  try {
+    return (localStorage.getItem(HOST_ID_STORAGE_KEY) || DEFAULT_HOST_ID).trim();
+  } catch (e) {
+    return DEFAULT_HOST_ID;
+  }
+}
 
-    function getOrCreateHostId() {
-      return FIXED_HOST_ID;
-    }
+function setFixedHostId(newId) {
+  const id = String(newId || '').trim();
+  // Allow letters/numbers/_- up to 32 chars (safe for Peer IDs)
+  if (!/^[A-Za-z0-9_-]{1,32}$/.test(id)) return false;
+  try { localStorage.setItem(HOST_ID_STORAGE_KEY, id); } catch (e) {}
+  return true;
+}
 
-    function clearQr() {
-      const el = document.getElementById('qrcode');
-      if (el) el.innerHTML = '';
-    }
+function getOrCreateHostId() {
+  return getFixedHostId();
+}
 
-    function buildJoinUrl(hostId) {
-      // Fixed join URL (no /join, no backend)
-      const baseUrl = location.origin + location.pathname;
-      return `${baseUrl}?host=${encodeURIComponent(hostId)}`;
-    }
+function clearQr() {
+  const el = document.getElementById('qrcode');
+  if (el) el.innerHTML = '';
+}
+
+function buildJoinUrl(hostId) {
+  // Fixed join URL (no /join, no backend)
+  const baseUrl = location.origin + location.pathname;
+  return `${baseUrl}?host=${encodeURIComponent(hostId)}`;
+}
+
+function copyTextToClipboard(text) {
+  const t = String(text || '');
+  if (!t) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(t).catch(() => {
+      // fallback
+      window.prompt('Copy this:', t);
+    });
+  } else {
+    window.prompt('Copy this:', t);
+  }
+}
+
+function syncHostIdInputs() {
+  const id = getFixedHostId();
+  const d = document.getElementById('host-id-input');
+  const m = document.getElementById('m-host-id-input');
+  if (d) d.value = id;
+  if (m) m.value = id;
+}
+
+function applyHostIdFromInput(inputEl) {
+  const val = inputEl ? inputEl.value : '';
+  const ok = setFixedHostId(val);
+  syncHostIdInputs();
+  if (!ok) {
+    toast('Invalid HOST ID (A-Z 0-9 _ - , max 32)');
+    return;
+  }
+
+  // If we are currently in "join/controller" mode (?host=...), redirect to the new host immediately.
+  const qs = new URLSearchParams(location.search);
+  if (qs.has('host')) {
+    const baseUrl = location.origin + location.pathname;
+    location.href = `${baseUrl}?host=${encodeURIComponent(getFixedHostId())}`;
+    return;
+  }
+
+  // If we are on desktop host page, the Peer ID is created at startup,
+  // so reload is the simplest way to apply the new hostId.
+  toast('HOST ID saved. Reloading to apply…');
+  setTimeout(() => location.reload(), 350);
+}
 
     function initJoin() {
       // Optional: if someone visits with ?join=1, just redirect to the fixed host.
