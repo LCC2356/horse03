@@ -1030,8 +1030,9 @@
     const STYLE_KEYS = Object.keys(SOUND_STYLES);
 
     let noteIndex = 0;
-    let lastNoteTime = 0;
-    const MIN_NOTE_INTERVAL_MS = 180; // ✅ slower = clearer melody // ✅ keeps melody recognizable when players mash
+    let melodyTimer = null;
+    const MELODY_STEP_SEC = 0.22; // melody pace (seconds per step)
+// ✅ slower = clearer melody // ✅ keeps melody recognizable when players mash
     let myCurrentSongKey = 'SPRING';
     let myStyleKey = 'GAMEBOY';
 
@@ -1274,13 +1275,75 @@
     }
 
     function playNextNote() {
+      // ✅ Tap feedback SFX (instant). Melody is handled by a separate timer so taps never "speed up" the tune.
       if (!audioCtx) return;
-      const tNow = Date.now();
-      if (tNow - lastNoteTime < MIN_NOTE_INTERVAL_MS) {
-        // Too fast: keep the current note (don't advance) so the melody stays recognizable
-        return;
-      }
-      lastNoteTime = tNow;
+      const now = audioCtx.currentTime;
+
+      // short percussive blip
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const style = STYLES[myStyleKey] || STYLES['GAMEBOY'];
+
+      // fixed bright pitch for click feedback (doesn't interfere with the song recognition)
+      osc.frequency.setValueAtTime(880, now);
+      osc.type = style.type;
+
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.18, now + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.07);
+    }
+
+    function startMelodyLoop() {
+          if (!audioCtx) return;
+          stopMelodyLoop();
+          noteIndex = 0;
+    
+          const songArr = SONGS[myCurrentSongKey] || SONGS['GONGXI_FACAI'];
+    
+          const tick = () => {
+            // choose next non-null note
+            const f = songArr[noteIndex % songArr.length] || 0;
+            noteIndex++;
+    
+            if (f && f > 0) {
+              const now = audioCtx.currentTime;
+              const osc = audioCtx.createOscillator();
+              const gain = audioCtx.createGain();
+              const style = STYLES[myStyleKey] || STYLES['GAMEBOY'];
+    
+              osc.type = style.type;
+              osc.frequency.setValueAtTime(f, now);
+    
+              // clearer melodic envelope than the tap blip
+              gain.gain.setValueAtTime(0.0001, now);
+              gain.gain.exponentialRampToValueAtTime(0.22, now + 0.01);
+              gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+    
+              osc.connect(gain);
+              gain.connect(audioCtx.destination);
+              osc.start(now);
+              osc.stop(now + 0.20);
+            }
+    
+            melodyTimer = window.setTimeout(tick, MELODY_STEP_SEC * 1000);
+          };
+    
+          tick();
+        }
+    
+        function stopMelodyLoop() {
+          if (melodyTimer) {
+            clearTimeout(melodyTimer);
+            melodyTimer = null;
+          }
+        }
+      /*lastNoteTime*/ = tNow;
       const now = audioCtx.currentTime;
       const songArr = SONGS[myCurrentSongKey] || SONGS['GONGXI_FACAI'];
       let freq = songArr[noteIndex % songArr.length];
@@ -3038,7 +3101,8 @@ function applyHostIdFromInput(inputEl) {
                 btn.innerText = "RUN";
                 info.innerText = data.infoText || "TAP TO RUN";
                 randomizeMusic();
-              }
+              
+      startMelodyLoop();}
               else if (data.mode === 'start') {
                 btn.classList.add('btn-start');
                 btn.innerText = data.label;
@@ -3170,7 +3234,8 @@ function applyHostIdFromInput(inputEl) {
       initAudio();
       randomizeMusic();
 
-      // ✅ Enable motion (jump) using a user gesture (this button click)
+      
+      startMelodyLoop();// ✅ Enable motion (jump) using a user gesture (this button click)
       enableMotionFromGesture();
 
       conn.send({ type: 'spawn', payload: { name: name, pixels: mobileGrid, color: selectedColor, uuid: playerUUID } });
