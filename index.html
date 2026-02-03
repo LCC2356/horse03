@@ -1011,11 +1011,51 @@
     };
 
     const SONGS = {
-      'GONGXI_FACAI': [370.0,329.6,370.0,329.6,277.2,277.2,0,0,277.2,370.0,329.6,370.0,329.6,370.0,370.0,0,0,277.2,0,0,370.0,329.6,370.0,329.6,277.2,277.2,0,0,277.2,370.0,329.6,370.0,329.6,370.0,370.0,0,0,277.2,0,0,370.0,329.6,370.0,329.6,277.2,277.2,0,0,277.2,370.0,329.6,370.0,329.6,370.0,370.0,0,0,277.2]
+      // CNY-style pentatonic loops (each tap advances one note)
+      'SPRING': [
+        392.0, 440.0, 523.3, 440.0, 392.0, 329.6, 293.7, 261.6,
+        293.7, 329.6, 392.0, 329.6, 293.7, 261.6, 0,
+        392.0, 392.0, 440.0, 392.0, 329.6, 293.7, 261.6, 0
+      ],
+      'LANTERN': [
+        523.3, 440.0, 392.0, 440.0, 523.3, 659.3, 523.3, 440.0,
+        392.0, 329.6, 293.7, 261.6, 293.7, 329.6, 392.0, 0
+      ],
+
+      // 🎉 刘德华《恭喜发财》（经典副歌动机：适合按键循环）
+      'GONGXI_FACAI': [
+        392.0, 392.0, 440.0, 523.3,
+        440.0, 392.0, 329.6, 392.0,
+        440.0, 523.3, 440.0, 392.0,
+        329.6, 293.7, 261.6, 0
+      ],
+
+      // 🎊 卓依婷《恭喜恭喜》（主旋律片段：短循环）
+      'GONGXI_GONGXI': [
+        392.0, 440.0, 523.3, 523.3,
+        440.0, 392.0, 329.6, 293.7,
+        329.6, 392.0, 440.0, 392.0,
+        329.6, 293.7, 261.6, 0
+      ],
+
+      // 🧧 卓依婷《拜年》（主旋律片段：短循环）
+      'BAI_NIAN': [
+        329.6, 392.0, 440.0, 523.3,
+        440.0, 392.0, 329.6, 293.7,
+        261.6, 293.7, 329.6, 392.0,
+        329.6, 293.7, 261.6, 0
+      ],
+
+      // 🌟 祖海《好运来》（副歌动机：短循环）
+      'HAO_YUN_LAI': [
+        392.0, 392.0, 440.0, 523.3,
+        440.0, 392.0, 329.6, 392.0,
+        440.0, 523.3, 659.3, 523.3,
+        440.0, 392.0, 329.6, 0
+      ]
     };
 
     const SOUND_STYLES = {
-      'CNY': { type: 'triangle', attack: 0.01, decay: 0.22 },
       'GAMEBOY': { type: 'square', decay: 0.1, attack: 0.01 },
       'FLUTE': { type: 'sine', decay: 0.3, attack: 0.05 },
       'LASER': { type: 'sawtooth', decay: 0.15, attack: 0.01 },
@@ -1027,9 +1067,7 @@
     const STYLE_KEYS = Object.keys(SOUND_STYLES);
 
     let noteIndex = 0;
-    let myCurrentSongKey = 'GONGXI_FACAI';
-    const SFX_KEYS = ['GONGXI_FACAI'];
-
+    let myCurrentSongKey = 'SPRING';
     let myStyleKey = 'GAMEBOY';
 
     let ponies = [];
@@ -1273,7 +1311,7 @@
     function playNextNote() {
       if (!audioCtx) return;
       const now = audioCtx.currentTime;
-      const songArr = SONGS[myCurrentSongKey] || SONGS['JINGLE'];
+      const songArr = SONGS[myCurrentSongKey] || SONGS['SPRING'];
       let freq = songArr[noteIndex % songArr.length];
       while (freq === 0) {
         noteIndex++;
@@ -1295,9 +1333,15 @@
     }
 
     function randomizeMusic() {
-      const songKeys = Object.keys(SONGS);
+      // ✅ Only use the 4 CNY classics during the competition
+      const songKeys = [
+        'GONGXI_FACAI',
+        'GONGXI_GONGXI',
+        'BAI_NIAN',
+        'HAO_YUN_LAI'
+      ];
       myCurrentSongKey = songKeys[Math.floor(Math.random() * songKeys.length)];
-      myStyleKey = 'CNY'; // stable style for recognisable melodies
+      myStyleKey = STYLE_KEYS[Math.floor(Math.random() * STYLE_KEYS.length)];
       noteIndex = 0;
     }
 
@@ -1708,6 +1752,28 @@ function setFixedHostId(newId) {
   return true;
 }
 
+
+function generateAlternativeHostId(baseId) {
+  // Sequential 2-digit suffix: 01, 02, 03...
+  // Example: NOWHERE01 -> NOWHERE02 -> NOWHERE03 ...
+  const s = String(baseId || DEFAULT_HOST_ID).trim();
+  const m = /^(.+?)(\d{2})$/.exec(s);
+  let prefix, num;
+  if (m) {
+    prefix = m[1];
+    num = parseInt(m[2], 10);
+  } else {
+    prefix = s.replace(/\d+$/, '');
+    num = 0;
+  }
+  let next = (isFinite(num) ? num : 0) + 1;
+  if (next > 99) next = 1;
+  const candidate = `${prefix}${String(next).padStart(2,'0')}`.slice(0,32);
+  return candidate;
+}
+
+
+
 function getOrCreateHostId() {
   return getFixedHostId();
 }
@@ -1766,19 +1832,6 @@ function applyHostIdFromInput(inputEl) {
   toast('HOST ID saved. Reloading to apply…');
   setTimeout(() => location.reload(), 350);
 }
-
-function generateAlternativeHostId(baseId) {
-  // Sequential 2-digit suffix: 01, 02, 03...
-  const s = String(baseId || DEFAULT_HOST_ID).trim();
-  const m = /^(.+?)(\d{2})$/.exec(s);
-  let prefix, num;
-  if (m) { prefix = m[1]; num = parseInt(m[2], 10); }
-  else { prefix = s.replace(/\d+$/, ''); num = 0; }
-  let next = (isFinite(num) ? num : 0) + 1;
-  if (next > 99) next = 1;
-  return `${prefix}${String(next).padStart(2,'0')}`.slice(0,32);
-}
-
 
     function initJoin() {
       // Optional: if someone visits with ?join=1, just redirect to the fixed host.
@@ -1895,23 +1948,17 @@ function generateAlternativeHostId(baseId) {
         });
 
         peer.on('error', (err) => {
+          console.error("PeerJS Error:", err);
+
+          // ✅ If this host id is already in use (e.g., another tab/device), auto-assign a new host id.
           if (err && err.type === 'unavailable-id') {
             const prev = getFixedHostId();
             const next = generateAlternativeHostId(prev);
             setFixedHostId(next);
             syncHostIdInputs();
             toast(`HOST ID in use → switched to ${next}`);
+            // Reload so Peer is re-created with the new id
             setTimeout(() => location.reload(), 250);
-            return;
-          }
-
-          console.error("PeerJS Error:", err);
-
-          // ✅ If this host id is already in use (e.g., another tab/device), regenerate once.
-          if (err && err.type === 'unavailable-id') {
-            try { localStorage.removeItem(HOST_ID_STORAGE_KEY); } catch(e) {}
-            alert("Host ID is already in use. Generating a new QR code...");
-            location.reload();
             return;
           }
 
@@ -2147,8 +2194,6 @@ function generateAlternativeHostId(baseId) {
     }
 
     function startRace() {
-      randomizeSfxForRace();
-
       updateBarText("GO!", "#ffffff");
 
       let statusText = "STATUS: RACING";
