@@ -1011,33 +1011,10 @@
     };
 
     const SONGS = {
-      // Numbered-notation based segments (from provided scores), mapped to C major.
-      // 1=C4(261.6), 2=D4(293.7), 3=E4(329.6), 4=F4(349.2),
-      // 5=G4(392.0), 6=A4(440.0), 7=B4(493.9), 0=rest
-
-      // 刘德华《恭喜发财》：从“我恭喜你发财”到“礼多人不怪”（节选循环）
+      // ✅ Single-song mode (for tuning): 刘德华《恭喜发财》
+      // Numbered-notation segment mapped to C major.
       'GONGXI_FACAI': [
-        440.0, 261.6, 329.6, 392.0, 440.0, 392.0, 440.0, 440.0, 261.6, 329.6, 392.0, 440.0, 261.6, 329.6, 392.0, 440.0, 261.6, 329.6, 392.0, 440.0, 392.0, 440.0, 329.6, 440.0, 392.0, 440.0, 392.0, 329.6, 329.6, 0.0, 0.0, 0.0, 329.6, 440.0, 392.0, 440.0, 392.0, 440.0, 440.0, 440.0, 0.0, 0.0, 329.6, 293.7, 329.6, 293.7, 261.6, 440.0, 0.0, 329.6, 293.7, 329.6, 293.7, 261.6, 293.7, 0.0, 261.6, 261.6, 293.7, 329.6, 392.0, 440.0, 0.0, 0.0, 0.0
-      ],
-
-      // 祖海《好运来》：从“好运来”到结尾“好运来”（节选循环）
-      'HAO_YUN_LAI': [
-        440.0, 329.6, 293.7, 293.7, 261.6, 440.0, 392.0, 261.6, 293.7, 440.0, 0.0, 440.0, 293.7, 261.6, 440.0, 392.0, 293.7, 392.0, 440.0, 329.6, 0.0, 329.6, 440.0, 392.0, 440.0, 440.0, 392.0, 440.0, 293.7, 261.6, 293.7, 0.0, 261.6, 261.6, 261.6, 293.7, 329.6, 329.6, 329.6, 293.7, 261.6, 392.0, 261.6, 440.0, 440.0, 0.0, 0.0, 392.0, 392.0, 440.0, 0.0
-      ],
-
-      // 卓依婷《恭喜恭喜》：从第一句开始（节选循环）
-      'GONGXI_GONGXI': [
-        440.0, 493.9, 261.6, 293.7, 349.2, 329.6, 329.6, 329.6, 440.0, 440.0, 329.6, 329.6, 293.7, 329.6, 329.6, 349.2, 329.6, 293.7, 293.7, 261.6, 261.6, 261.6, 493.9, 440.0, 392.0, 440.0, 440.0, 293.7, 329.6, 261.6, 329.6, 493.9, 329.6, 440.0, 0.0, 293.7, 329.6, 261.6, 329.6, 493.9, 329.6, 440.0, 0.0
-      ],
-
-      // 卓依婷《拜年》主旋律节选（可后续你再指定范围我再替换）
-      'BAI_NIAN': [
-        440.0, 493.9, 261.6, 293.7,
-        349.2, 329.6, 329.6,
-        329.6, 440.0, 329.6,
-        293.7, 329.6,
-        349.2, 329.6, 293.7,
-        0
+440.0, 261.6, 329.6, 392.0, 440.0, 392.0, 440.0, 440.0, 261.6, 329.6, 392.0, 440.0, 261.6, 329.6, 392.0, 440.0, 261.6, 329.6, 392.0, 440.0, 392.0, 440.0, 329.6, 440.0, 392.0, 440.0, 392.0, 329.6, 329.6, 0.0, 0.0, 0.0, 329.6, 440.0, 392.0, 440.0, 392.0, 440.0, 440.0, 440.0, 0.0, 0.0, 329.6, 293.7, 329.6, 293.7, 261.6, 440.0, 0.0, 329.6, 293.7, 329.6, 293.7, 261.6, 293.7, 0.0, 261.6, 261.6, 293.7, 329.6, 392.0, 440.0, 0.0, 0.0, 0.0
       ]
     };
 
@@ -1054,7 +1031,7 @@
 
     let noteIndex = 0;
     let lastNoteTime = 0;
-    const MIN_NOTE_INTERVAL_MS = 120; // ✅ keeps melody recognizable when players mash
+    const MIN_NOTE_INTERVAL_MS = 180; // ✅ slower = clearer melody // ✅ keeps melody recognizable when players mash
     let myCurrentSongKey = 'SPRING';
     let myStyleKey = 'GAMEBOY';
 
@@ -1305,7 +1282,7 @@
       }
       lastNoteTime = tNow;
       const now = audioCtx.currentTime;
-      const songArr = SONGS[myCurrentSongKey] || SONGS['SPRING'];
+      const songArr = SONGS[myCurrentSongKey] || SONGS['GONGXI_FACAI'];
       let freq = songArr[noteIndex % songArr.length];
       while (freq === 0) {
         noteIndex++;
@@ -1327,25 +1304,13 @@
     }
 
     function randomizeMusic() {
-      // ✅ Only use the 4 CNY motifs during the competition
-      // ✅ Avoid picking the same melody twice in a row on the same device
-      const songKeys = [
-        'GONGXI_FACAI',
-        'GONGXI_GONGXI',
-        'BAI_NIAN',
-        'HAO_YUN_LAI'
-      ];
-
-      // keep last pick across runs
-      if (typeof window.__lastSongKey === 'undefined') window.__lastSongKey = null;
-
-      let nextKey = songKeys[Math.floor(Math.random() * songKeys.length)];
-      if (window.__lastSongKey && songKeys.length > 1) {
-        let guard = 0;
-        while (nextKey === window.__lastSongKey && guard < 12) {
-          nextKey = songKeys[Math.floor(Math.random() * songKeys.length)];
-          guard++;
-        }
+      // ✅ Single-song mode: always use GONGXI_FACAI
+      myCurrentSongKey = 'GONGXI_FACAI';
+      // keep some variety in timbre
+      myStyleKey = STYLE_KEYS[Math.floor(Math.random() * STYLE_KEYS.length)];
+      noteIndex = 0;
+      window.__lastSongKey = 'GONGXI_FACAI';
+    }
       }
 
       myCurrentSongKey = nextKey;
