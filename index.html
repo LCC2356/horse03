@@ -1011,47 +1011,35 @@
     };
 
     const SONGS = {
-      // CNY-style pentatonic loops (each tap advances one note)
-      'SPRING': [
-        392.0, 440.0, 523.3, 440.0, 392.0, 329.6, 293.7, 261.6,
-        293.7, 329.6, 392.0, 329.6, 293.7, 261.6, 0,
-        392.0, 392.0, 440.0, 392.0, 329.6, 293.7, 261.6, 0
-      ],
-      'LANTERN': [
-        523.3, 440.0, 392.0, 440.0, 523.3, 659.3, 523.3, 440.0,
-        392.0, 329.6, 293.7, 261.6, 293.7, 329.6, 392.0, 0
-      ],
-
-      // 🎉 刘德华《恭喜发财》（经典副歌动机：适合按键循环）
+      // ✅ Festive "CNY-style" motifs (original, short loops; each tap advances one note)
+      // Notes are tuned to a friendly pentatonic-ish palette so mash taps still sound good.
+      // (These are *not* exact transcriptions of any specific song.)
       'GONGXI_FACAI': [
-        392.0, 392.0, 440.0, 523.3,
-        440.0, 392.0, 329.6, 392.0,
-        440.0, 523.3, 440.0, 392.0,
-        329.6, 293.7, 261.6, 0
+        // bright, punchy call/response motif
+        392.0, 392.0, 440.0, 523.3, 440.0, 392.0, 329.6, 392.0,
+        440.0, 523.3, 440.0, 392.0, 329.6, 293.7, 261.6, 0,
+        261.6, 293.7, 329.6, 392.0, 440.0, 392.0, 329.6, 293.7, 261.6, 0
       ],
 
-      // 🎊 卓依婷《恭喜恭喜》（主旋律片段：短循环）
       'GONGXI_GONGXI': [
-        392.0, 440.0, 523.3, 523.3,
-        440.0, 392.0, 329.6, 293.7,
-        329.6, 392.0, 440.0, 392.0,
+        // bouncy, sing-along motif
+        523.3, 523.3, 440.0, 392.0, 440.0, 523.3, 587.3, 523.3,
+        440.0, 392.0, 329.6, 293.7, 329.6, 392.0, 440.0, 392.0,
         329.6, 293.7, 261.6, 0
       ],
 
-      // 🧧 卓依婷《拜年》（主旋律片段：短循环）
       'BAI_NIAN': [
-        329.6, 392.0, 440.0, 523.3,
-        440.0, 392.0, 329.6, 293.7,
-        261.6, 293.7, 329.6, 392.0,
-        329.6, 293.7, 261.6, 0
+        // warmer, lower-register greeting motif
+        329.6, 392.0, 440.0, 392.0, 329.6, 293.7, 261.6, 293.7,
+        329.6, 392.0, 440.0, 523.3, 440.0, 392.0, 329.6, 293.7,
+        261.6, 0
       ],
 
-      // 🌟 祖海《好运来》（副歌动机：短循环）
       'HAO_YUN_LAI': [
-        392.0, 392.0, 440.0, 523.3,
-        440.0, 392.0, 329.6, 392.0,
-        440.0, 523.3, 659.3, 523.3,
-        440.0, 392.0, 329.6, 0
+        // soaring, "good luck" lift motif
+        392.0, 440.0, 523.3, 659.3, 523.3, 440.0, 392.0, 440.0,
+        523.3, 587.3, 659.3, 587.3, 523.3, 440.0, 392.0, 329.6,
+        392.0, 440.0, 523.3, 0
       ]
     };
 
@@ -1333,14 +1321,31 @@
     }
 
     function randomizeMusic() {
-      // ✅ Only use the 4 CNY classics during the competition
+      // ✅ Only use the 4 CNY motifs during the competition
+      // ✅ Avoid picking the same melody twice in a row on the same device
       const songKeys = [
         'GONGXI_FACAI',
         'GONGXI_GONGXI',
         'BAI_NIAN',
         'HAO_YUN_LAI'
       ];
-      myCurrentSongKey = songKeys[Math.floor(Math.random() * songKeys.length)];
+
+      // keep last pick across runs
+      if (typeof window.__lastSongKey === 'undefined') window.__lastSongKey = null;
+
+      let nextKey = songKeys[Math.floor(Math.random() * songKeys.length)];
+      if (window.__lastSongKey && songKeys.length > 1) {
+        let guard = 0;
+        while (nextKey === window.__lastSongKey && guard < 12) {
+          nextKey = songKeys[Math.floor(Math.random() * songKeys.length)];
+          guard++;
+        }
+      }
+
+      myCurrentSongKey = nextKey;
+      window.__lastSongKey = nextKey;
+
+      // style can still vary
       myStyleKey = STYLE_KEYS[Math.floor(Math.random() * STYLE_KEYS.length)];
       noteIndex = 0;
     }
