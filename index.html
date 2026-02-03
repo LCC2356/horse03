@@ -1274,7 +1274,9 @@ let myStyleKey = 'GAMEBOY';
         if (mCopy) mCopy.addEventListener('click', () => { copyTextToClipboard(getFixedHostId()); toast('HOST ID copied'); });
         if (mApply) mApply.addEventListener('click', () => { applyHostIdFromInput(mIn); });
         if (mIn) mIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyHostIdFromInput(mIn); });
-         btns.forEach(btn => {
+               }catch(e){}
+
+      btns.forEach(btn => {
         const type = btn.getAttribute('data-icon');
         if (type) { btn.appendChild(createPixelIcon(type, 3, '#fff')); }
       });
