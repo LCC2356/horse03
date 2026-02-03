@@ -436,6 +436,40 @@
       font-family: 'VT323', monospace;
       color: var(--primary);
     }
+
+    .song-controls{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      background:#111;
+      border: 2px solid var(--primary);
+      padding: 8px 10px;
+      border-radius: 12px;
+      font-family: 'VT323', monospace;
+      color: var(--primary);
+    }
+    .song-label{ font-size: 1.2rem; letter-spacing: 1px; }
+    .song-select{
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 2px solid #333;
+      background:#0b0b0b;
+      color:#fff;
+      outline:none;
+      font-family: 'VT323', monospace;
+      font-size: 1.1rem;
+    }
+    #m-song-select{
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 2px solid #333;
+      background:#0b0b0b;
+      color:#fff;
+      outline:none;
+      font-family: 'VT323', monospace;
+      font-size: 1.1rem;
+    }
     .host-id-label{
       font-size: 1.2rem;
       letter-spacing: 1px;
@@ -788,6 +822,17 @@
         <button class="btn btn-small" id="host-id-apply" type="button">APPLY</button>
       </div>
 
+      <div class="song-controls" title="Tap SFX melody">
+        <span class="song-label">SFX</span>
+        <select id="song-select" class="song-select">
+          <option value="GONGXI_FACAI">恭喜发财</option>
+          <option value="GONGXI_GONGXI">恭喜恭喜</option>
+          <option value="BAI_NIAN">拜年</option>
+          <option value="HAO_YUN_LAI">好运来</option>
+        </select>
+      </div>
+
+
       <button class="btn" onclick="spawnTestPony()">+ BOT</button>
       <button class="btn" onclick="openDesktopEditor()">+ PONY</button>
     </div>
@@ -948,6 +993,19 @@
       </div>
     </div>
 
+        <div class="m-admin-row">
+          <div class="m-admin-label">SFX</div>
+          <div class="m-admin-control">
+            <select id="m-song-select">
+              <option value="GONGXI_FACAI">恭喜发财</option>
+              <option value="GONGXI_GONGXI">恭喜恭喜</option>
+              <option value="BAI_NIAN">拜年</option>
+              <option value="HAO_YUN_LAI">好运来</option>
+            </select>
+          </div>
+        </div>
+
+
     <div id="m-controller">
       <div id="m-info" class="controller-info">GET READY</div>
 
@@ -1011,16 +1069,11 @@
     };
 
     const SONGS = {
-      // CNY-style pentatonic loops (each tap advances one note)
-      'SPRING': [
-        392.0, 440.0, 523.3, 440.0, 392.0, 329.6, 293.7, 261.6,
-        293.7, 329.6, 392.0, 329.6, 293.7, 261.6, 0,
-        392.0, 392.0, 440.0, 392.0, 329.6, 293.7, 261.6, 0
-      ],
-      'LANTERN': [
-        523.3, 440.0, 392.0, 440.0, 523.3, 659.3, 523.3, 440.0,
-        392.0, 329.6, 293.7, 261.6, 293.7, 329.6, 392.0, 0
-      ]
+      // Tap-to-play melodies (user-provided jianpu excerpts)
+      'GONGXI_FACAI': [740.0, 659.3, 740.0, 659.3, 740.0, 740.0, 740.0, 0, 0, 554.4, 493.9, 554.4, 493.9, 440.0, 740.0, 0, 554.4, 493.9, 554.4, 493.9, 440.0, 493.9, 0, 440.0, 440.0, 493.9, 554.4, 659.3, 0],
+      'GONGXI_GONGXI': [370.0, 415.3, 329.6, 415.3, 622.2, 415.3, 554.3, 0, 0, 622.2, 415.3, 554.3, 440.0, 0],
+      'BAI_NIAN': [329.6, 293.6, 261.6, 293.6, 329.6, 293.6, 329.6, 293.6, 392.0, 440.0, 392.0, 493.8, 440.0, 0, 329.6, 293.6, 329.6, 440.0, 329.6, 293.6, 329.6, 0],
+      'HAO_YUN_LAI': [493.9, 440.1, 370.0, 329.7, 329.7, 329.7, 293.7, 329.7, 370.0, 440.1, 440.1, 440.1, 329.7, 370.0, 440.1, 493.9, 493.9, 493.9, 370.0, 440.1, 493.9, 293.7, 493.9, 0]
     };
 
     const SOUND_STYLES = {
@@ -1035,8 +1088,20 @@
     const STYLE_KEYS = Object.keys(SOUND_STYLES);
 
     let noteIndex = 0;
-    let myCurrentSongKey = 'SPRING';
+    let myCurrentSongKey = 'GONGXI_FACAI';
     let myStyleKey = 'GAMEBOY';
+
+    function setSongKey(key){
+      if (!SONGS[key]) return;
+      myCurrentSongKey = key;
+      noteIndex = 0;
+      // sync UI
+      const d = document.getElementById('song-select');
+      const m = document.getElementById('m-song-select');
+      if (d) d.value = key;
+      if (m) m.value = key;
+      toast(`SFX: ${key}`);
+    }
 
     let ponies = [];
     let ponyQueue = [];
@@ -1279,7 +1344,7 @@
     function playNextNote() {
       if (!audioCtx) return;
       const now = audioCtx.currentTime;
-      const songArr = SONGS[myCurrentSongKey] || SONGS['SPRING'];
+      const songArr = SONGS[myCurrentSongKey] || SONGS['GONGXI_FACAI'];
       let freq = songArr[noteIndex % songArr.length];
       while (freq === 0) {
         noteIndex++;
@@ -1384,6 +1449,20 @@
         if (mApply) mApply.addEventListener('click', () => { applyHostIdFromInput(mIn); });
         if (mIn) mIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyHostIdFromInput(mIn); });
       }catch(e){}
+      // Tap SFX song selection (desktop + mobile hidden admin)
+      try{
+        const dSel = document.getElementById('song-select');
+        const mSel = document.getElementById('m-song-select');
+        const initKey = myCurrentSongKey;
+
+        if (dSel) dSel.addEventListener('change', (e) => setSongKey(e.target.value));
+        if (mSel) mSel.addEventListener('change', (e) => setSongKey(e.target.value));
+
+        // initial sync
+        if (dSel) dSel.value = initKey;
+        if (mSel) mSel.value = initKey;
+      }catch(e){}
+
 
 
       const btns = document.querySelectorAll('.emoji-btn');
