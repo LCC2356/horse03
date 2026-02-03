@@ -1575,62 +1575,14 @@
 
 
     // =========================
-    // ✅ Stable QR / Host ID
+    // ✅ Permanent QR (no backend): fixed Host ID
     // =========================
-    const HOST_ID_STORAGE_KEY = 'HRR_HOST_ID';
 
-    // =========================
-    // ✅ Permanent QR /join routing (room-based)
-    // =========================
-    const DEFAULT_ROOM_ID = 'TEAM01';
-
-    function getRoomId() {
-      // Allow overriding room via query on the main page (useful for multiple setups):
-      //   https://nowheretorun.studionowhere.com/?room=TEAM01
-      try {
-        const sp = new URLSearchParams(window.location.search);
-        return (sp.get('room') || DEFAULT_ROOM_ID).trim() || DEFAULT_ROOM_ID;
-      } catch(e) {
-        return DEFAULT_ROOM_ID;
-      }
-    }
-
-    // =========================
-    // ✅ Host presence reporting (requires a tiny backend/serverless endpoint)
-    // =========================
-    // NOTE: For production, your developer should validate this token server-side.
-    // Leave empty if you don't use token auth.
-    const HOST_REPORT_TOKEN = '';
-
-    async function reportHostOnline(hostId) {
-      try {
-        const body = { room: getRoomId(), hostId: hostId };
-        if (HOST_REPORT_TOKEN) body.token = HOST_REPORT_TOKEN;
-
-        await fetch('/api/set-host', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          cache: 'no-store',
-          body: JSON.stringify(body)
-        });
-      } catch(e) {
-        // Silent fail: game should still run even if backend is not ready
-      }
-    }
-
-    function startHostHeartbeat(hostId) {
-      reportHostOnline(hostId);
-      return setInterval(() => reportHostOnline(hostId), 15000);
-    }
+    // Change this once, print the QR once, and it will always work (as long as only ONE host is online at a time).
+    const FIXED_HOST_ID = 'NOWHERE01';
 
     function getOrCreateHostId() {
-      let id = null;
-      try { id = localStorage.getItem(HOST_ID_STORAGE_KEY); } catch(e) {}
-      if (!id) {
-        id = 'HRR-' + Math.random().toString(36).slice(2, 10);
-        try { localStorage.setItem(HOST_ID_STORAGE_KEY, id); } catch(e) {}
-      }
-      return id;
+      return FIXED_HOST_ID;
     }
 
     function clearQr() {
@@ -1638,50 +1590,16 @@
       if (el) el.innerHTML = '';
     }
 
-    function buildJoinUrl() {
-      // ✅ Permanent QR: always points to /join (room-based routing)
-      const room = getRoomId();
-      const joinUrl = `${location.origin}/join?room=${encodeURIComponent(room)}`;
-      return joinUrl;
+    function buildJoinUrl(hostId) {
+      // Fixed join URL (no /join, no backend)
+      const baseUrl = location.origin + location.pathname;
+      return `${baseUrl}?host=${encodeURIComponent(hostId)}`;
     }
 
     function initJoin() {
-      // Landing page used by the permanent QR: /join?room=TEAM01
-      const joinView = document.getElementById('join-view');
-      const msg = document.getElementById('join-msg');
-      const retry = document.getElementById('join-retry');
-      const openMain = document.getElementById('join-open-main');
-
-      const sp = new URLSearchParams(window.location.search);
-      const room = (sp.get('room') || DEFAULT_ROOM_ID).trim() || DEFAULT_ROOM_ID;
-
-      function showError() {
-        if (msg) msg.innerHTML = `No host online for <span style="opacity:.9">${room}</span>. Please try again in a moment.`;
-        if (retry) retry.style.display = 'inline-block';
-      }
-
-      async function go() {
-        if (retry) retry.style.display = 'none';
-        if (msg) msg.textContent = 'Finding the current host…';
-
-        try {
-          const r = await fetch(`/api/active-host?room=${encodeURIComponent(room)}`, { cache: 'no-store' });
-          if (!r.ok) throw new Error('bad status');
-          const data = await r.json();
-          if (!data || !data.hostId) throw new Error('no host');
-
-          // Redirect to the main page with the live host id
-          location.replace(`/?host=${encodeURIComponent(data.hostId)}&room=${encodeURIComponent(room)}`);
-        } catch(e) {
-          showError();
-        }
-      }
-
-      if (joinView) joinView.style.display = 'flex';
-      if (retry) retry.onclick = go;
-      if (openMain) openMain.onclick = () => { location.href = `/?room=${encodeURIComponent(room)}`; };
-
-      go();
+      // Optional: if someone visits with ?join=1, just redirect to the fixed host.
+      // This keeps a "permanent join entry" without requiring any backend.
+      location.replace(buildJoinUrl(FIXED_HOST_ID));
     }
 
     function initDesktop() {
@@ -1690,9 +1608,7 @@
         const hostId = getOrCreateHostId();
         peer = new Peer(hostId, PEER_CONFIG);
         peer.on('open', id => {
-          const url = buildJoinUrl();
-          // ✅ Tell backend this host is online (so /join can find it)
-          startHostHeartbeat(id);
+          const url = buildJoinUrl(id);
           clearQr();
           new QRCode(document.getElementById("qrcode"), {
             text: url, width: 86, height: 86,
