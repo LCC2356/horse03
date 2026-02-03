@@ -437,29 +437,7 @@
       color: var(--primary);
     }
 
-    .song-controls{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      background:#111;
-      border: 2px solid var(--primary);
-      padding: 8px 10px;
-      border-radius: 12px;
-      font-family: 'VT323', monospace;
-      color: var(--primary);
-    }
-    .song-label{ font-size: 1.2rem; letter-spacing: 1px; }
-    .song-select{
-      padding: 8px 10px;
-      border-radius: 10px;
-      border: 2px solid #333;
-      background:#0b0b0b;
-      color:#fff;
-      outline:none;
-      font-family: 'VT323', monospace;
-      font-size: 1.1rem;
-    }
-    #m-song-select{
+                #m-song-select{
       width: 100%;
       padding: 8px 10px;
       border-radius: 10px;
@@ -821,18 +799,6 @@
         <button class="btn btn-small" id="host-id-copy" type="button">COPY</button>
         <button class="btn btn-small" id="host-id-apply" type="button">APPLY</button>
       </div>
-
-      <div class="song-controls" title="Tap SFX melody">
-        <span class="song-label">SFX</span>
-        <select id="song-select" class="song-select">
-          <option value="GONGXI_FACAI">恭喜发财</option>
-          <option value="GONGXI_GONGXI">恭喜恭喜</option>
-          <option value="BAI_NIAN">拜年</option>
-          <option value="HAO_YUN_LAI">好运来</option>
-        </select>
-      </div>
-
-
       <button class="btn" onclick="spawnTestPony()">+ BOT</button>
       <button class="btn" onclick="openDesktopEditor()">+ PONY</button>
     </div>
@@ -885,149 +851,6 @@
           <span>HOST CONTROL</span>
           <span style="font-size:1rem; color:#888;">(hidden)</span>
         </div>
-        
-        <div class="m-admin-row">
-          <div class="m-admin-label">HOST ID</div>
-          <div class="m-admin-control m-admin-hostid">
-            <input type="text" id="m-host-id-input" maxlength="32" spellcheck="false" value="NOWHERE01" />
-            <button class="btn btn-small" id="m-host-id-copy" type="button">COPY</button>
-            <button class="btn btn-small" id="m-host-id-apply" type="button">APPLY</button>
-          </div>
-        </div>
-<div class="m-admin-hint">Zoom / Stretch / X / Y supports decimals. Length changes track size (height fixed).</div>
-
-        <div class="m-admin-row">
-          <div class="m-admin-label">ZOOM</div>
-          <div class="m-admin-control">
-            <input type="number" id="m-admin-zoom" min="1" max="500" step="0.1" value="100" inputmode="decimal" />
-            <span class="unit-label">%</span>
-          </div>
-        </div>
-
-        <!-- ✅ NEW: STRETCH X -->
-        <div class="m-admin-row">
-          <div class="m-admin-label">STRETCH</div>
-          <div class="m-admin-control">
-            <input type="number" id="m-admin-stretch" min="50" max="200" step="0.1" value="100" inputmode="decimal" />
-            <span class="unit-label">%</span>
-          </div>
-        </div>
-
-        <!-- ✅ NEW: X OFFSET -->
-        <div class="m-admin-row">
-          <div class="m-admin-label">X OFFSET</div>
-          <div class="m-admin-control">
-            <input type="number" id="m-admin-x" min="-3000" max="3000" step="0.1" value="0" inputmode="decimal" />
-            <span class="unit-label">PX</span>
-          </div>
-        </div>
-
-        <div class="m-admin-row">
-          <div class="m-admin-label">Y OFFSET</div>
-          <div class="m-admin-control">
-            <input type="number" id="m-admin-y" min="-1200" max="1200" step="0.1" value="0" inputmode="decimal" />
-            <span class="unit-label">PX</span>
-          </div>
-        </div>
-
-        <!-- ✅ NEW: TRACK LENGTH -->
-        <div class="m-admin-row">
-          <div class="m-admin-label">LENGTH</div>
-          <div class="m-admin-control">
-            <input type="number" id="m-admin-len" min="800" max="12000" step="10" value="3400" inputmode="numeric" />
-            <span class="unit-label">PX</span>
-          </div>
-        </div>
-
-        <!-- ✅ NEW: TUG AUTO CENTER -->
-        <div class="m-admin-row">
-          <div class="m-admin-label">TUG CENTER</div>
-          <div class="m-admin-control" style="justify-content:flex-end;">
-            <input type="checkbox" id="m-admin-tugcenter" />
-            <span class="unit-label" id="m-admin-tugcenter-label">OFF</span>
-          </div>
-        </div>
-
-        <div class="m-admin-row">
-          <div class="m-admin-label">MODE</div>
-          <div class="m-admin-control">
-            <select id="m-admin-mode">
-              <option value="RANDOM">RANDOM</option>
-              <option value="CLASSIC">RUN</option>
-              <option value="HURDLE">JUMP</option>
-              <option value="RED_LIGHT">STOP?</option>
-              <option value="TUG">TEAM</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="m-admin-row">
-          <div class="m-admin-label">SNOW</div>
-          <div class="m-admin-control" style="justify-content:flex-end;">
-            <input type="checkbox" id="m-admin-snow" checked />
-            <span class="unit-label" id="m-admin-snow-label">ON</span>
-          </div>
-        </div>
-
-        <div class="m-admin-row">
-          <div class="m-admin-label">BORDER</div>
-          <div class="m-admin-control" style="justify-content:flex-end;">
-            <input type="checkbox" id="m-admin-border" checked />
-            <span class="unit-label" id="m-admin-border-label">ON</span>
-          </div>
-        </div>
-
-        <div class="m-admin-row">
-          <div class="m-admin-label">B WIDTH</div>
-          <div class="m-admin-control">
-            <input type="number" id="m-admin-borderw" min="0" max="20" step="0.5" value="2" inputmode="decimal" />
-            <span class="unit-label">PX</span>
-          </div>
-        </div>
-
-        <div class="m-admin-actions">
-          <button class="m-btn-small primary" id="m-admin-apply">APPLY</button>
-          <button class="m-btn-small" id="m-admin-addbot">+ BOT</button>
-          <button class="m-btn-small danger" id="m-admin-back">BACK</button>
-        </div>
-      </div>
-    </div>
-
-        <div class="m-admin-row">
-          <div class="m-admin-label">SFX</div>
-          <div class="m-admin-control">
-            <select id="m-song-select">
-              <option value="GONGXI_FACAI">恭喜发财</option>
-              <option value="GONGXI_GONGXI">恭喜恭喜</option>
-              <option value="BAI_NIAN">拜年</option>
-              <option value="HAO_YUN_LAI">好运来</option>
-            </select>
-          </div>
-        </div>
-
-
-    <div id="m-controller">
-      <div id="m-info" class="controller-info">GET READY</div>
-
-      <div id="m-mode-wrapper">
-        <select id="m-mode-select">
-          <option value="RANDOM">RANDOM</option>
-          <option value="CLASSIC">RUN</option>
-          <option value="HURDLE">JUMP</option>
-          <option value="RED_LIGHT">STOP?</option>
-          <option value="TUG">TEAM</option>
-        </select>
-      </div>
-
-      <div id="m-btn" class="push-btn btn-wait">WAIT</div>
-
-      <div class="emoji-bar">
-        <div class="emoji-btn" onclick="sendEmoji('HEART')" data-icon="HEART"></div>
-        <div class="emoji-btn" onclick="sendEmoji('POOP')" data-icon="POOP"></div>
-        <div class="emoji-btn" onclick="sendEmoji('BOLT')" data-icon="BOLT"></div>
-        <div class="emoji-btn" onclick="sendEmoji('FACE')" style="font-size: 2rem;">?</div>
-      </div>
-    </div>
   </div>
 
   <!-- ✅ Permanent QR landing: /join -->
@@ -1069,11 +892,18 @@
     };
 
     const SONGS = {
-      // Tap-to-play melodies (user-provided jianpu excerpts)
-      'GONGXI_FACAI': [740.0, 659.3, 740.0, 659.3, 740.0, 740.0, 740.0, 0, 0, 554.4, 493.9, 554.4, 493.9, 440.0, 740.0, 0, 554.4, 493.9, 554.4, 493.9, 440.0, 493.9, 0, 440.0, 440.0, 493.9, 554.4, 659.3, 0],
-      'GONGXI_GONGXI': [370.0, 415.3, 329.6, 415.3, 622.2, 415.3, 554.3, 0, 0, 622.2, 415.3, 554.3, 440.0, 0],
-      'BAI_NIAN': [329.6, 293.6, 261.6, 293.6, 329.6, 293.6, 329.6, 293.6, 392.0, 440.0, 392.0, 493.8, 440.0, 0, 329.6, 293.6, 329.6, 440.0, 329.6, 293.6, 329.6, 0],
-      'HAO_YUN_LAI': [493.9, 440.1, 370.0, 329.7, 329.7, 329.7, 293.7, 329.7, 370.0, 440.1, 440.1, 440.1, 329.7, 370.0, 440.1, 493.9, 493.9, 493.9, 370.0, 440.1, 493.9, 293.7, 493.9, 0]
+      // Tap-to-play melodies (from user-provided jianpu excerpts)
+      // 1) 恭喜发财 (1=A, choose A3 as tonic for a warmer pitch)
+      'GONGXI_FACAI': [370.0,220.0,277.2,329.6,370.0,329.6,370.0,370.0,370.0,220.0,277.2,329.6,370.0,220.0,277.2,329.6,370.0,220.0,277.2,329.6,370.0,329.6,370.0,277.2,370.0,329.6,370.0,329.6,277.2,277.2,0,0,277.2,370.0,329.6,370.0,329.6,370.0,370.0,0,0,277.2,246.9,277.2,220.0,370.0,0,277.2,246.9,277.2,220.0,246.9,0,220.0,220.0,246.9,277.2,329.6,0],
+
+      // 2) 恭喜恭喜 (1=E, tonic E4)
+      'GONGXI_GONGXI': [370.0,329.6,329.6,329.6,622.3,554.4,493.9,554.4,554.4,370.0,415.3,329.6,415.3,622.3,415.3,554.4,415.3,370.0,415.3,329.6,415.3,622.3,415.3,554.4,415.3,0],
+
+      // 3) 拜年 (1=C, tonic C4)
+      'BAI_NIAN': [329.6,293.7,261.6,293.7,329.6,293.7,329.6,293.7,392.0,440.0,392.0,493.9,440.0,0,329.6,293.7,329.6,440.0,329.6,293.7,329.6,440.0,329.6,392.0,392.0,349.2,329.6,0],
+
+      // 4) 好运来 (1=D, tonic D4)
+      'HAO_YUN_LAI': [493.9,370.0,329.6,329.6,293.7,493.9,440.0,293.7,329.6,493.9,0,493.9,329.6,293.7,493.9,440.0,329.6,440.0,493.9,370.0,0]
     };
 
     const SOUND_STYLES = {
@@ -1089,20 +919,16 @@
 
     let noteIndex = 0;
     let myCurrentSongKey = 'GONGXI_FACAI';
-    let myStyleKey = 'GAMEBOY';
+    
+    const SFX_KEYS = ['GONGXI_FACAI','GONGXI_GONGXI','BAI_NIAN','HAO_YUN_LAI'];
 
-    function setSongKey(key){
-      if (!SONGS[key]) return;
-      myCurrentSongKey = key;
+    function randomizeSfxForRace() {
+      myCurrentSongKey = SFX_KEYS[Math.floor(Math.random() * SFX_KEYS.length)];
       noteIndex = 0;
-      // sync UI
-      const d = document.getElementById('song-select');
-      const m = document.getElementById('m-song-select');
-      if (d) d.value = key;
-      if (m) m.value = key;
-      toast(`SFX: ${key}`);
     }
+let myStyleKey = 'GAMEBOY';
 
+    
     let ponies = [];
     let ponyQueue = [];
     let grass = [];
@@ -1448,25 +1274,7 @@
         if (mCopy) mCopy.addEventListener('click', () => { copyTextToClipboard(getFixedHostId()); toast('HOST ID copied'); });
         if (mApply) mApply.addEventListener('click', () => { applyHostIdFromInput(mIn); });
         if (mIn) mIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyHostIdFromInput(mIn); });
-      }catch(e){}
-      // Tap SFX song selection (desktop + mobile hidden admin)
-      try{
-        const dSel = document.getElementById('song-select');
-        const mSel = document.getElementById('m-song-select');
-        const initKey = myCurrentSongKey;
-
-        if (dSel) dSel.addEventListener('change', (e) => setSongKey(e.target.value));
-        if (mSel) mSel.addEventListener('change', (e) => setSongKey(e.target.value));
-
-        // initial sync
-        if (dSel) dSel.value = initKey;
-        if (mSel) mSel.value = initKey;
-      }catch(e){}
-
-
-
-      const btns = document.querySelectorAll('.emoji-btn');
-      btns.forEach(btn => {
+         btns.forEach(btn => {
         const type = btn.getAttribute('data-icon');
         if (type) { btn.appendChild(createPixelIcon(type, 3, '#fff')); }
       });
@@ -2235,6 +2043,8 @@ function applyHostIdFromInput(inputEl) {
     }
 
     function startRace() {
+      randomizeSfxForRace();
+
       updateBarText("GO!", "#ffffff");
 
       let statusText = "STATUS: RACING";
