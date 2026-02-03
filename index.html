@@ -987,6 +987,7 @@
 
 
   <script>
+
     // ✅ Track height fixed; length is host-controlled
     let gameW = 3400;
     const GAME_H = 100;
@@ -1343,28 +1344,6 @@
             melodyTimer = null;
           }
         }
-      /*lastNoteTime*/ = tNow;
-      const now = audioCtx.currentTime;
-      const songArr = SONGS[myCurrentSongKey] || SONGS['GONGXI_FACAI'];
-      let freq = songArr[noteIndex % songArr.length];
-      while (freq === 0) {
-        noteIndex++;
-        freq = songArr[noteIndex % songArr.length];
-      }
-      noteIndex++;
-      const style = SOUND_STYLES[myStyleKey] || SOUND_STYLES['GAMEBOY'];
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = style.type;
-      osc.frequency.setValueAtTime(freq, now);
-      gain.connect(audioCtx.destination);
-      gain.gain.setValueAtTime(0, now);
-      gain.gain.linearRampToValueAtTime(0.3, now + style.attack);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + style.attack + style.decay);
-      osc.connect(gain);
-      osc.start(now);
-      osc.stop(now + style.attack + style.decay + 0.1);
-    }
 
     function randomizeMusic() {
       // ✅ Single-song mode: always use GONGXI_FACAI
@@ -3399,6 +3378,7 @@ function applyHostIdFromInput(inputEl) {
         el.appendChild(cell);
       }));
     }
-  </script>
+  
+</script>
 </body>
 </html>
