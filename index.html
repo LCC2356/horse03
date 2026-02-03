@@ -1276,6 +1276,9 @@ let myStyleKey = 'GAMEBOY';
         if (mIn) mIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyHostIdFromInput(mIn); });
                }catch(e){}
 
+      const btns = document.querySelectorAll('.btn');
+
+
       btns.forEach(btn => {
         const type = btn.getAttribute('data-icon');
         if (type) { btn.appendChild(createPixelIcon(type, 3, '#fff')); }
