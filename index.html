@@ -1707,6 +1707,24 @@ function setFixedHostId(newId) {
   return true;
 }
 
+function randomHostSuffix(len = 4) {
+  const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no I, L, O, 0, 1
+  let out = '';
+  for (let i = 0; i < len; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return out;
+}
+
+function generateAlternativeHostId(baseId) {
+  const base = String(baseId || DEFAULT_HOST_ID).trim();
+  const suffix = randomHostSuffix(4);
+  let candidate = `${base}-${suffix}`;
+  if (candidate.length > 32) candidate = candidate.slice(0, 32);
+  // Ensure it still matches our allowed charset rule; fallback if not.
+  if (!/^[A-Za-z0-9_-]{1,32}$/.test(candidate)) candidate = `${DEFAULT_HOST_ID}-${suffix}`;
+  return candidate;
+}
+
+
 function getOrCreateHostId() {
   return getFixedHostId();
 }
@@ -1883,13 +1901,18 @@ function applyHostIdFromInput(inputEl) {
         peer.on('error', (err) => {
           console.error("PeerJS Error:", err);
 
-          // ✅ If this host id is already in use (e.g., another tab/device), regenerate once.
+          // ✅ If this host id is already in use (e.g., another tab/device), auto-assign a new host id.
           if (err && err.type === 'unavailable-id') {
-            try { localStorage.removeItem(HOST_ID_STORAGE_KEY); } catch(e) {}
-            alert("Host ID is already in use. Generating a new QR code...");
-            location.reload();
+            const prev = getFixedHostId();
+            const next = generateAlternativeHostId(prev);
+            setFixedHostId(next);
+            syncHostIdInputs();
+            toast(`HOST ID in use → switched to ${next}`);
+            // Reload so Peer is re-created with the new id
+            setTimeout(() => location.reload(), 250);
             return;
           }
+}
 
           alert("Network Error: " + (err && err.type ? err.type : "unknown") + "\nTry refreshing.");
         });
