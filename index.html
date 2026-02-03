@@ -1011,9 +1011,16 @@
     };
 
     const SONGS = {
-      'JINGLE': [ 329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 329.6, 392.0, 261.6, 293.7, 329.6, 349.2, 349.2, 349.2, 349.2, 349.2, 329.6, 329.6, 329.6, 293.7, 293.7, 329.6, 293.7, 392.0 ],
-      'MERRY': [ 261.6, 349.2, 349.2, 392.0, 349.2, 329.6, 293.7, 293.7, 293.7, 392.0, 392.0, 440.0, 392.0, 349.2, 329.6, 261.6, 261.6, 440.0, 440.0, 466.2, 440.0, 392.0, 349.2, 293.7, 261.6, 261.6, 293.7, 392.0, 329.6, 349.2 ],
-      'DECK': [ 523.3, 493.9, 440.0, 392.0, 349.2, 329.6, 293.7, 261.6, 293.7, 329.6, 349.2, 293.7, 329.6, 293.7, 261.6 ]
+      // CNY-style pentatonic loops (each tap advances one note)
+      'SPRING': [
+        392.0, 440.0, 523.3, 440.0, 392.0, 329.6, 293.7, 261.6,
+        293.7, 329.6, 392.0, 329.6, 293.7, 261.6, 0,
+        392.0, 392.0, 440.0, 392.0, 329.6, 293.7, 261.6, 0
+      ],
+      'LANTERN': [
+        523.3, 440.0, 392.0, 440.0, 523.3, 659.3, 523.3, 440.0,
+        392.0, 329.6, 293.7, 261.6, 293.7, 329.6, 392.0, 0
+      ]
     };
 
     const SOUND_STYLES = {
@@ -1028,7 +1035,7 @@
     const STYLE_KEYS = Object.keys(SOUND_STYLES);
 
     let noteIndex = 0;
-    let myCurrentSongKey = 'JINGLE';
+    let myCurrentSongKey = 'SPRING';
     let myStyleKey = 'GAMEBOY';
 
     let ponies = [];
@@ -1272,7 +1279,7 @@
     function playNextNote() {
       if (!audioCtx) return;
       const now = audioCtx.currentTime;
-      const songArr = SONGS[myCurrentSongKey] || SONGS['JINGLE'];
+      const songArr = SONGS[myCurrentSongKey] || SONGS['SPRING'];
       let freq = songArr[noteIndex % songArr.length];
       while (freq === 0) {
         noteIndex++;
@@ -1707,22 +1714,26 @@ function setFixedHostId(newId) {
   return true;
 }
 
-function randomHostSuffix(len = 4) {
-  const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no I, L, O, 0, 1
-  let out = '';
-  for (let i = 0; i < len; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)];
-  return out;
-}
 
 function generateAlternativeHostId(baseId) {
-  const base = String(baseId || DEFAULT_HOST_ID).trim();
-  const suffix = randomHostSuffix(4);
-  let candidate = `${base}-${suffix}`;
-  if (candidate.length > 32) candidate = candidate.slice(0, 32);
-  // Ensure it still matches our allowed charset rule; fallback if not.
-  if (!/^[A-Za-z0-9_-]{1,32}$/.test(candidate)) candidate = `${DEFAULT_HOST_ID}-${suffix}`;
+  // Sequential 2-digit suffix: 01, 02, 03...
+  // Example: NOWHERE01 -> NOWHERE02 -> NOWHERE03 ...
+  const s = String(baseId || DEFAULT_HOST_ID).trim();
+  const m = /^(.+?)(\d{2})$/.exec(s);
+  let prefix, num;
+  if (m) {
+    prefix = m[1];
+    num = parseInt(m[2], 10);
+  } else {
+    prefix = s.replace(/\d+$/, '');
+    num = 0;
+  }
+  let next = (isFinite(num) ? num : 0) + 1;
+  if (next > 99) next = 1;
+  const candidate = `${prefix}${String(next).padStart(2,'0')}`.slice(0,32);
   return candidate;
 }
+
 
 
 function getOrCreateHostId() {
