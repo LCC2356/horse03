@@ -703,7 +703,6 @@
         </div>
       </div>
 
-      <!-- ✅ NEW: HORIZONTAL STRETCH -->
       <div class="control-group">
         <span class="control-label">STRETCH X</span>
         <input type="range" id="stretch-slider" min="50" max="200" step="0.1" value="100" />
@@ -713,7 +712,6 @@
         </div>
       </div>
 
-      <!-- ✅ NEW: X OFFSET (left/right pan) -->
       <div class="control-group">
         <span class="control-label">X OFFSET</span>
         <input type="range" id="x-slider" min="-3000" max="3000" step="1" value="0" />
@@ -732,7 +730,6 @@
         </div>
       </div>
 
-      <!-- ✅ NEW: TRACK LENGTH (px) -->
       <div class="control-group">
         <span class="control-label">LENGTH</span>
         <div class="input-wrapper">
@@ -741,7 +738,6 @@
         </div>
       </div>
 
-      <!-- ✅ NEW: TUG AUTO CENTER -->
       <div class="control-group">
         <span class="control-label">TUG CENTER</span>
         <div class="input-wrapper">
@@ -833,7 +829,6 @@
       </div>
     </div>
 
-    <!-- ✅ 手机端隐藏控制面板（五次点击标题进入） -->
     <div id="m-admin">
       <div class="m-admin-card">
         <div class="m-admin-title">
@@ -859,7 +854,6 @@
           </div>
         </div>
 
-        <!-- ✅ NEW: STRETCH X -->
         <div class="m-admin-row">
           <div class="m-admin-label">STRETCH</div>
           <div class="m-admin-control">
@@ -868,7 +862,6 @@
           </div>
         </div>
 
-        <!-- ✅ NEW: X OFFSET -->
         <div class="m-admin-row">
           <div class="m-admin-label">X OFFSET</div>
           <div class="m-admin-control">
@@ -885,7 +878,6 @@
           </div>
         </div>
 
-        <!-- ✅ NEW: TRACK LENGTH -->
         <div class="m-admin-row">
           <div class="m-admin-label">LENGTH</div>
           <div class="m-admin-control">
@@ -894,7 +886,6 @@
           </div>
         </div>
 
-        <!-- ✅ NEW: TUG AUTO CENTER -->
         <div class="m-admin-row">
           <div class="m-admin-label">TUG CENTER</div>
           <div class="m-admin-control" style="justify-content:flex-end;">
@@ -972,7 +963,6 @@
     </div>
   </div>
 
-  <!-- ✅ Permanent QR landing: /join -->
   <div id="join-view">
     <div id="join-card">
       <h2>Joining…</h2>
@@ -987,7 +977,6 @@
 
 
   <script>
-
     // ✅ Track height fixed; length is host-controlled
     let gameW = 3400;
     const GAME_H = 100;
@@ -1012,10 +1001,46 @@
     };
 
     const SONGS = {
-      // ✅ Single-song mode (for tuning): 刘德华《恭喜发财》
-      // Numbered-notation segment mapped to C major.
+      // Numbered-notation based segments (from provided scores), mapped to C major.
+      // 1=C4(261.6), 2=D4(293.7), 3=E4(329.6), 4=F4(349.2),
+      // 5=G4(392.0), 6=A4(440.0), 7=B4(493.9), 0=rest
+
+      // 刘德华《恭喜发财》副歌：我恭喜你发财 - 我恭喜你精彩 - 最好的请过来 - 不好的请走开 - 礼多人不怪
       'GONGXI_FACAI': [
-440.0, 261.6, 329.6, 392.0, 440.0, 392.0, 440.0, 440.0, 261.6, 329.6, 392.0, 440.0, 261.6, 329.6, 392.0, 440.0, 261.6, 329.6, 392.0, 440.0, 392.0, 440.0, 329.6, 440.0, 392.0, 440.0, 392.0, 329.6, 329.6, 0.0, 0.0, 0.0, 329.6, 440.0, 392.0, 440.0, 392.0, 440.0, 440.0, 440.0, 0.0, 0.0, 329.6, 293.7, 329.6, 293.7, 261.6, 440.0, 0.0, 329.6, 293.7, 329.6, 293.7, 261.6, 293.7, 0.0, 261.6, 261.6, 293.7, 329.6, 392.0, 440.0, 0.0, 0.0, 0.0
+        // 第一句：我(G3) 恭(C4) 喜(C4) 你(D4) 发(E4) 财(E4)
+        196.0, 261.6, 261.6, 293.7, 329.6, 329.6, 0.0,
+        
+        // 第二句：我(G3) 恭(C4) 喜(C4) 你(D4) 精(E4) 彩(E4)
+        196.0, 261.6, 261.6, 293.7, 329.6, 329.6, 0.0,
+        
+        // 第三句：最(E4) 好(D4) 的(E4) 请(D4) 过(C4) 来(D4)
+        329.6, 293.7, 329.6, 293.7, 261.6, 293.7, 0.0,
+        
+        // 第四句：不(A3) 好(C4) 的(A3) 请(C4) 走(D4) 开(D4)
+        220.0, 261.6, 220.0, 261.6, 293.7, 293.7, 0.0,
+        
+        // 第五句：礼(D4) 多(D4) 人(E4) 不(D4) 怪(C4)
+        293.7, 293.7, 329.6, 293.7, 261.6, 0.0, 0.0
+      ],
+
+      // 祖海《好运来》：从“好运来”到结尾“好运来”（节选循环）
+      'HAO_YUN_LAI': [
+        440.0, 329.6, 293.7, 293.7, 261.6, 440.0, 392.0, 261.6, 293.7, 440.0, 0.0, 440.0, 293.7, 261.6, 440.0, 392.0, 293.7, 392.0, 440.0, 329.6, 0.0, 329.6, 440.0, 392.0, 440.0, 440.0, 392.0, 440.0, 293.7, 261.6, 293.7, 0.0, 261.6, 261.6, 261.6, 293.7, 329.6, 329.6, 329.6, 293.7, 261.6, 392.0, 261.6, 440.0, 440.0, 0.0, 0.0, 392.0, 392.0, 440.0, 0.0
+      ],
+
+      // 卓依婷《恭喜恭喜》：从第一句开始（节选循环）
+      'GONGXI_GONGXI': [
+        440.0, 493.9, 261.6, 293.7, 349.2, 329.6, 329.6, 329.6, 440.0, 440.0, 329.6, 329.6, 293.7, 329.6, 329.6, 349.2, 329.6, 293.7, 293.7, 261.6, 261.6, 261.6, 493.9, 440.0, 392.0, 440.0, 440.0, 293.7, 329.6, 261.6, 329.6, 493.9, 329.6, 440.0, 0.0, 293.7, 329.6, 261.6, 329.6, 493.9, 329.6, 440.0, 0.0
+      ],
+
+      // 卓依婷《拜年》主旋律节选（可后续你再指定范围我再替换）
+      'BAI_NIAN': [
+        440.0, 493.9, 261.6, 293.7,
+        349.2, 329.6, 329.6,
+        329.6, 440.0, 329.6,
+        293.7, 329.6,
+        349.2, 329.6, 293.7,
+        0
       ]
     };
 
@@ -1031,9 +1056,8 @@
     const STYLE_KEYS = Object.keys(SOUND_STYLES);
 
     let noteIndex = 0;
-    let melodyTimer = null;
-    const MELODY_STEP_SEC = 0.22; // melody pace (seconds per step)
-// ✅ slower = clearer melody // ✅ keeps melody recognizable when players mash
+    let lastNoteTime = 0;
+    const MIN_NOTE_INTERVAL_MS = 120; // ✅ keeps melody recognizable when players mash
     let myCurrentSongKey = 'SPRING';
     let myStyleKey = 'GAMEBOY';
 
@@ -1276,82 +1300,63 @@
     }
 
     function playNextNote() {
-      // ✅ Tap feedback SFX (instant). Melody is handled by a separate timer so taps never "speed up" the tune.
       if (!audioCtx) return;
+      const tNow = Date.now();
+      if (tNow - lastNoteTime < MIN_NOTE_INTERVAL_MS) {
+        // Too fast: keep the current note (don't advance) so the melody stays recognizable
+        return;
+      }
+      lastNoteTime = tNow;
       const now = audioCtx.currentTime;
-
-      // short percussive blip
+      const songArr = SONGS[myCurrentSongKey] || SONGS['SPRING'];
+      let freq = songArr[noteIndex % songArr.length];
+      while (freq === 0) {
+        noteIndex++;
+        freq = songArr[noteIndex % songArr.length];
+      }
+      noteIndex++;
+      const style = SOUND_STYLES[myStyleKey] || SOUND_STYLES['GAMEBOY'];
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      const style = STYLES[myStyleKey] || STYLES['GAMEBOY'];
-
-      // fixed bright pitch for click feedback (doesn't interfere with the song recognition)
-      osc.frequency.setValueAtTime(880, now);
       osc.type = style.type;
-
-      gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(0.18, now + 0.005);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
-
-      osc.connect(gain);
+      osc.frequency.setValueAtTime(freq, now);
       gain.connect(audioCtx.destination);
-
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.3, now + style.attack);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + style.attack + style.decay);
+      osc.connect(gain);
       osc.start(now);
-      osc.stop(now + 0.07);
+      osc.stop(now + style.attack + style.decay + 0.1);
     }
 
-    function startMelodyLoop() {
-          if (!audioCtx) return;
-          stopMelodyLoop();
-          noteIndex = 0;
-    
-          const songArr = SONGS[myCurrentSongKey] || SONGS['GONGXI_FACAI'];
-    
-          const tick = () => {
-            // choose next non-null note
-            const f = songArr[noteIndex % songArr.length] || 0;
-            noteIndex++;
-    
-            if (f && f > 0) {
-              const now = audioCtx.currentTime;
-              const osc = audioCtx.createOscillator();
-              const gain = audioCtx.createGain();
-              const style = STYLES[myStyleKey] || STYLES['GAMEBOY'];
-    
-              osc.type = style.type;
-              osc.frequency.setValueAtTime(f, now);
-    
-              // clearer melodic envelope than the tap blip
-              gain.gain.setValueAtTime(0.0001, now);
-              gain.gain.exponentialRampToValueAtTime(0.22, now + 0.01);
-              gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
-    
-              osc.connect(gain);
-              gain.connect(audioCtx.destination);
-              osc.start(now);
-              osc.stop(now + 0.20);
-            }
-    
-            melodyTimer = window.setTimeout(tick, MELODY_STEP_SEC * 1000);
-          };
-    
-          tick();
-        }
-    
-        function stopMelodyLoop() {
-          if (melodyTimer) {
-            clearTimeout(melodyTimer);
-            melodyTimer = null;
-          }
-        }
-
     function randomizeMusic() {
-      // ✅ Single-song mode: always use GONGXI_FACAI
-      myCurrentSongKey = 'GONGXI_FACAI';
-      // keep some variety in timbre
+      // ✅ Only use the 4 CNY motifs during the competition
+      // ✅ Avoid picking the same melody twice in a row on the same device
+      const songKeys = [
+        'GONGXI_FACAI',
+        'GONGXI_GONGXI',
+        'BAI_NIAN',
+        'HAO_YUN_LAI'
+      ];
+
+      // keep last pick across runs
+      if (typeof window.__lastSongKey === 'undefined') window.__lastSongKey = null;
+
+      let nextKey = songKeys[Math.floor(Math.random() * songKeys.length)];
+      if (window.__lastSongKey && songKeys.length > 1) {
+        let guard = 0;
+        while (nextKey === window.__lastSongKey && guard < 12) {
+          nextKey = songKeys[Math.floor(Math.random() * songKeys.length)];
+          guard++;
+        }
+      }
+
+      myCurrentSongKey = nextKey;
+      window.__lastSongKey = nextKey;
+
+      // style can still vary
       myStyleKey = STYLE_KEYS[Math.floor(Math.random() * STYLE_KEYS.length)];
       noteIndex = 0;
-      window.__lastSongKey = 'GONGXI_FACAI';
     }
 
     function setTrackBorder(enabled, widthPx, updateUI=true) {
@@ -3080,8 +3085,7 @@ function applyHostIdFromInput(inputEl) {
                 btn.innerText = "RUN";
                 info.innerText = data.infoText || "TAP TO RUN";
                 randomizeMusic();
-              
-      startMelodyLoop();}
+              }
               else if (data.mode === 'start') {
                 btn.classList.add('btn-start');
                 btn.innerText = data.label;
@@ -3213,8 +3217,7 @@ function applyHostIdFromInput(inputEl) {
       initAudio();
       randomizeMusic();
 
-      
-      startMelodyLoop();// ✅ Enable motion (jump) using a user gesture (this button click)
+      // ✅ Enable motion (jump) using a user gesture (this button click)
       enableMotionFromGesture();
 
       conn.send({ type: 'spawn', payload: { name: name, pixels: mobileGrid, color: selectedColor, uuid: playerUUID } });
@@ -3378,7 +3381,6 @@ function applyHostIdFromInput(inputEl) {
         el.appendChild(cell);
       }));
     }
-  
-</script>
+  </script>
 </body>
 </html>
